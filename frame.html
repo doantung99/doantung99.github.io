@@ -1,0 +1,25 @@
+<html>
+<head></head>
+<body onload="document.getElementById('csrf').submit()">
+<form class="new_user" id="new_user" action="/users/sign_in" accept-charset="UTF-8" method="post" id="csrf"><input name="utf8" type="hidden" value="✓"><input type="hidden" name="authenticity_token" value="mFdZcXO7rP/UwCMT4uwPJxDLZkrQRLtBat/po3R9Aze2Z5kBnOue0oYT4XaVRtB6LLglcFGzbIpYdCGeNF+NSw==">
+  <div class="field">
+    <label for="user_email">Email</label><br>
+    <input autofocus="autofocus" autocomplete="email" type="email" value="test@gmail.com" name="user[email]" id="user_email">
+  </div>
+
+  <div class="field">
+    <label for="user_password">Password</label><br>
+    <input autocomplete="current-password" type="password" value="123456" name="user[password]" id="user_password">
+  </div>
+
+    <div class="field">
+      <input name="user[remember_me]" type="hidden" value="0"><input type="checkbox" value="1" name="user[remember_me]" id="user_remember_me">
+      <label for="user_remember_me">Remember me</label>
+    </div>
+
+  <div class="actions">
+    <input type="submit" name="commit" value="Log in" data-disable-with="Log in">
+  </div>
+  </body>
+</form>
+</html>
