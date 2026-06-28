@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="amber" data-noise="on">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0a0e0a">
+    <meta name="color-scheme" content="dark">
+
+    <title>XTS-AES — LazyBlog</title>
+    <meta name="description" content="An encrypted ESP32-S3 flash dump whose read-protected XTS-AES key is deterministically derivable from readable eFuse data via a leaked provisioning firmware&apos;s KDF.">
+            <meta name="author" content="tungdlm99">
+        <meta name="generator" content="LazyBlog 1.11.0">
+    <meta name="robots" content="index, follow, max-image-preview:large">
+
+    <link rel="canonical" href="https://doantung99.github.io/blog/posts/xts-aes">
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="XTS-AES">
+    <meta property="og:description" content="An encrypted ESP32-S3 flash dump whose read-protected XTS-AES key is deterministically derivable from readable eFuse data via a leaked provisioning firmware&apos;s KDF.">
+    <meta property="og:url" content="https://doantung99.github.io/blog/posts/xts-aes">
+    <meta property="og:type" content="article">
+    <meta property="og:site_name" content="LazyBlog">
+    <meta property="og:locale" content="vi_VN">
+                <meta property="article:published_time" content="2026-06-28">
+                    <meta property="article:author" content="tungdlm99">
+                            <meta property="article:tag" content="ctf">
+                    <meta property="article:tag" content="v1t-ctf-2026">
+                    <meta property="article:tag" content="hardware">
+                    <meta property="article:tag" content="ai-assisted">
+            
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="XTS-AES">
+    <meta name="twitter:description" content="An encrypted ESP32-S3 flash dump whose read-protected XTS-AES key is deterministically derivable from readable eFuse data via a leaked provisioning firmware&apos;s KDF.">
+        
+    <!-- Alternates: machine-readable / AI / RSS -->
+            <link rel="alternate" type="text/markdown" href="https://doantung99.github.io/blog/posts/xts-aes.md">
+        <link rel="alternate" type="text/plain" title="llms.txt index" href="/blog/llms.txt">
+    <link rel="alternate" type="application/rss+xml" title="LazyBlog RSS" href="/blog/feed.xml">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20fill%3D%22%230a0e0a%22%2F%3E%3Ctext%20x%3D%224%22%20y%3D%2224%22%20font-family%3D%22monospace%22%20font-size%3D%2222%22%20fill%3D%22%2339ff14%22%3E%26gt%3B_%3C%2Ftext%3E%3C%2Fsvg%3E">
+
+            <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"XTS-AES","description":"An encrypted ESP32-S3 flash dump whose read-protected XTS-AES key is deterministically derivable from readable eFuse data via a leaked provisioning firmware\u0027s KDF.","datePublished":"2026-06-28","dateModified":"2026-06-28","url":"https://doantung99.github.io/blog/posts/xts-aes","mainEntityOfPage":"https://doantung99.github.io/blog/posts/xts-aes","inLanguage":"vi","keywords":"ctf, v1t-ctf-2026, hardware, ai-assisted","author":{"@type":"Person","name":"tungdlm99"},"publisher":{"@type":"Organization","name":"LazyBlog","url":"https://doantung99.github.io/blog/"}}</script>
+    
+    <script>
+    // Theme bootstrap — server already rendered the configured default on
+    // <html data-theme>. Only override here when the visitor has picked a
+    // different valid value previously. Runs sync in <head> so no FOUC.
+    (function () {
+        try {
+            var t = localStorage.getItem('theme');
+            if (t === 'green' || t === 'amber' || t === 'crypt' || t === 'brutalist' || t === 'c64' || t === 'lcd') {
+                document.documentElement.setAttribute('data-theme', t);
+            }
+        } catch (e) {}
+    })();
+    </script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Play:wght@400;700&family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
+
+            <link rel="stylesheet" href="/blog/assets/base.css?v=1782400888">
+            <link rel="stylesheet" href="/blog/assets/effects.css?v=1782400888">
+            <link rel="stylesheet" href="/blog/assets/components.css?v=1782478868">
+            <link rel="stylesheet" href="/blog/assets/post.css?v=1782478868">
+                
+    </head>
+<body class="is-post">
+
+<div class="read-progress" aria-hidden="true">
+    <div class="read-progress-fill"></div>
+</div>
+
+<header>
+            <div class="callsign">XV5HP // MAYLAB // HẢI PHÒNG</div>
+                    <p class="site-brand"><a href="/blog/" class="brand-link">LazyBlog</a></p>
+                <div class="subtitle">// A personal blog transmitting thoughts over imperfect radio waves. Expect noise, fading, and low bandwidth—but always authentic signals.</div>
+        <div class="header-actions">
+        <a class="header-btn" href="/blog/" aria-label="Back to home">[ HOME ]</a>
+                <a class="header-btn" href="/blog/search" aria-label="Search">[ SEARCH ]</a>
+        <a class="header-btn" href="/blog/archive" aria-label="Archive">[ ARCHIVE ]</a>
+                    <a class="header-btn" href="/blog/about" aria-label="About">[ ABOUT ]</a>
+                                <div class="theme-picker" id="theme-picker">
+            <button class="header-btn theme-picker-toggle" type="button"
+                    aria-haspopup="menu" aria-expanded="false" aria-label="Switch theme">
+                <span data-theme-label>[ THEME ]</span>
+            </button>
+            <div class="theme-picker-menu" role="menu" hidden>
+                <button type="button" role="menuitem" data-theme-set="amber">AMBER</button>
+                <button type="button" role="menuitem" data-theme-set="green">GREEN</button>
+                <button type="button" role="menuitem" data-theme-set="crypt">CRYPT</button>
+                <button type="button" role="menuitem" data-theme-set="brutalist">BRUTALIST</button>
+                <button type="button" role="menuitem" data-theme-set="c64">C64</button>
+                <button type="button" role="menuitem" data-theme-set="lcd">LCD</button>
+            </div>
+        </div>
+    </div>
+</header>
+
+<main>
+    
+
+<article class="post-article">
+        <div class="section-tag">
+        § TRANSMISSION — 2026-06-28 — tungdlm99    </div>
+    <h1 class="post-page-title">
+                    <span class="post-icon">🔐</span>
+                XTS-AES    </h1>
+
+    
+            <nav class="toc toc-inline" aria-label="Table of contents">
+            <div class="toc-label">§ TOC — NAVIGATION</div>
+            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-2"><a href="#flag">Flag</a></li></ul>
+        </nav>
+    
+    <div class="post-body">
+        <h2 id="summary">Summary</h2>
+<p>We get an encrypted ESP32-S3 SPI-flash dump (flash encryption ON, XTS-AES-128) plus an eFuse summary and a &quot;leaked&quot; provisioning firmware. The hardware key is read-protected in eFuse, but the leaked tool derives it deterministically from <em>readable</em> device data (MAC + <code>BLOCK_USR_DATA</code>), so we reverse the KDF, rebuild the key, and decrypt the <code>flagdata</code> partition.</p>
+<h2 id="solution">Solution</h2>
+<p>I recognized this as the classic embedded trap: a &quot;secure&quot; key that's read-protected in fuses but actually reproducible if its derivation leaks. So I set the direction up front — find the KDF in the provisioning binary, recover the constants, then run ESP32's flash-encryption math in reverse. The model did the grinding; my job was steering and verifying.</p>
+<p><strong>1. Triage the inputs.</strong> I handed the model <code>efuse_sum.json</code> and asked it to strip the espefuse banner and pull the security-relevant fuses. It confirmed <code>SPI_BOOT_CRYPT_CNT=Enable</code>, <code>KEY_PURPOSE_0=XTS_AES_128_KEY</code>, <code>BLOCK_KEY0 readable=False</code>, and — crucially — the readable per-device values: <code>MAC=d0:cf:13:2f:36:c8</code> and <code>BLOCK_USR_DATA</code>. That readable data is the KDF input.</p>
+<p><strong>2. Isolate the real KDF, not the banner.</strong> <code>strings</code> on <code>leaked_debug_firmware.bin</code> (a stripped Xtensa ELF) showed the derivation as <code>PBKDF2(HMAC-SHA256(...))</code>. I told the model to ignore the human-readable log lines and actually pin the constants in the binary — radare2 won't auto-resolve Xtensa <code>l32r</code> literal-pool references, so I steered it to scan <code>.flash.text</code> for the little-endian addresses of those format strings and read the literal pool that holds them (around vaddr <code>0x42000b20</code>). It came back with the SHA-256 IV (<code>6a09e667…</code>), a 16-byte HMAC key constant <code>855780fc45bce8878d68f0040630cdbb</code>, and the integers <code>6000</code> and <code>4096</code>. The model first guessed 6000 was the iteration count; I had it re-check the KDF function at <code>0x420096a4</code>, where the call signature <code>(USR_DATA, 24, MAC, 6, out, 32)</code> makes clear the PBKDF2 salt is the 6-byte MAC and the iteration count is <strong>4096</strong>.</p>
+<p><strong>3. Rebuild the key and run ESP32's XTS quirks in reverse.</strong> I had the model implement Espressif's flash-encryption scheme exactly: 128-byte data units, a tweak of <code>address &amp; ~0x7F</code> packed little-endian, and the byte-reversal before/after each AES-XTS block. I verified the key by checking that flash offset <code>0x0</code> decrypts to the <code>0xE9</code> ESP image magic before trusting it on the <code>flagdata</code> partition (<code>off=0x113000</code>, from the plaintext partition table at <code>0x8000</code>).</p>
+<pre><code class="language-python">import struct, hashlib, hmac
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from cryptography.hazmat.backends import default_backend
+
+# --- Step 1+2: reverse the leaked KDF -&gt; recover the read-protected XTS key ---
+K16    = bytes.fromhex(&quot;855780fc45bce8878d68f0040630cdbb&quot;)          # HMAC key constant
+USR    = bytes.fromhex(&quot;eed822f54024e490e59ca5e670784a5daa1f04fd07787353&quot;)  # BLOCK_USR_DATA[0:24]
+MAC    = bytes.fromhex(&quot;d0cf132f36c8&quot;)                              # device MAC (PBKDF2 salt)
+digest = hmac.new(K16, USR, hashlib.sha256).digest()
+key32  = hashlib.pbkdf2_hmac(&quot;sha256&quot;, digest, MAC, 4096, 32)       # XTS-AES-128 key
+
+# --- ESP32-S3 flash XTS-AES decrypt (128-byte unit + byte-reversal quirk) ---
+def xts_dec(key, flash_address, indata):
+    be = default_backend(); out = []
+    pad_left = flash_address % 0x80
+    data = b&quot;\x00&quot; * pad_left + indata
+    data += b&quot;\x00&quot; * ((-len(data)) % 0x80)
+    fa = flash_address
+    for i in range(0, len(data), 0x80):
+        tweak = struct.pack(&quot;&lt;I&quot;, fa &amp; ~0x7F) + b&quot;\x00&quot; * 12; fa += 0x80
+        c = Cipher(algorithms.AES(key), modes.XTS(tweak), backend=be).decryptor()
+        out.append(c.update(data[i:i + 0x80][::-1])[::-1])
+    return b&quot;&quot;.join(out)[pad_left: pad_left + len(indata)]
+
+flash = open(&quot;flash_dump.bin&quot;, &quot;rb&quot;).read()
+assert xts_dec(key32, 0x0, flash[0x0:0x80])[0] == 0xE9          # ESP image magic -&gt; key confirmed
+flagdata = xts_dec(key32, 0x113000, flash[0x113000:0x114000])  # flagdata partition
+print(flagdata.split(b&quot;\x00&quot;, 1)[0].decode())
+</code></pre>
+<p>This prints the flag straight out of the decrypted partition (<code>V1T{...}</code>, stored uppercase even though the prompt shows lowercase <code>v1t{}</code>).</p>
+<h2 id="flag">Flag</h2>
+<pre><code>V1T{7h15_5h1d_k1nd4_h4rd_1kn0w}
+</code></pre>
+    </div>
+
+    
+            <div class="section-tag post-tags-label">§ TAGS</div>
+        <div class="post-meta-tags">
+                            <a class="tag-chip" href="/blog/tags/ctf">#ctf</a>
+                            <a class="tag-chip" href="/blog/tags/v1t-ctf-2026">#v1t-ctf-2026</a>
+                            <a class="tag-chip" href="/blog/tags/hardware">#hardware</a>
+                            <a class="tag-chip" href="/blog/tags/ai-assisted">#ai-assisted</a>
+                    </div>
+    
+    <div class="post-footer">
+        <a class="view-source-link" href="/blog/posts/xts-aes.md">[ VIEW SOURCE .md ]</a>
+                <a class="view-source-link" href="/blog/">← BACK TO INDEX</a>
+    </div>
+
+    </article>
+
+    <aside class="post-toc-wrap" aria-hidden="true">
+        <nav class="toc" aria-label="Floating table of contents">
+            <div class="toc-label">§ TOC — NAVIGATION</div>
+            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-2"><a href="#flag">Flag</a></li></ul>
+        </nav>
+    </aside>
+</main>
+
+<footer>
+                    <div class="footer-copyright">LAZYBLOG TERMINAL // 2026 // 73 DE LAZYBLOG</div>
+                <div class="footer-source">
+            <a class="footer-source-link"
+               href="https://github.com/hieuha/LazyBlog"
+               target="_blank"
+               rel="noopener noreferrer"
+               aria-label="LazyBlog source code on GitHub">
+                [ POWERED BY LAZYBLOG ON GITHUB ↗ ]
+            </a>
+        </div>
+        <div class="footer-version">v1.11.0</div>
+</footer>
+
+<button id="back-to-top" class="back-to-top" aria-label="Back to top" title="Back to top">↑</button>
+
+<script defer src="/blog/assets/site.js?v=1782400888"></script>
+        <script defer src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <script defer>
+        // Point the autoloader at the same CDN we loaded core from. Runs
+        // before post.js so by the time copy buttons mount the tokens
+        // are already in place.
+        document.addEventListener('DOMContentLoaded', function () {
+            if (window.Prism && Prism.plugins && Prism.plugins.autoloader) {
+                Prism.plugins.autoloader.languages_path =
+                    'https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/';
+            }
+        });
+    </script>
+    <script defer src="/blog/assets/post.js?v=1782400888"></script>
+
+</body>
+</html>

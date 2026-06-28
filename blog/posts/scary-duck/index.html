@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="amber" data-noise="on">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0a0e0a">
+    <meta name="color-scheme" content="dark">
+
+    <title>Scary Duck — LazyBlog</title>
+    <meta name="description" content="An MP4 with an appended password-protected ZIP, whose password is split between a binary block in the last frame and FSK tones in the last audio, then a final Base62 unwrap of the decrypted plaintext.">
+            <meta name="author" content="tungdlm99">
+        <meta name="generator" content="LazyBlog 1.11.0">
+    <meta name="robots" content="index, follow, max-image-preview:large">
+
+    <link rel="canonical" href="https://doantung99.github.io/blog/posts/scary-duck">
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="Scary Duck">
+    <meta property="og:description" content="An MP4 with an appended password-protected ZIP, whose password is split between a binary block in the last frame and FSK tones in the last audio, then a final Base62 unwrap of the decrypted plaintext.">
+    <meta property="og:url" content="https://doantung99.github.io/blog/posts/scary-duck">
+    <meta property="og:type" content="article">
+    <meta property="og:site_name" content="LazyBlog">
+    <meta property="og:locale" content="vi_VN">
+                <meta property="article:published_time" content="2026-06-28">
+                    <meta property="article:author" content="tungdlm99">
+                            <meta property="article:tag" content="ctf">
+                    <meta property="article:tag" content="v1t-ctf-2026">
+                    <meta property="article:tag" content="forensics">
+                    <meta property="article:tag" content="ai-assisted">
+            
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Scary Duck">
+    <meta name="twitter:description" content="An MP4 with an appended password-protected ZIP, whose password is split between a binary block in the last frame and FSK tones in the last audio, then a final Base62 unwrap of the decrypted plaintext.">
+        
+    <!-- Alternates: machine-readable / AI / RSS -->
+            <link rel="alternate" type="text/markdown" href="https://doantung99.github.io/blog/posts/scary-duck.md">
+        <link rel="alternate" type="text/plain" title="llms.txt index" href="/blog/llms.txt">
+    <link rel="alternate" type="application/rss+xml" title="LazyBlog RSS" href="/blog/feed.xml">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20fill%3D%22%230a0e0a%22%2F%3E%3Ctext%20x%3D%224%22%20y%3D%2224%22%20font-family%3D%22monospace%22%20font-size%3D%2222%22%20fill%3D%22%2339ff14%22%3E%26gt%3B_%3C%2Ftext%3E%3C%2Fsvg%3E">
+
+            <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Scary Duck","description":"An MP4 with an appended password-protected ZIP, whose password is split between a binary block in the last frame and FSK tones in the last audio, then a final Base62 unwrap of the decrypted plaintext.","datePublished":"2026-06-28","dateModified":"2026-06-28","url":"https://doantung99.github.io/blog/posts/scary-duck","mainEntityOfPage":"https://doantung99.github.io/blog/posts/scary-duck","inLanguage":"vi","keywords":"ctf, v1t-ctf-2026, forensics, ai-assisted","author":{"@type":"Person","name":"tungdlm99"},"publisher":{"@type":"Organization","name":"LazyBlog","url":"https://doantung99.github.io/blog/"}}</script>
+    
+    <script>
+    // Theme bootstrap — server already rendered the configured default on
+    // <html data-theme>. Only override here when the visitor has picked a
+    // different valid value previously. Runs sync in <head> so no FOUC.
+    (function () {
+        try {
+            var t = localStorage.getItem('theme');
+            if (t === 'green' || t === 'amber' || t === 'crypt' || t === 'brutalist' || t === 'c64' || t === 'lcd') {
+                document.documentElement.setAttribute('data-theme', t);
+            }
+        } catch (e) {}
+    })();
+    </script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Play:wght@400;700&family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
+
+            <link rel="stylesheet" href="/blog/assets/base.css?v=1782400888">
+            <link rel="stylesheet" href="/blog/assets/effects.css?v=1782400888">
+            <link rel="stylesheet" href="/blog/assets/components.css?v=1782478868">
+            <link rel="stylesheet" href="/blog/assets/post.css?v=1782478868">
+                
+    </head>
+<body class="is-post">
+
+<div class="read-progress" aria-hidden="true">
+    <div class="read-progress-fill"></div>
+</div>
+
+<header>
+            <div class="callsign">XV5HP // MAYLAB // HẢI PHÒNG</div>
+                    <p class="site-brand"><a href="/blog/" class="brand-link">LazyBlog</a></p>
+                <div class="subtitle">// A personal blog transmitting thoughts over imperfect radio waves. Expect noise, fading, and low bandwidth—but always authentic signals.</div>
+        <div class="header-actions">
+        <a class="header-btn" href="/blog/" aria-label="Back to home">[ HOME ]</a>
+                <a class="header-btn" href="/blog/search" aria-label="Search">[ SEARCH ]</a>
+        <a class="header-btn" href="/blog/archive" aria-label="Archive">[ ARCHIVE ]</a>
+                    <a class="header-btn" href="/blog/about" aria-label="About">[ ABOUT ]</a>
+                                <div class="theme-picker" id="theme-picker">
+            <button class="header-btn theme-picker-toggle" type="button"
+                    aria-haspopup="menu" aria-expanded="false" aria-label="Switch theme">
+                <span data-theme-label>[ THEME ]</span>
+            </button>
+            <div class="theme-picker-menu" role="menu" hidden>
+                <button type="button" role="menuitem" data-theme-set="amber">AMBER</button>
+                <button type="button" role="menuitem" data-theme-set="green">GREEN</button>
+                <button type="button" role="menuitem" data-theme-set="crypt">CRYPT</button>
+                <button type="button" role="menuitem" data-theme-set="brutalist">BRUTALIST</button>
+                <button type="button" role="menuitem" data-theme-set="c64">C64</button>
+                <button type="button" role="menuitem" data-theme-set="lcd">LCD</button>
+            </div>
+        </div>
+    </div>
+</header>
+
+<main>
+    
+
+<article class="post-article">
+        <div class="section-tag">
+        § TRANSMISSION — 2026-06-28 — tungdlm99    </div>
+    <h1 class="post-page-title">
+                    <span class="post-icon">🦆</span>
+                Scary Duck    </h1>
+
+    
+            <nav class="toc toc-inline" aria-label="Table of contents">
+            <div class="toc-label">§ TOC — NAVIGATION</div>
+            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-2"><a href="#flag">Flag</a></li></ul>
+        </nav>
+    
+    <div class="post-body">
+        <h2 id="summary">Summary</h2>
+<p>We got a single MP4 that hid a password-protected ZIP appended after the video data. The password was split in two halves — an inverted 8x4 binary block in the last frame and eight frequency-mapped tones in the last three seconds of audio — and the decrypted payload still needed one more Base62 unwrap to reveal the flag. I steered, the model did the carving and decoding.</p>
+<h2 id="solution">Solution</h2>
+<p>I pegged this as a layered media-stego challenge the moment I saw a short MP4 that was &quot;too big,&quot; so I set the direction: assume something is appended, then assume the visible/audible hints near the end carry a key. I had the model triage the container first — <code>ffprobe</code> plus a byte scan turned up a <code>PK\x03\x04</code> signature at offset <code>9124676</code>, and <code>dd</code> carved out <code>embedded.zip</code> (containing <code>solver.py</code> and <code>flag.enc</code>, password-protected).</p>
+<p>Then I split the recovery into two prompts. First, &quot;pull the last frame and read the black/white block as bits&quot; — the model extracted <code>last_frame.png</code>, cropped the rectangle to an 8x4 grid, and read <code>29 11 d0 22</code>. It initially handed me those raw bytes as the password half; I caught that and pointed it back to the challenge's expectation of <em>inverted</em> bits, giving <code>d6ee2fdd</code>. Second, &quot;spectrogram the last 3 seconds and map the tones&quot; — eight tones spaced 150 Hz from 600 Hz decode via <code>(freq-600)/150</code> into <code>0b8b243e</code>. Concatenated: <code>0b8b243ed6ee2fdd</code>.</p>
+<p>That hex string is both the ZIP password and the raw 8-byte XOR key. I had the model invert <code>solver.py</code>'s pipeline (base64 -&gt; XOR -&gt; reverse), which produced <code>-0day-...-RCE-</code>; I recognized the middle as Base62 and had it do the final decode. One script that runs end to end:</p>
+<pre><code class="language-python">#!/usr/bin/env python3
+import base64, subprocess
+from pathlib import Path
+from PIL import Image
+
+# --- Step 1: carve the appended ZIP from the MP4 ---
+blob = Path(&quot;challenge.mp4&quot;).read_bytes()
+off = blob.find(b&quot;PK\x03\x04&quot;)
+Path(&quot;embedded.zip&quot;).write_bytes(blob[off:])
+
+# --- Step 2: password = audio half + visual half ---
+# Visual half: inverted bytes of the 8x4 binary block in the last frame.
+visual_block = [0x29, 0x11, 0xd0, 0x22]          # read from last_frame_8x4.png
+visual = bytes((~b) &amp; 0xFF for b in visual_block).hex()   # -&gt; d6ee2fdd
+
+# Audio half: eight FSK tones, value = (freq - 600) / 150 -&gt; hex digit.
+tones = [600, 2250, 1800, 2250, 900, 1200, 1050, 2700]
+audio = &quot;&quot;.join(f&quot;{(f - 600)//150:x}&quot; for f in tones)     # -&gt; 0b8b243e
+
+password = audio + visual                          # 0b8b243ed6ee2fdd
+key = bytes.fromhex(password)
+
+# --- Step 3: extract the protected ZIP with that password ---
+subprocess.run([&quot;unzip&quot;, &quot;-o&quot;, &quot;-P&quot;, password, &quot;embedded.zip&quot;, &quot;-d&quot;, &quot;extracted&quot;], check=True)
+
+# --- Step 4: invert solver.py pipeline (base64 -&gt; xor -&gt; reverse) ---
+ct = Path(&quot;extracted/flag.enc&quot;).read_bytes().strip()
+raw = base64.b64decode(ct)
+xored = bytes(b ^ key[i % len(key)] for i, b in enumerate(raw))
+mid = xored[::-1].decode()                          # -0day-&lt;base62&gt;-RCE-
+
+# --- Step 5: final Base62 unwrap of the middle segment ---
+s = mid.split(&quot;-&quot;)[2]
+alphabet = &quot;0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz&quot;
+n = 0
+for c in s:
+    n = n * 62 + alphabet.index(c)
+flag = n.to_bytes((n.bit_length() + 7) // 8, &quot;big&quot;)
+print(flag.decode())
+</code></pre>
+<h2 id="flag">Flag</h2>
+<pre><code>V1T{7h47_dUck_l00k_5c4ry_7h0}
+</code></pre>
+    </div>
+
+    
+            <div class="section-tag post-tags-label">§ TAGS</div>
+        <div class="post-meta-tags">
+                            <a class="tag-chip" href="/blog/tags/ctf">#ctf</a>
+                            <a class="tag-chip" href="/blog/tags/v1t-ctf-2026">#v1t-ctf-2026</a>
+                            <a class="tag-chip" href="/blog/tags/forensics">#forensics</a>
+                            <a class="tag-chip" href="/blog/tags/ai-assisted">#ai-assisted</a>
+                    </div>
+    
+    <div class="post-footer">
+        <a class="view-source-link" href="/blog/posts/scary-duck.md">[ VIEW SOURCE .md ]</a>
+                <a class="view-source-link" href="/blog/">← BACK TO INDEX</a>
+    </div>
+
+    </article>
+
+    <aside class="post-toc-wrap" aria-hidden="true">
+        <nav class="toc" aria-label="Floating table of contents">
+            <div class="toc-label">§ TOC — NAVIGATION</div>
+            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-2"><a href="#flag">Flag</a></li></ul>
+        </nav>
+    </aside>
+</main>
+
+<footer>
+                    <div class="footer-copyright">LAZYBLOG TERMINAL // 2026 // 73 DE LAZYBLOG</div>
+                <div class="footer-source">
+            <a class="footer-source-link"
+               href="https://github.com/hieuha/LazyBlog"
+               target="_blank"
+               rel="noopener noreferrer"
+               aria-label="LazyBlog source code on GitHub">
+                [ POWERED BY LAZYBLOG ON GITHUB ↗ ]
+            </a>
+        </div>
+        <div class="footer-version">v1.11.0</div>
+</footer>
+
+<button id="back-to-top" class="back-to-top" aria-label="Back to top" title="Back to top">↑</button>
+
+<script defer src="/blog/assets/site.js?v=1782400888"></script>
+        <script defer src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <script defer>
+        // Point the autoloader at the same CDN we loaded core from. Runs
+        // before post.js so by the time copy buttons mount the tokens
+        // are already in place.
+        document.addEventListener('DOMContentLoaded', function () {
+            if (window.Prism && Prism.plugins && Prism.plugins.autoloader) {
+                Prism.plugins.autoloader.languages_path =
+                    'https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/';
+            }
+        });
+    </script>
+    <script defer src="/blog/assets/post.js?v=1782400888"></script>
+
+</body>
+</html>

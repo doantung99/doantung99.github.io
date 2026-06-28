@@ -4,9 +4,45 @@
 
 ## Posts
 
-- [System Online — Welcome to LazyBlog](https://doantung99.github.io/blog/posts/welcome-to-lazyblog.md): Your local LazyBlog instance is live. Here's how to write your first real post and make this blog your own.
+- [10X54](https://doantung99.github.io/blog/posts/10x54.md): An ESP32-S3 firmware crackme that XOR-obfuscates its UI strings and gates the flag behind an LCG keystream — recovered the key from just the V1T{ prefix instead of cracking the password.
+- [78CT](https://doantung99.github.io/blog/posts/78ct.md): Geolocate an aerial dragon-shaped park in Vietnam, then decode a text-steganography string hidden in lake-themed words to recover the flag.
+- [Anime Shop](https://doantung99.github.io/blog/posts/anime-shop.md): PrestaShop deployed straight from its GitHub source tree left dev mode on, exposing the Symfony profiler for an APP_SECRET leak and a signed /_fragment SSRF that reads the flag off an internal-only service.
+- [B1tsy Ducky](https://doantung99.github.io/blog/posts/b1tsy-ducky.md): A Bitsy browser game ships a Go WebAssembly module whose hidden duck routine derives an AES-GCM key from three page-sourced inputs; reconstructing the exact password string offline decrypts the flag.
+- [BootRoot Root of No Return](https://doantung99.github.io/blog/posts/bootroot-root-of-no-return.md): A Windows 2000 'bootkit' challenge where the real payload lives inside a recovered EXE that writes a 16-bit MBR; the flag is hidden in 19 bytes the boot code decodes with SUB 0x0D but never prints.
+- [China Crack 202](https://doantung99.github.io/blog/posts/china-crack-202.md): A password-protected archive whose ZIP/7z password was reused verbatim from last year's 'tryna crack' challenge — recover it from the title hint, extract, and read the flag off the decrypted artifact.
+- [Classless](https://doantung99.github.io/blog/posts/classless.md): A stripped x86-64 'object VM' runs base64(zlib(JSON\)\) programs through a triple type-confusion vault; the flag is XOR-0x37-decoded straight out of .rodata.
+- [Diddy License Checker](https://doantung99.github.io/blog/posts/diddy-license-checker.md): A Linux ELF crackme that derives an AES-CBC key/IV from 'innocent' inputs (a Fibonacci-mod-9 lucky number and a license file\), then masks the ciphertext with a repeating-XOR over the license name; reverse the pipeline to recover the flag offline.
+- [Diddy License Checker Revenge](https://doantung99.github.io/blog/posts/diddy-license-checker-revenge.md): A crackme whose 'revenge' variant assembles its flag from 33 hard-coded byte offsets of a server-side PNG fetched at runtime — fully reversed, but the flag stays remote.
+- [Duck Nettool Revenge](https://doantung99.github.io/blog/posts/duck-nettool-revenge.md): A ping tool with command injection behind a brutal character-set filter — RCE using only ;, ?, /, i, digits, and space to glob /bin/sh and leak app.py's source.
+- [Duck Smuzzle](https://doantung99.github.io/blog/posts/duck-smuzzle.md): A Caddy -> nginx -> FastAPI stack where an IP-allowlist WAF is bypassed by spoofing X-Forwarded-For, the JWT secret is leaked via X-Accel-Redirect, and /duck is reached by smuggling raw HTTP/2 streams through an h2c upgrade.
+- [Duck Wiki](https://doantung99.github.io/blog/posts/duck-wiki.md): Stored XSS in a Wiki.js page via a Vue 2 scoped-slot destructuring-default SSTI primitive, smuggled past DOMPurify's <tabset> allowlist and a ModSecurity CRS proxy to exfiltrate localStorage.FLAG from the bot.
+- [Ducks Ping-Pong](https://doantung99.github.io/blog/posts/ducks-ping-pong.md): A user-mode EXE that ping-pongs IOCTLs with a kernel driver; recover the driver's response buffer and apply the user-mode final transform offline to print the flag.
+- [Ducks Ping-Pong Revenge](https://doantung99.github.io/blog/posts/ducks-ping-pong-revenge.md): A user-mode EXE and a kernel driver play a multi-stage IOCTL ping-pong; recover the driver-validated stage state offline, then run the final transform to decrypt the flag.
+- [Green Goblin](https://doantung99.github.io/blog/posts/green-goblin.md): A 5 GiB Windows 11 RAM dump hides five flag fragments across classic OS internals (Registry, kernel symlink, NTFS ADS, Event Log, named memory section\); carving and reversing the dropper reveals the fixed bytes, which decode with ROT47.
+- [HVL](https://doantung99.github.io/blog/posts/hvl.md): A 'troll' GitHub Pages site hides the flag behind two stego layers; the real one is a substitution-cipher font that renders emoji lyrics as flag text.
+- [Huh](https://doantung99.github.io/blog/posts/huh.md): A mixed OSINT/stego challenge where a Vietnamese village photo gives the flag prefix and a hidden text fragment gives the suffix.
+- [Kaspersky](https://doantung99.github.io/blog/posts/kaspersky.md): A 5-question Kaspersky / Kaspersky Academy OSINT quiz at kaspersky.v1t.site, industrialized by scripting the grader's API — and the final question only accepted the course title in its native Cyrillic, not any romanization.
+- [New Way to store my CP](https://doantung99.github.io/blog/posts/new-way-to-store-my-cp.md): A near-empty Pastebin hid a StegCloak password, and a YouTube video was actually a yt-media-storage container whose packets had to be block-reconstructed, Wirehair-repaired, and XChaCha20-decrypted to reveal the flag.
+- [Polar Fragments](https://doantung99.github.io/blog/posts/polar-fragments.md): A multi-source forensics challenge where each of five pcaps exfiltrates one flag fragment over a different protocol (HTTP/FTP/SMTP/chunked HTTP\), and the fragments are low-contrast text hidden inside carried images and documents.
+- [Quack CIA](https://doantung99.github.io/blog/posts/quack-cia.md): An OSINT trail from a video to a GitHub repo, then recovering the flag from a deleted Vim undo file (flag.txt.un_\) committed to the repo's history.
+- [Scary Duck](https://doantung99.github.io/blog/posts/scary-duck.md): An MP4 with an appended password-protected ZIP, whose password is split between a binary block in the last frame and FSK tones in the last audio, then a final Base62 unwrap of the decrypted plaintext.
+- [ShahInRev](https://doantung99.github.io/blog/posts/shahinrev.md): A stripped Linux ELF with anti-debug and decoy strings hid a VM-style checker over an 8-byte value; recover the inner hex that drives the accumulator to a hardcoded constant.
+- [Slop Anti or Anti Slop](https://doantung99.github.io/blog/posts/slop-anti-or-anti-slop.md): A deliberately misleading crypto challenge where the real target is an AES-GCM ciphertext whose key is reconstructed from a Decimal-polynomial leak, Lagrange interpolation, and 70M rounds of modular squaring.
+- [StaleMate](https://doantung99.github.io/blog/posts/stalemate.md): A userland re-implementation of io_uring provided buffer rings models CVE-2024-0582: unregister a mmap'd PBUF ring and the stale mapping becomes a UAF read/write you ride to forge a page-table PTE onto the cred slot.
+- [StaleMate Revenge](https://doantung99.github.io/blog/posts/stalemate-revenge.md): Hardened userland io_uring/PBUF use-after-free where I groomed a workspace page-table page onto a freed slot, leaked it, inverted the keyed PTE MAC to recover both workspace keys, then forged a self-referential page table to patch and re-seal the winning record chain.
+- [XTS-AES](https://doantung99.github.io/blog/posts/xts-aes.md): An encrypted ESP32-S3 flash dump whose read-protected XTS-AES key is deterministically derivable from readable eFuse data via a leaked provisioning firmware's KDF.
+- [try](https://doantung99.github.io/blog/posts/try.md): A Windows PE64 input verifier buried under fake packer/protector strings; the real check is a tiny VM constraint layer plus a 64-bit hash, which the flag itself satisfies.
 
 ## Tags
 
-- getting-started: https://doantung99.github.io/blog/tags/getting-started
-- meta: https://doantung99.github.io/blog/tags/meta
+- ai-assisted: https://doantung99.github.io/blog/tags/ai-assisted
+- crypto: https://doantung99.github.io/blog/tags/crypto
+- ctf: https://doantung99.github.io/blog/tags/ctf
+- forensics: https://doantung99.github.io/blog/tags/forensics
+- hardware: https://doantung99.github.io/blog/tags/hardware
+- misc: https://doantung99.github.io/blog/tags/misc
+- osint: https://doantung99.github.io/blog/tags/osint
+- pwn: https://doantung99.github.io/blog/tags/pwn
+- rev: https://doantung99.github.io/blog/tags/rev
+- v1t-ctf-2026: https://doantung99.github.io/blog/tags/v1t-ctf-2026
+- web: https://doantung99.github.io/blog/tags/web
