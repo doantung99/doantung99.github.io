@@ -210,31 +210,35 @@ V1t{7e4c91a0d3b86f25}
 
 ## Lessons learned - prompting the AI
 
-This challenge is a textbook **stripped-keygen / byte-VM checker**, and that class has a specific failure mode when you bring an LLM to it: the model wants to *read* its way to the answer and trust strings. My entire edge was prompting against that instinct and verifying against ground truth.
+Whenever you face a **stripped keygen / byte-VM "checker" binary** — the kind that imports a hex/`strtoul` decoder, has no `memcmp` against a stored flag, and ends in a single `cmp` against a hardcoded constant — the flag is *the preimage of that constant under a computation*, never a string you can read. This whole class has one dominant LLM failure mode: the model wants to *read* its way to the answer, trusts plausible strings, and quietly mistranscribes the VM math. Everything below is written so it transfers to the next checker of this shape (whether the inner mix is an S-box VM, an FNV/CRC fold, a TEA/XTEA round, or a hand-rolled byte shuffle), not just to ShahInRev.
 
-**1. Set the class and the strategy in the first prompt — don't ask "what is this binary."** The prompt that actually shaped the solve:
+**1. Set the class and the strategy in the very first prompt — never open with "what does this binary do."** Paste `nm -D` / `file` output and say what it *is*:
 
-> "This is a stripped x86-64 ELF keygen-style checker. It imports `strtoul` + `fopen`/`fgets` and has no `memcmp` against a static flag, so the correct flag is the *preimage* of a hardcoded constant under a computation, NOT a stored string. There is a `.shahin.note` section full of FAKE flags (`deadbeefcafebabe`, `0000000000000000`) — treat any flag-looking string as a decoy. Find the final `cmp`/`movabs` accumulator constant and the function that produces it. Do not propose any answer you found via `strings`."
+> "This is a stripped x86-64 ELF keygen-style checker. It imports a hex decoder (`strtoul`/custom) and has NO `memcmp`/`strcmp` against a static flag, so the correct flag is the *preimage* of a hardcoded constant under a computation, not a stored string. Your job is to (a) find the final accept comparison — the `movabs`/`cmp`/`sete` and the constant it tests — and (b) reconstruct the exact function that produces the value being compared. Do not propose any answer you found via `strings`. Confirm the import set matches a checker (decoder present, no static-string compare) before you go further."
 
-Naming the class up front stops the model from wandering, and pre-declaring the decoys as poison is the single highest-leverage instruction for this binary.
+Naming the class stops the model wandering; pre-declaring "no stored flag" is the single highest-leverage line for this whole category.
 
-**2. For the VM, demand a faithful transcription and forbid creativity.** The grind is transcribing disassembly to code; that is the model's job, but only if you cage it:
+**2. Pre-declare the decoys and anti-analysis traps as poison, up front.** Checker binaries in this class routinely ship fake flags in odd sections and a `TracerPid`/`ptrace` gate wired into control flow so the checker *lies* under a debugger. Tell the model both at once:
 
-> "Reimplement this VM loop as a pure Python function `accumulate(state: bytes) -> u64` that matches the binary bit-for-bit. Treat every `rol`/`ror` as a true rotate with wraparound (NOT a shift), preserve operand order on every `sub`/non-commutative op, and mask to 8/64 bits exactly where the registers do. If any operand or table value is ambiguous in the disassembly, leave a `# UNKNOWN` comment — do NOT guess or 'simplify'."
+> "Assume hostile noise. Any flag-looking string in `strings`/`readelf -x` (e.g. a custom `.note`-style section) is a DECOY — list them only so we can blacklist them, never propose them. Also assume an anti-debug gate (`/proc/self/status` `TracerPid` or `ptrace`) whose result is folded into control flow, so running under GDB takes a WRONG branch. Solve this statically, or patch the gate's branch / NOP it to return 0 — do NOT build a GDB harness against a checker that misbehaves under GDB."
 
-The two bugs the model produced (rotate-as-shift, reversed subtract operands) are exactly what this prompt is built to prevent, and they are the standard failure modes for VM transcription.
+**3. Demand a bit-for-bit transcription of the inner function and explicitly forbid creativity.** The grind — disassembly to code — is the model's job, but only caged. This prompt is built to prevent the two universal VM-transcription bugs (rotate decayed to shift; reversed operands on a non-commutative op):
 
-**3. Tell it the search is small, and force binary-confirmation.** Because the body is only 8 bytes, the right instruction is:
+> "Reimplement this loop as a pure function `accumulate(state: bytes) -> u64` matching the binary bit-for-bit. Rules: every `rol`/`ror` is a TRUE rotate with wraparound, NOT a shift; preserve operand order on every `sub`/`div`/non-commutative op; mask to exactly 8/16/32/64 bits wherever the source register does; copy every `.rodata` table value verbatim (paste the `readelf -x` bytes), do not regenerate them from a guessed formula. If any operand, table value, or branch is ambiguous, leave a `# UNKNOWN` comment and STOP — do not guess, simplify, or 'clean up' the math."
 
-> "The search space is 8 bytes; check how coupled the lanes are before brute-forcing, and verify every candidate by RUNNING the real binary, not by trusting your Python model."
+**4. Tell it the search is small and force binary-confirmation of every candidate.** With an N-byte body you can bound the work, but a Python "match" proves nothing if the model is wrong:
 
-That last clause is what catches a wrong VM model — a Python-only "match" against `TARGET` means nothing if the transcription is wrong; `./Shahinrev` returning `accepted` is the only oracle that counts.
+> "The unknown is only 8 bytes (16 hex). First report how coupled the lanes are (independent? neighbour-coupled? fully diffused?) and pick the cheapest recovery — invert if linear, meet-in-the-middle if two halves, brute force only the truly free bytes. Then verify EVERY candidate by RUNNING the real binary (`./bin 'V1t{...}'` -> `accepted`), not by trusting your Python. Treat the binary as the only oracle."
 
-**Dead-ends to tell the model to avoid up front:**
-- Proposing flags from `strings`/`.shahin.note` (poisoned by design).
-- Scripting a GDB harness — the `TracerPid` check is rigged so the checker misbehaves under a debugger; do it statically or patch the branch.
-- "Cleaning up" the VM math (rotations, modular adds, table lookups) into something more readable — fidelity beats readability here.
+**What to tell it to focus on:** the accept `cmp`/`movabs` constant and the exact function feeding it; the verbatim `.rodata` tables; the coupling structure of the bytes (it decides invert-vs-brute-force).
 
-**How I caught its mistakes:** I never reviewed the generated VM by reading it line-by-line — I treated the real binary as the test oracle. The model's first preimage failed `./Shahinrev`, which immediately told me the VM model was wrong; I diffed its rotate and subtract implementations against the disassembly, fixed both, and re-ran until `accepted`. Verification, not inspection, found the bugs.
+**Classic dead-ends of this class — name them so the model avoids them up front:**
+- Proposing flags from `strings` or a custom note section (poisoned by design).
+- Scripting a GDB/ptrace harness against an anti-debug checker that is rigged to reject under a tracer — do it statically or patch the branch.
+- "Cleaning up" rotations, modular adds, and table lookups into more readable math — fidelity beats readability; a tidied `rol` becomes a wrong `shr`.
+- Regenerating an S-box / constant table from a guessed closed-form instead of dumping the real bytes.
+- Trusting a Python `== TARGET` match as the solution without running the binary.
 
-**Fast-path prompt recipe for next time:** *"Stripped keygen checker — find the `movabs` accumulator constant and the function that produces it; reimplement that function in Python bit-for-bit (true rotates, exact operand order, exact masks, mark unknowns); treat every flag-looking string as a decoy; then recover the 8-byte preimage and confirm by running the real binary, never by trusting the model."*
+**How to verify the output and catch hallucinations for this class:** never accept a VM model by reading it — make the real binary the test oracle. If the model's first preimage fails `./bin`, the transcription is wrong; diff its `rol`/`ror`/`sub`/mask lines and every table against the disassembly (those four are where the bugs always are), fix, and re-run until the binary prints `accepted`. For ShahInRev the model's first pass had exactly two such bugs (rotate-as-shift and a reversed subtract) — both invisible on inspection, both caught instantly by the binary rejecting the candidate. Verification, not inspection, finds these.
+
+**Fast-path prompt recipe for the next checker of this class:** *"Stripped keygen checker — no stored flag. Find the `movabs`/`cmp` accept constant and the function producing it; blacklist every `strings`/`.note` flag as a decoy and solve statically around the `TracerPid`/`ptrace` gate; reimplement that function in Python bit-for-bit (true rotates, exact operand order, exact masks, verbatim `.rodata` tables, `# UNKNOWN` for anything ambiguous); report lane coupling, recover the N-byte preimage with the cheapest method, and confirm by RUNNING the real binary — never by trusting the model."*

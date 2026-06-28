@@ -253,28 +253,46 @@ The flag is its own punchline: "I wondering without AI can you still solve it an
 
 ## Lessons learned - prompting the AI
 
-This challenge is the archetype of "obfuscated-source crypto with decoys": one short Python file, several genuine-looking subroutines, and only a few that matter. An LLM is enormously good at this *if* you keep it from chasing the slop. My value-add was triage and verification, not arithmetic.
+**This class: obfuscated-source crypto where the printed values are decoys and the real key is derived from a few hidden sub-secrets.** Whenever you face an "anti-AI" / slop crypto challenge — one short Python (or Sage) file, a pile of genuine-looking helper functions, a `main()` that prints red-herring values, and a single ciphertext you actually have to decrypt — the work is *not* arithmetic, it's triage. Your job is to tell the model which functions are load-bearing, name the right technique for each sub-secret, pre-empt the genre's standard dead-ends, and use the AEAD tag as a correctness oracle. The prompts below are written to transfer to the *next* challenge of this shape, not just this one. This instance happened to factor into "underdetermined Decimal-polynomial (LLL)" + "affine-scrambled points then Lagrange over GF(p)" + "repeated-squaring time-lock," and I'll use those as the concrete examples — but swap in whatever sub-primitives the next file uses.
 
-**1. Make the model classify functions before it solves anything.** The first move is not "solve it," it's "map the file." I prompted:
+### 1. Force a backwards trace + real-vs-decoy classification before any solving
 
-> "Here is challenge.py and output.txt. Do NOT solve yet. List every function, and for each one say whether its output reaches the AES key/nonce in E(). Trace backwards from E(). Flag any value that is only printed in main() as a likely decoy."
+The single highest-leverage move for this class is to make the model map the file before it touches math. Decoys live in `main()`/`print()`; the truth lives in whatever function feeds the cipher. Copy-paste:
 
-That single classification pass is what surfaced that `main()`'s printed `coffee`/`sugar` are decoys and that `E()`/`K()` are the only real targets. Without it the model anchors on the `print` statements and the RSA/PoW/OTP vocabulary.
+> "Here is challenge.py and output.txt. Do NOT solve anything yet. Find the function that produces the ciphertext / calls AESGCM/encrypt/seal. Starting from that call, trace **backwards**: list every function whose output flows into the key, nonce, or AAD, and every value that is *only* printed in main() and never reaches the cipher. Output a two-column table: REAL (reaches the key) vs DECOY (printed only). Tell me exactly which string/byte forms get hashed into the key, because formatting matters."
 
-**2. Name the technique for each sub-problem so it doesn't pick the wrong tool.** The polynomial step is the one the model gets wrong by default — it tries exact Lagrange on 5 points for a degree-8 poly and declares it impossible. I corrected course explicitly:
+That last sentence matters for the whole class: keys in these challenges are almost always `SHA256(str(secret))`, so a sign or an off-by-one changes everything. The classification pass is what surfaced here that `main()`'s printed `coffee`/`sugar` are bait and that `K()`/`E()` are the only targets — and the same pass works on any file in this genre.
 
-> "Five Decimal points for a degree-8 integer polynomial is NOT exact interpolation — the coefficients are small bounded integers and the leaks are high-precision decimals. Treat it as a lattice/LLL hidden-number reconstruction, not Lagrange. Then verify your coefficients by re-evaluating P(x, coffee) at each leaked x and checking it rounds to the leaked y."
+### 2. Name the technique per sub-secret — and warn that the same word can be right in one step and wrong in another
 
-That reframing (lattice, not Lagrange) is the whole ballgame for Step 1. Note Lagrange IS correct for Step 2 — same word, opposite advice — so I had to tell it *which step gets which tool*, not just name the tool once.
+The model's default failure in this class is reaching for the obvious tool. For an under-determined polynomial it tries exact Lagrange, finds it "impossible," and stalls. Steer it explicitly, and tell it where the *correct* use of that same tool is:
 
-**3. Tell it which dead-ends to avoid, by name.** Three traps cost real time if you don't pre-empt them, so I listed them in the prompt:
+> "There are N independent secrets feeding the key; solve each with the right tool, and don't assume one tool fits all. If a secret is a small-bounded-integer polynomial leaked through high-precision Decimal/float evaluations with FEWER points than coefficients, that is NOT exact interpolation — set it up as an LLL/lattice (hidden-number) reconstruction of the integer coefficients. If a secret has a FULL set of exact points over a prime field, that IS classic Lagrange interpolation mod p. If a secret is `x` squared a huge fixed number of times mod n, that is a time-lock — run the loop as written. State which technique you're using for which secret before coding."
 
-> "Do not use the printed coffee/sugar — they're decoys from main(). Do not use r raw as sugar; run R(r, z, n). Do not try to factor n or reduce the exponent 2^z mod phi(n) — n is unfactored, it's a time-lock, just run the loop."
+The deliberate trap in this genre is word-collision: "Lagrange" is the *wrong* answer for the leaked-polynomial step and the *right* answer for the recovered-points step. Tell the model which step gets which tool; don't name a technique once and let it generalize.
 
-Those three (printed decoys, raw `r`, and "be clever about the squaring") are exactly where an unsupervised model burns an hour.
+### 3. List the genre's classic dead-ends up front, by name
 
-**4. Insist on transcribing `M()` verbatim.** For the `cream` step, the failure mode is the model "tidying up" the slice indices (`v[4:7]`, `v[7:10]`, `v[11:14]`) and silently breaking them. My prompt: "Copy M() exactly, keep the original slices, build points = the two direct points (v[0],v[1]),(v[2],v[3]) plus M(...), then call the challenge's own I() for Lagrange over m." Reuse the challenge's own helpers rather than reimplementing — there's no upside to paraphrasing index arithmetic.
+These traps recur across nearly every challenge of this class, so seed them in the prompt instead of letting the model rediscover them on the clock:
 
-**5. How I caught mistakes: lean on the GCM tag and the cheap intermediate check.** The beauty of this challenge is that AES-GCM authenticates, so the final `decrypt()` is a binary correctness oracle for all three ingredients at once — if it throws `InvalidTag`, something upstream is wrong, and I made the model re-derive rather than guess which part. Before paying for the 70M-squaring run, I always had it validate `coffee` locally (re-evaluate `P` at the leaked `x`s) and sanity-check `cream` is in range `[0, m)`. That ordering — verify the cheap things, then spend the expensive time-lock once — is what made the solve a single clean run instead of a guess-and-recompute slog.
+> "Avoid these known traps: (a) do NOT use any value that only appears in a print() in main() — they are decoys; (b) do NOT feed a raw seed straight into the key if a transform function exists — apply the transform (e.g. run R(seed, z, n), don't use the seed directly); (c) for repeated-squaring `2^z mod n`, do NOT try to factor n or reduce the exponent via phi(n) — assume n is unfactorable and it's an intentional time-lock, just iterate; (d) when reconstructing integer coefficients, track the SIGN — a wrong sign hashes to a different key even though the magnitude looks right."
 
-**Fast-path prompt recipe for next time:** *"Obfuscated crypto source — first trace backwards from the encrypt call and label every function real-vs-decoy; ignore anything only printed in main(); for each secret tell me the right tool (LLL for under-determined Decimal-polynomial leaks, Lagrange for full point sets, run-as-written for time-lock squaring); copy the challenge's own helpers verbatim; verify each reconstruction cheaply, then let the AES-GCM tag be the final yes/no."*
+Each of (a)–(d) is exactly where an unsupervised model burns an hour on this kind of challenge.
+
+### 4. Reuse the challenge's own helpers verbatim — forbid "tidying"
+
+When a secret is recovered by an in-file function with fiddly slicing/index selection (here `M()` with `v[4:7]`, `v[7:10]`, `v[11:14]` and `ids` indexing into the previously-recovered list), the model's instinct to "clean up" the indices silently corrupts the result, and there's usually no local check. Demand fidelity:
+
+> "Do not rewrite or simplify the challenge's helper functions. Copy M()/I()/R() (or their equivalents) **character-for-character**, including the exact slice bounds and index variables, then call them with the inputs the source uses. If a recovered secret feeds a later function, pass it in exactly as the source does — same indices, same order. No paraphrasing of index arithmetic."
+
+This generalizes to the whole class: any time one sub-secret is consumed by another step (the `coffee -> cream` dependency here), preserve the source's wiring rather than re-deriving it.
+
+### 5. Verify cheaply before paying for the expensive step — and let the AEAD tag be the final judge
+
+This class hands you a free correctness oracle: the ciphertext is almost always AES-GCM (or another AEAD), so `decrypt()` either returns plaintext or throws `InvalidTag` — a binary verdict on *all* sub-secrets at once. But you don't want to discover a sign error only after a multi-minute time-lock run, so verify the cheap reconstructions first:
+
+> "Before running the expensive time-lock loop, validate the cheap secrets locally: re-evaluate the recovered polynomial P(x, coeffs) at every leaked x and confirm it rounds to the leaked y; confirm every field-element secret is in range [0, m); re-derive, don't guess, if anything is off. Only after those pass, run the time-lock once and call decrypt(). Treat an InvalidTag as proof that an upstream secret is wrong — re-derive it, never brute-force around the tag."
+
+**How to catch the model's hallucinations in this class:** (1) make it show the lattice/interpolation *check* (re-evaluate at the leaked points; mod-range check on field elements) rather than just asserting numbers — recovered constants are the most common silent fabrication; (2) confirm it actually iterated the full squaring count `z` and didn't substitute a `pow`-based "optimization" that assumes a factorization it doesn't have; (3) require it to print intermediate hashes/lengths (e.g. the 12-byte nonce slice) so a formatting mismatch surfaces before the tag does; (4) the final guard is the AEAD tag — if it claims success, the decrypt either ran clean or it's lying, so make it paste the real plaintext.
+
+**Fast-path prompt recipe for this class:** *"Obfuscated 'anti-AI' crypto source — first trace BACKWARDS from the AEAD/encrypt call and label every function REAL-vs-DECOY, ignoring anything only printed in main(); for each hidden secret name the right tool explicitly (LLL for under-determined Decimal/float-polynomial leaks, Lagrange mod p for full point sets, iterate-as-written for repeated-squaring time-locks), watch signs and exact string forms since the key is SHA256(str(secret)); copy the challenge's own helpers verbatim with original slices; verify the cheap reconstructions locally before running the time-lock, then let the AES-GCM tag be the single yes/no."*

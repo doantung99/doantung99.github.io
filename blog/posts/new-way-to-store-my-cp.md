@@ -268,29 +268,32 @@ V1T{Quack_Quack_Quack_1_l0ve_Qu4cking_r34l_much_br}
 
 ## Lessons learned - prompting the AI
 
-This challenge is a perfect case study in *steering* an LLM through a multi-stage stego chain. The model is fantastic at the grind — dumping codepoints, sampling blocks, wrangling Wirehair, de-padding text — and consistently bad at the two things that actually crack it: reading a pun as a tool name, and refusing to stop at an intermediate result. Here's the reusable playbook for this class of "layered stego + obscure-tool" challenge.
+**The class:** *layered misc/stego where a pun or in-joke names an obscure third-party tool, and the carrier you're handed has been through a lossy round-trip (re-uploaded image/video/audio).* This shows up constantly — "hidden in a meme/screenshot/voice-note/YouTube-rip" challenges, anything where flavor text says "my new <noun>" or "shout out to <name>", anything where the obvious extractor (LSB, `strings`, `binwalk`, `zsteg`) returns nothing because the file is a *container produced by a named tool*, not raw stego. The two human jobs are always the same: (1) read the wordplay as a tool/author name, and (2) refuse to stop at the first decoded string. An LLM is excellent at the grinding (dumping codepoints, sampling blocks, running the tool, de-padding) and reliably bad at exactly those two judgment calls. Below are prompts that transfer to the *next* such challenge, not just this duck.
 
-**Make the model prove hidden data exists, don't ask it what the text says.** If you ask "what does this Pastebin mean," the model summarizes the prose and the zero-width payload vanishes from its attention. Instead I prompted for evidence:
+**1. Prove hidden data exists and fingerprint the tool from the bytes — never ask "what does this say."** Asking for meaning makes the model summarize prose and the payload evaporates from its attention. Demand evidence and a tool match from the raw alphabet:
 
-> "This text looks empty but I suspect hidden Unicode. Print every codepoint above 0x7F with its index and `repr`. Then tell me which known text-stego tool uses that exact set of codepoints — match the alphabet, don't guess from the words."
+> "This file looks empty/ordinary but I suspect an embedded payload. Dump every byte/codepoint outside the normal range (for text: every codepoint > 0x7F with index and `repr`; for a file: the first 64 bytes as hex plus any repeated magic). Then identify which *named, off-the-shelf* tool emits that exact byte/codepoint set — match the signature, do NOT infer the tool from the surrounding words."
 
-That forces it to surface `U+200C/200D` + `U+2061–2064` and *name* StegCloak from the fingerprint rather than from the word "cloak." Telling it to match the *alphabet* is what kept it honest.
+For this challenge that surfaced `U+200C/200D` + `U+2061–2064` and forced "StegCloak" from the fingerprint. On the next one it will surface a PNG tEXt chunk, an `SFTY`/`PK`/`RIFF`-style magic, or an unusual zero-width run — and name the tool that writes it.
 
-**Force the model to treat a leetspeak string as a clue, not a conclusion.** Its default failure mode was to declare `5h0ut_0ut_t0_Brandon` the answer. I countered with an explicit dual-use framing:
+**2. Treat any leetspeak / human-name / in-joke string as dual-use: clue AND credential.** The default model failure is to declare the first decoded string the answer. Force the pivot explicitly:
 
-> "Treat `5h0ut_0ut_t0_Brandon` as BOTH a password AND an OSINT pointer. Decode the leetspeak to a name, then find a GitHub project by that author for storing arbitrary files inside a YouTube video. Do not assume this is the flag."
+> "Treat `<decoded string>` as BOTH a password/key AND an OSINT pointer. Decode any leetspeak to plain words, extract any person/handle/project name, then search GitHub/Google for a tool by that author matching the challenge's verb (here: 'store a file inside a video'). Assume this string is a waypoint, not the flag — keep going until you find the tool it points to."
 
-That single instruction is what turned "Brandon" into `PulseBeat02/yt-media-storage` and reframed the MP4 from "image with hidden pixels" to "packet container."
+This is what turned `5h0ut_0ut_t0_Brandon` into `PulseBeat02/yt-media-storage` and reframed the MP4 from "image with hidden pixels" to "packet container." The same prompt will turn "thanks 2 R4wr" or "made with QuackEnc" into the actual project on the next challenge.
 
-**Tell it exactly which dead-ends to skip.** This challenge has seductive wrong paths, and naming them up front saved a lot of wasted cycles:
+**3. Name the carrier type and ban the seductive dead-ends up front.** Once you know the tool, tell the model what the artifact *is* and forbid the generic stego reflexes — and flag the lossy round-trip explicitly, because that's the silent killer in this class:
 
-> "The MP4 is a yt-media-storage container, NOT visual stego. Do not try LSB, spectrograms, or hidden QR frames. The input is a 1080p YouTube re-encode, so pixel-perfect decoding will fail — recover by averaging each block to one bit, keep only `SFTY` packets that checksum, and rely on Wirehair repair packets to fill the one missing source block."
+> "This MP4/PNG/WAV is a `<tool>` container, NOT visual/audio stego. Do NOT try LSB, spectrograms, `zsteg`, `binwalk`, or hidden QR frames. The input has been re-encoded by the platform (YouTube/Discord/Twitter), so pixel/sample-perfect decoding will fail — recover at the *block/symbol* level by averaging each cell to one bit, keep only packets whose magic and checksum validate, and rely on the format's redundancy (fountain/Reed–Solomon/parity) to fill the blocks the compression destroyed."
 
-Without that, the model burns turns on LSB extractors and on "fixing" the official decoder's CLI flags when the real issue is the lossy input.
+The classic dead-ends to pre-empt for this class: (a) running generic stego extractors on a tool-specific container; (b) trying to "fix" the official decoder's build flags when the real problem is that the *input* was already degraded — the official decoder assumes a pristine upload; (c) reading individual pixels/samples instead of blocks; (d) assuming a missing block is fatal when the format ships repair/redundancy packets.
 
-**How I caught its mistakes and verified.** Three checks did the work. (1) I never accepted "I found hidden data" — I made it print the actual codepoints and eyeballed them against StegCloak's known alphabet. (2) At the `SFTY` stage I had it report how many packets passed the checksum versus how many frames it sampled; a plausible ratio (and the magic appearing at all) confirmed the block grid was right before trusting the decode. (3) For the final flag I refused the regex result and compared character-by-character: the `Quack`s gluing `V 1 T` are padding, but the `Quack`s inside the braces are part of the real flag — an easy place to over-strip. The verifier is always "show me the bytes," never "tell me it worked."
+**4. Verify by bytes, never by the model's say-so.** Three checks catch the hallucinations this class produces:
+- *Existence check:* make it print the actual codepoints/hex and eyeball them against the suspected tool's known signature. "I found hidden data" is not acceptable; the bytes are.
+- *Decode-sanity check:* have it report a ratio — packets that passed magic+checksum vs. total cells/frames sampled. A plausible ratio (and the magic appearing at all, e.g. `SFTY`) confirms the grid/threshold is right *before* you trust the reconstructed file.
+- *Flag check:* refuse the regex result and compare character-by-character against the padding. Here the `Quack`s gluing `V 1 T` are filler but the `Quack`s inside the braces are part of the real flag — an over-strip is the single easiest way to submit a wrong flag. The verifier is always "show me the bytes," never "tell me it worked."
 
-**Fast-path prompt recipe for next time:** *"Prove hidden data exists by dumping raw codepoints/bytes and fingerprint the exact tool from them; decode any leetspeak string as a dual-use clue+credential and pivot to the named author's GitHub tool; then tell the model the carrier type explicitly, ban the obvious-but-wrong extraction methods, recover by block not by pixel, and verify the flag by hand against the padding."*
+**Fast-path prompt recipe for the class:** *"Dump raw bytes/codepoints and fingerprint the exact named tool from them (don't infer from words); decode any leetspeak/name string as a dual-use clue+credential and pivot to that author's GitHub tool; then declare the carrier type, ban LSB/spectrogram/binwalk, recover by block not pixel because the input is a lossy re-encode, lean on the format's redundancy to fill missing blocks, and verify the flag by hand against the padding."*
 
 ## References
 

@@ -214,30 +214,31 @@ v1t{wh0_smuggl3_my_403}
 
 ## Lessons learned - prompting the AI
 
-This challenge is a *chain*, and the failure mode with an LLM is letting it wander off mid-chain or hallucinate a step that "feels" plausible. The discipline that worked: name the technique, pin each link with a verifiable oracle, and forbid the obvious rabbit holes up front.
+**Whenever you face a multi-proxy / header-trust-boundary web chain** (a stack of front proxies + reverse proxies + app server where each hop re-derives the client identity, and the "WAF" turns out to be an IP allowlist rather than a payload filter), the LLM is excellent at the per-hop bookkeeping but will happily invent a plausible-sounding step and march on. The whole game is forcing it to reason about *each trust boundary independently* and to *prove every link before advancing*. The prompts below are written so they drop straight onto the next instance of this class — a Cloudflare/Apache/Express stack, a `werkzeug` allowlist, an Envoy/HAProxy front, whatever — not just onto Duck Smuzzle.
 
-**Prompts that actually moved the solve.**
+**Reusable prompts for this class (copy-paste, swap the proxy names):**
 
-> "Here are the Caddy, nginx, and Dockerfile configs. Map every trust boundary: for each proxy, tell me exactly how it derives the client IP and how it mutates `X-Forwarded-For`. I think the WAF is an IP allowlist — confirm which header/entry `fastapi-guard` trusts and whether it's the first or last XFF token."
+> "Here are all the proxy/app configs (front proxy, reverse proxy, app, Dockerfile). For EACH hop in order, give me a table: how it derives the client IP, whether it OVERWRITES / PREPENDS / APPENDS / passes-through `X-Forwarded-For` (and `X-Real-IP`, `Forwarded`), and which path patterns it blocks. Then tell me which single header+token the final allowlist actually trusts (first vs last XFF entry), and the lowest hop I can reach directly that lets my spoofed value land in that trusted position."
 
-That one prompt produced the whole "nginx prepends, Caddy overwrites, guard trusts the first token" picture the entire chain hinges on. Forcing per-hop reasoning about XFF mutation is what surfaced the bypass.
+> "This is a `<FastAPI|Express|Spring|Flask>` app and I can read its API schema / route table. Do NOT analyze the route *paths* — diff the auto-generated identifiers (`operationId` in OpenAPI, handler/function names, debug route names). Frameworks leak the source-level function name there; the Dockerfile may have renamed a handler to a secret. List any identifier that looks like a random token or password."
 
-> "This is a FastAPI app and I can read `/openapi.json`. Don't look at the route *paths* — diff the `operationId` fields. FastAPI builds those from the Python function name, and I suspect the Dockerfile renamed a handler to a secret. Extract any operationId that looks like a random token."
+> "I have a response-header-injection sink (the app reflects arbitrary `response.headers[x]=y`) and I'm behind `<nginx|Apache>` which has an `internal` location serving a secret file. Give me the ONE response header that makes the reverse proxy serve that internal location to me, and the exact request. Do NOT propose path traversal, LFI, or SSRF — the read is a documented proxy internal-redirect feature, not a filesystem trick."
 
-Aiming the model at `operationId` specifically (and telling it to ignore paths) was the difference between a 10-second leak and an hour of staring at the schema.
+> "Both proxies block path `/X` and the front proxy overwrites `X-Forwarded-For`, but the front proxy is h2c-enabled. Write the raw `Connection: Upgrade` + `Upgrade: h2c` dance, confirm the `101`, then send a single HTTP/2 stream for `GET /X` carrying my spoofed `x-forwarded-for` inside the tunnel. Explain WHY the path block and the XFF overwrite don't apply to the smuggled stream."
 
-> "The `/flag` handler lets me set arbitrary response headers, we're behind nginx, and there's an `internal` `/private` location. Give me the single header that makes nginx serve an internal location to the client — and do NOT suggest path traversal or LFI; the read is via an nginx feature, not the filesystem."
+**What to tell the model to focus on — and the dead-ends of this class to forbid up front:**
+- State plainly: **the WAF is an IP allowlist, not a payload filter.** This single sentence stops the model from obfuscating payloads (case-swapping, comment injection, unicode tricks) and redirects it to *appearing* to be the trusted IP.
+- Make it reason about **XFF mutation per hop** (overwrite vs prepend vs append) and **which end of the list the allowlist reads** — these two facts decide which hop you must hit directly. This is the single most common place the model hand-waves.
+- For framework secret leaks, **point at auto-generated identifiers** (`operationId`, handler names, `__name__`-derived fields), not paths. Forbid it from re-reading the route list yet again.
+- **Forbid LFI / path traversal / SSRF** for the internal-file read; for nginx the answer is `X-Accel-Redirect`, for Apache it is `X-Sendfile`/`X-Accel-Redirect` semantics. Name the proxy so it picks the right header.
+- **Forbid spoofing XFF through the front door** — if the front proxy overwrites it, the move is to reach the next hop directly or to tunnel. Say so, or it will burn turns sending headers that get clobbered.
+- For the finale, frame the goal as **"preserve my attacker-controlled header past the front proxy AND bypass the path block simultaneously,"** and name **h2c upgrade smuggling** as the lever. Otherwise the model defaults to **classic HTTP/1.1 request smuggling (CL.TE / TE.CL)** — the wrong technique here, and a notorious time sink.
 
-**What to focus the model on / dead-ends to forbid.**
-- Tell it the WAF is an **IP allowlist**, not a payload filter — it stops trying to obfuscate payloads and starts thinking about *who it appears to be*.
-- Point it at `operationId`, not route paths, for the FastAPI leak.
-- Explicitly forbid **LFI / path traversal** for the secret-file read; the answer is `X-Accel-Redirect`, an nginx internal-redirect feature.
-- Explicitly forbid spoofing XFF *through Caddy's front door* — Caddy overwrites it; the move is to reach **nginx directly** or smuggle.
-- For the finale, tell it the goal is to **preserve attacker-controlled XFF past Caddy while simultaneously bypassing the `/duck` path block**, and that the lever is **h2c upgrade smuggling** — otherwise it reaches for HTTP/1.1 request smuggling (CL.TE/TE.CL), which is the wrong target here.
+**How to verify the model's output for this class (catch the hallucinations):** every link in a proxy chain has a binary oracle — demand it before moving on.
+- *Allowlist bypass:* run the identical request **with** the spoofed header → expect `200`, **without** → expect `403`. If both are `403`, you're on the wrong hop (or reading the wrong XFF end); if both are `200`, the allowlist isn't the gate and the model misdiagnosed the WAF. Never accept "it should work."
+- *Schema/identifier leak:* the leaked token must actually unlock the gated endpoint (status flips, or a different response body). A token that "looks random" but doesn't change any response is a hallucination — make the model feed it back and show the diff.
+- *Internal-redirect file read:* the response body must literally contain the secret file's contents. If you get the app's normal page instead, the proxy ignored the injected header (wrong header name, or the location isn't `internal`) — not a "maybe it's cached" situation.
+- *Forged token:* keep a **negative oracle** — here a wrong secret returns `"quack"`, the real one returns the flag. Make the model treat the rejection string as a HARD failure, never a near-miss; this is where it most loves to declare premature victory.
+- *h2c tunnel:* require an actual `101 Switching Protocols`, then A/B a known endpoint **over the tunnel** (`200`) vs **without** (`403`) to prove the tunnel both reaches the backend AND preserves your header — before you bet the whole chain on the final request.
 
-**How I caught the model's mistakes.** Every link had a binary oracle and I refused to advance without it:
-- *XFF bypass:* same request **with** spoof → `200`, **without** → `403`. If both are `403`, you're on the wrong hop.
-- *JWT secret:* `"quack"` = wrong secret, flag = right secret. When the model "confirmed" a token built from the password-as-secret, the `"quack"` response caught the lie immediately — I made it treat `"quack"` as a hard failure, not a near-miss.
-- *h2c tunnel:* require a `101 Switching Protocols` on the upgrade, then A/B the same `/openapi.json` over the tunnel (`200`) vs. without (`403`) to prove the tunnel both reaches the backend *and* preserves XFF before betting the chain on it.
-
-**Fast-path prompt recipe for next time:** "Multi-proxy stack — map each hop's XFF mutation and which token the IP allowlist trusts; leak FastAPI secrets from `operationId`; turn any response-header sink into an `X-Accel-Redirect` internal read (no LFI); then h2c-upgrade-smuggle to carry spoofed XFF past the front proxy onto the path-blocked route — and verify every link with a with/without status diff before advancing."
+**Fast-path prompt recipe for this class:** "Multi-proxy stack — for every hop tabulate XFF mutation (overwrite/prepend/append) and which token the IP allowlist trusts; leak framework secrets from auto-generated identifiers (`operationId`/handler names), not paths; turn any response-header sink into a proxy internal-redirect file read (`X-Accel-Redirect`, no LFI/SSRF); then h2c-upgrade-smuggle to carry my spoofed XFF past the path-blocking front proxy — and prove every link with a with/without status diff (and treat the rejection string as a hard failure) before advancing."

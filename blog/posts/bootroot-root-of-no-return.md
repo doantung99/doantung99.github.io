@@ -178,29 +178,34 @@ v1t{12x10_Yen_lang}
 
 ## Lessons learned - prompting the AI
 
-This challenge is a great template for how to drive an LLM through a "bootkit installer + hidden boot-sector payload" problem fast. The model is excellent at the mechanical parts (disassembly, opcode decoding, byte arithmetic) and reliably bad at one thing (it pattern-matches single-byte transforms to XOR). Steer accordingly.
+Whenever you face a **bootkit / boot-sector rev challenge** — a recovered user-mode installer (or a `.img`/`.qcow2`/`.vmdk`) where the real logic is a 16-bit MBR or VBR that the BIOS runs at `0x7C00`, and the flag is produced by some in-memory transform the boot code never prints — the same playbook applies. The class has a fixed shape (installer writes 512 bytes -> those bytes run in real mode -> a tiny INT-10h/INT-13h routine plus a byte-loop hides the flag) and the same two failure modes (mistaking the disk for a forensics problem, and mis-reading the decode op). An LLM is excellent at the mechanical work here (16-bit disassembly, ModR/M decode, byte arithmetic) and reliably weak at exactly the two judgment calls. Drive it like this on the *next* one too.
 
-**1. Set the hypothesis before letting it explore.** The single most valuable prompt was the one that named the shape and forbade the wrong direction:
+**1. Open by naming the class and forbidding the wrong direction.** The highest-leverage prompt states the shape and rules out forensics before the model explores:
 
-> "This is a recovered bootkit *installer* (`eEyeBootRoot2005.exe`) plus a Windows 2000 disk image. First verify whether the disk's MBR (sector 0) and NTFS VBR (sector 63) are stock or modified — check for `Invalid partition table` / `NTLDR is missing` strings and the `33 C0 8E D0` MBR prologue. If they're stock, the disk is a decoy and the payload is a 512-byte boot sector embedded in the EXE's `.data`. Do NOT run Volatility, registry, or filesystem-timeline forensics until we've ruled out the static-RE path."
+> "This is a bootkit / boot-sector RE challenge: a recovered installer (`<EXE name>`) plus a disk image. Before anything else, classify the boot chain. Dump the MBR (sector 0) and the active partition's VBR and tell me whether each is **stock or attacker-modified** — check for `Invalid partition table` / `NTLDR is missing` / `33 C0 8E D0` (stock prologue). If both are stock, the disk is a decoy and the malicious 512-byte sector is embedded as a static blob inside the installer. Do NOT run Volatility, registry, `tsk_recover`, or filesystem-timeline forensics until we've ruled out the static-RE path."
 
-That one paragraph collapsed the search space. Without the explicit "do not run forensics," the model wanted to treat "Windows 2000 image" as a memory/disk forensics challenge and would have burned the session on `tsk_recover`, hive parsing, and timeline analysis.
+Reuse verbatim for any boot-sector challenge; just swap the installer/image names. Naming the class up front is what stops "old Windows disk image" from triggering an hour of memory/disk forensics that the challenge never wanted.
 
-**2. Pin the disassembly mode, or every address is wrong.** Boot sectors are 16-bit real mode at org `0x7C00`. I told the model exactly that:
+**2. Locate and carve the 512-byte sector by its signature, not by guesswork.** Every boot sector ends with `55 AA` at offset `+0x1FE`; that is your anchor in any binary:
 
-> "Carve 512 bytes at file offset `0x8220` from the EXE (the `55 AA` signature should land at `0x841E`). Disassemble as 16-bit x86 with origin `0x7C00`. Identify every `INT 10h` call by AH value, and find any in-memory write/decode loop — give me the target address, byte count, and the exact opcode bytes of the transform instruction."
+> "Find the malicious boot sector inside `<EXE>`: scan for the `55 AA` signature whose preceding 510 bytes look like real-mode code (lots of `INT 10h`/`INT 13h`, a `0x7C00`-relative `mov si`). Report the file offset of the sector start (signature offset minus `0x1FE`) and whether `main` passes that address to `WriteFile`/`DeviceIoControl`. Carve exactly 512 bytes from there."
 
-Asking for "the exact opcode bytes of the transform instruction" is what set up the SUB-vs-XOR catch. If you let the model just *describe* the loop in prose, it will write "XORs each byte with 0x0D" and you will never know.
+**3. Pin the disassembly mode and demand the raw opcode bytes of any transform.** Boot code is 16-bit real mode at org `0x7C00`; a wrong mode makes every address and operand wrong:
 
-**3. The dead-ends to name explicitly:**
-- Forensics tooling on the disk — it is stock. Tell the model the MBR/VBR are Microsoft's and move on.
-- Assuming XOR for the decode loop. Make the model decode the actual ModR/M: in `80 /n`, reg field `/5` = SUB, `/6` = XOR. The opcode here is `80 2F 0D`, and `2F` -> reg `101b` = 5 = SUB.
-- Trying to find the flag string on disk or in the EXE in plaintext — it is encoded, only materialized in memory at runtime, and never printed.
+> "Disassemble the carved sector as **16-bit x86, origin `0x7C00`**. Annotate every `INT 10h`/`INT 13h` by its AH value. Find any in-memory write or decode loop and give me: target address, byte count (from `CX`), and the **exact opcode bytes of the transform instruction** — do not just describe it in prose."
 
-**4. How I caught the mistakes and verified.** When the model first produced an XOR-with-`0x0D` decode, the output was non-printable garbage with no `v1t{`. That failed output *is* the verification: a CTF flag must be printable ASCII and start with `v1t{`. I fed that back —
+Asking for the opcode bytes (not "it XORs each byte") is the entire trick for catching the class's signature error. If you let the model narrate, it will write "XORs with 0x0D" and you'll never know it guessed.
 
-> "That output is garbage and has no `v1t{` prefix. Recheck the transform opcode `80 2F 0D` — decode the ModR/M reg field and tell me whether it's SUB or XOR, then redo the decode."
+**4. Focus areas, and the classic dead-ends of this class to name up front.** Tell the model to focus on: the boot-chain classification, the `55 AA` carve, the INT-10h/INT-13h semantics (attribute bytes, teletype prints, disk reads of further stages), and the decode loop's bounds and operation. Tell it to AVOID, explicitly, the dead-ends that burn boot-sector challenges:
+- Treating a stock disk as a forensics target — if MBR/VBR are Microsoft's, say so and stop touching the disk.
+- **Assuming XOR for any single-byte loop.** For `80 /n` (8-bit immediate group-1), the ModR/M reg field decides the op: `/0`=ADD, `/4`=AND, `/5`=**SUB**, `/6`=XOR. Make the model decode the actual reg field every time. (Here `80 2F 0D`: `2F` -> reg `101b` = `/5` = SUB.)
+- Grepping for the flag in plaintext on disk or in the EXE — in this class it is encoded and only materializes in memory at runtime, often in the sector's spare bytes just before `55 AA`, and is frequently never printed.
+- Wrong endianness/word-size when reading `mov bx, imm16` / `mov cx, imm16` — these are little-endian 16-bit immediates, not bytes.
 
-— and the model self-corrected to SUB, which immediately produced `v1t{12x10_Yen_lang}`. The double check at the end (signature `55 AA` at offset `0x1FE`, plus the `v1t{...}` delimiters in the result) confirmed both the offset math and the operation. My judgment was the loop: *if the decoded bytes aren't printable and brace-delimited, the transform or offset is wrong* — and I refused to accept the first answer that violated that.
+**5. How to verify the output and catch hallucinations.** The class gives you a free oracle: the decoded buffer must be **printable ASCII with the `flag{`-style delimiters**. If it isn't, the transform op, the constant, the offset, or the length is wrong. When the model first handed me an XOR-with-`0x0D` decode, the result was non-printable garbage with no `v1t{` — that *is* the test. I fed it straight back:
 
-**Fast-path prompt recipe for next time:** "Recovered bootkit installer writes a 512-byte MBR — verify the disk's MBR/VBR are stock (decoy), carve the boot sector from `.data` (`55 AA` at +0x1FE), disassemble as 16-bit org 0x7C00, find the in-memory decode loop, and decode the actual ModR/M (`80 /5` = SUB, not XOR) — flag is the buffer the loop writes but never prints, so it must come out as printable `v1t{...}`."
+> "That output is non-printable and has no `v1t{` prefix. Re-decode the ModR/M reg field of the transform opcode `80 2F 0D` and tell me whether it's SUB or XOR, then redo the buffer. The result must be printable ASCII that starts with `v1t{` and ends with `}`."
+
+It self-corrected to SUB and produced `v1t{12x10_Yen_lang}`. Belt-and-suspenders checks for any boot-sector solve: assert `55 AA` at sector `+0x1FE` (proves the carve offset), assert the decode bounds stay inside the 512-byte sector, and assert the final bytes are printable and brace-delimited (proves the op and direction). Refuse the first answer that violates printability — that single rule catches the XOR-vs-SUB hallucination every time.
+
+**Fast-path prompt recipe for the class:** "Bootkit/boot-sector RE — first classify MBR+VBR as stock (decoy) or modified, carve the 512-byte sector by its `55 AA` at `+0x1FE`, disassemble 16-bit org `0x7C00`, decode every INT-10h/13h by AH, find the in-memory transform loop and decode its actual ModR/M reg field (`80 /5`=SUB, `/6`=XOR — never assume), then prove correctness by requiring printable, brace-delimited ASCII out of the buffer the loop writes but never prints."

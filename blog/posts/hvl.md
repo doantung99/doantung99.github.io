@@ -150,28 +150,43 @@ v1t{g04t_mck_hvl}
 
 ## Lessons learned - prompting the AI
 
-This challenge is a great case study in *why human steering still matters even when the model writes all the code*. The technical work — Unicode decoding, `fontTools` `cmap` parsing — is squarely in the model's wheelhouse. The two places it failed were both **judgment failures**, not capability failures, and judgment is exactly what I supplied.
+Generalize this challenge to its class: **a "troll" client-side / static-site web stego challenge where the flag is hidden in a shipped asset (a font, an SVG, an image, a subtitle/lyric track, a CSS file) and there are one or more intentional decoy payloads designed to make you stop early.** Cipher fonts, Unicode variation-selector smuggling, zero-width text, CSS `content:` tricks, and "the captions render differently than they're encoded" all live here. The advice below is written so it transfers to the *next* member of this class, not just to this one font.
 
-**Prompt 1 — frame the genre before handing over artifacts.** I opened with:
+The meta-lesson that generalizes: in this class the model's coding ability is rarely the bottleneck — **decoy discipline and the encode-vs-render distinction are.** Prime both before handing over artifacts.
 
-> "This is a 'troll' web CTF (the name `hvl` references haivl, a meme site). Expect decoys. Here's `index.html` and a font file from the repo. List every *anomalous* asset and tell me which one is most likely the real flag channel versus a deliberate distraction — don't commit to the first hidden thing you find."
+**Prompt 1 — frame the genre and force a ranked anomaly list (use on any troll/stego web chal):**
 
-Telling the model upfront that decoys are expected is what made it skeptical of its own findings later. Without that priming, models love to declare victory on the first hidden payload.
+> "This is a troll-style static web CTF — assume there are deliberate decoys and that the flag is hidden inside a shipped asset, not in the visible page. Here are all the repo/site artifacts: [list/attach them]. Don't solve anything yet. First enumerate every asset and rank each as 'likely real flag channel' vs 'likely decoy', with a one-line reason. Do NOT commit to the first hidden payload you find."
 
-**Prompt 2 — kill the decoy explicitly.** When it decoded the variation selectors to `hello sir` and got excited, I corrected:
+Naming the genre up front and asking for a *ranking* (not a solution) is what makes the model skeptical of its own later findings. Without this priming, models declare victory on the first hidden string.
 
-> "`hello sir` is not in `v1t{...}` format, so it's the decoy, not the flag. Stop working the variation selectors. Pivot to the font: dump its `name` table and `cmap` with `fontTools` and tell me what the emoji codepoints map to."
+**Prompt 2 — supply the flag format as a self-rejection gate (use whenever a candidate appears):**
 
-The format check (`v1t{...}`) is the single most powerful disambiguator in a multi-layer stego challenge — I gave the model the acceptance criterion so it could self-reject wrong answers instead of looking to me for a thumbs-up.
+> "The flag format is `v1t{...}`. Treat that as a hard acceptance test: any candidate string that isn't in that format is a decoy, full stop — say so and move on rather than rationalizing it. You just decoded `hello sir`; reject it as a decoy and pivot to the next-highest-ranked artifact."
 
-**Prompt 3 — anticipate the glyph-name gotcha.** Before it could conclude the font was broken:
+Handing the model the acceptance criterion lets it self-reject wrong answers instead of fishing for your thumbs-up. In a multi-layer stego chal the format check is the single strongest disambiguator.
 
-> "`fontTools` returns glyph *names*, not characters — `braceleft` means `{`, `four` means `4`, `underscore` means `_`. Build a glyph-name→char map for the named glyphs only, leave single-letter names as-is, and filter to codepoints >= 0x1F000 so the Latin text and decoy don't pollute the output."
+**Prompt 3 — pre-empt the encode-vs-render and name-vs-char traps (the classic dead-ends of this class):**
 
-**What to tell the model to focus on:** the `name` table of any unexpected font (it spoils cipher fonts instantly — here "Emoji To AZ"), the `cmap` as a *substitution table*, and SRT/source order preservation so characters come out in sequence.
+> "For the font/asset channel, inspect *how it's interpreted*, not just its raw bytes. Dump the font's `name` table and `cmap` with `fontTools` — a spoofed family name (e.g. not really 'Noto') means it's a substitution-cipher font and the `cmap` IS the cipher. Remember `cmap` returns glyph *names* (`braceleft`, `four`, `underscore`), not characters, so build a glyph-name→char map for the named glyphs and leave single-letter names as-is. Then filter the source to only the payload codepoints (here emoji, `>= 0x1F000`) and preserve source order so the flag comes out in sequence."
 
-**Dead-ends to tell it to AVOID:** don't `curl`/`requests` the live site (Cloudflare managed challenge → 403 from datacenter IPs; go to the public GitHub Pages repo instead); don't treat the variation-selector payload as the flag (it's `hello sir`, a decoy); don't feed all SRT characters through the cipher (filter to emoji codepoints); don't assume `fontTools` returns characters (it returns glyph names, so digits/braces/underscore need translation).
+**Prompt 4 — block the live-site rabbit hole early (recon for any Cloudflare/static-hosted target):**
 
-**How I verified / caught mistakes:** I checked every candidate against the `v1t{...}` format — that immediately exposed `hello sir` as a decoy. For the final answer, I cross-checked the script's output against the *intended* visual: the font is designed so the emojis render as the flag on screen, so "does it read as a sensible, on-theme flag" (`g04t`/`mck`/`hvl`) was a second independent confirmation. When the model produced glyph-name soup, the giveaway was that the output contained recognizable *names* of characters (`braceleft`, `four`) — a clear sign of a name-vs-character bug, not a corrupt font.
+> "Don't `curl`/`requests` the live origin — if it's behind a Cloudflare managed challenge, datacenter IPs get 403 while browsers pass. Instead pull the source from where it's actually hosted: check `/favicon.ico` and `/robots.txt` for hosting fingerprints (GitHub Pages 404 body, etc.), then find and read the public repo or the rendered DOM directly."
 
-**Fast-path prompt recipe for next time:** *"Troll/stego web chal — expect decoys, don't commit to the first hidden payload. Validate every candidate against the flag format and reject non-conforming ones as decoys. Inspect unexpected fonts via `fontTools` name + cmap tables (cipher fonts), remember cmap returns glyph names not chars, and filter payload codepoints by range while preserving source order."*
+**What to tell the model to FOCUS on:** the *interpretation layer* of each asset, not its raw bytes — a font's `name`/`cmap` tables (spoofed family name = cipher font), CSS `content`/`@font-face`, SVG `<text>` with a custom font, and any place where "what's stored" differs from "what's drawn." Always preserve source/document order so the recovered characters stay in sequence.
+
+**Dead-ends to tell it to AVOID up front (the recurring traps of this class):**
+- Don't hit the live site with `curl`/`requests` behind a Cloudflare/anti-bot interstitial — go to the public source (GitHub Pages repo, rendered DOM).
+- Don't accept the first hidden payload as the flag — variation-selector / zero-width / "first decoded string" payloads are usually decoys (here `hello sir`).
+- Don't assume font/parser libraries return *characters* — `fontTools` returns glyph *names*; digits/braces/underscore need translation.
+- Don't run *all* source characters through the cipher — filter to the payload codepoint range or you get Latin-text garbage and `KeyError`s.
+- Don't trust visual emoji at face value when a custom `@font-face` is loaded — the rendered glyph can differ entirely from the codepoint.
+
+**How to VERIFY the model's output for this class (catch hallucinations):**
+- Run every candidate through the flag-format regex (`v1t\{.*\}`). A non-conforming string is a decoy or a bug — never the answer.
+- If output contains *names* of characters (`braceleft`, `four`, `underscore`) instead of the characters, that's the diagnostic signature of a glyph-name-vs-character bug — not a corrupt font. Don't let the model conclude "the font is broken."
+- Cross-check against the *intended channel*: a cipher font is designed to render the flag on screen, so confirm with an independent path (load the `@font-face` in a browser, or re-derive the mapping by hand for 3–4 codepoints) and sanity-check that the flag is on-theme/readable (`g04t`/`mck`/`hvl`), not random.
+- Recompute order-sensitive output two ways (e.g. by document order vs. sorted) and confirm only document order yields a coherent flag — that flags hidden ordering bugs.
+
+**Fast-path prompt recipe for the class:** *"Troll/stego static-web chal — expect decoys, pull source from the public host (not the Cloudflare-protected live origin), and rank assets before solving. Validate every candidate against the flag format and reject non-conforming strings as decoys. For each asset inspect the interpretation layer, not raw bytes — for fonts dump `name`+`cmap` (spoofed name = cipher font), translate glyph names to chars, filter to the payload codepoint range, and preserve source order. Verify by re-deriving a few codepoints by hand and confirming the flag is format-valid and on-theme."*

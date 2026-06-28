@@ -238,34 +238,38 @@ v1t{1c3_b34r_15_cu73?}
 
 ## Lessons learned - prompting the AI
 
-This challenge is a *pattern* — "N captures, one fragment each, different protocol each, payload is a file with text in it, everything else is bait." Once you name that pattern to the model, the solve becomes a grind the LLM is genuinely good at: carving, decoding, entropy-ranking. My value was framing, triage, and verification. Here's the reusable playbook.
+Whenever you face a **multi-capture "exfil-the-fragments" forensics challenge** — N symmetric pcaps, one flag fragment per capture, a *different* protocol per capture (HTTP / FTP / SMTP / chunked HTTP / DNS / ICMP), the payload is a *file* with the fragment drawn as text inside it, and there's a fat disk image or locked archive sitting nearby as bait — the LLM is genuinely good at the grind (carving, decoding, entropy-ranking, reassembly). Your job is framing, triage, and verification. The prompts below are written to be pasted into the *next* challenge of this class, not just this one. Swap the protocol list, ports, and magics as the artifacts dictate.
 
-**1. Lead with the pattern, not the question.** The single best prompt I gave did not say "find the flag." It said:
+**1. Open by naming the class and quarantining the bait — before "find the flag."** This is the single highest-leverage prompt. Paste a version of:
 
-> "This is a multi-source forensics challenge. There are 5 matched pcaps plus a big disk image and a locked zip. Treat the disk image and zip as decoys unless I say otherwise. Assume each pcap exfiltrates ONE flag fragment through a DIFFERENT protocol, and the payload is a FILE (image/pdf/docx) with the fragment drawn as text inside it. For each pcap, identify the protocol carrier and the embedded file type first; do not try to read the flag as a raw string."
+> "This is a multi-source exfiltration forensics challenge. There are N matched captures plus one or more large artifacts (disk image / locked archive). Treat the large artifacts as DECOYS unless I explicitly say otherwise — do not open, mount, or carve them. Assume each capture exfiltrates exactly ONE flag fragment through a DIFFERENT protocol, and the payload is a FILE (PNG/JPEG/PDF/DOCX/etc.) with the fragment drawn as text inside it. For each capture: (a) identify the protocol carrier, (b) identify the embedded file type, THEN (c) reconstruct it. Never try to `grep` the flag as a raw ASCII string — it is rendered, not stored."
 
-That one paragraph kept the model out of the 10 GiB image for the entire session and set the right two-layer mental model (carrier → embedded file → glyphs).
+That two-layer mental model (carrier → embedded file → rendered glyphs) plus the explicit "stay out of the big artifacts" line is what kept this solve out of the 10 GiB image for the entire session. Reuse it verbatim on any challenge with a lopsided file set.
 
-**2. Give it the exact carving heuristic, including the magics.** Don't make the model rediscover that carriers base64-encode payloads. Tell it:
+**2. Hand it the carving heuristic and the magics — don't let it rediscover them.** Carriers almost always base64-encode their payloads, so byte-grepping base64 magics beats protocol dissection as a first move:
 
-> "Grep the raw pcap bytes for base64 file magics — `/9j/` for JPEG, `iVBORw0` for PNG, `JVBER` for PDF — before doing any protocol dissection. If a carrier rides a non-standard port, force HTTP dissection with `tshark -d tcp.port==<port>,http` so chunk headers like X-Chunk-Index become visible."
+> "Before any protocol dissection, grep the RAW capture bytes for base64 file magics: `/9j/` (JPEG), `iVBORw0` (PNG), `JVBER` (PDF), `UEsDB` (ZIP/DOCX/XLSX), `R0lGOD` (GIF). For each hit, base64-decode and confirm the real magic bytes. If a carrier rides a non-standard port, FORCE the dissector with `tshark -d tcp.port==<port>,http` (or the relevant protocol) so application headers like `X-Chunk-Index` become visible — otherwise tshark shows only raw TCP and you'll think there's nothing there."
 
-This collapsed a lot of flailing. The model defaulted to "let me dissect this as TCP and read streams," which on odd ports shows nothing useful.
+The model's default instinct is "dissect as TCP and read streams," which on odd ports surfaces nothing — this prompt collapses that flailing.
 
-**3. For the chunked pcap, name entropy as the discriminator explicitly.** The model's instinct was to reassemble *all* 9 chunked transfers and stare at them. I redirected:
+**3. For any chunked / fragmented carrier, name entropy as the discriminator and ordering as mandatory.** Decoy streams are random bytes (~7.99 bits/byte); the real payload is structured and compressible:
 
-> "There are 9 chunked transfers to 9 different host:port. Eight are random-byte decoys; exactly one decodes to a real JPEG. Rank them by Shannon entropy of the base64-decoded bytes and check for an `FF D8 FF` header — keep the lowest-entropy one, and order chunks by X-Chunk-Index before concatenating."
+> "There are multiple chunked transfers to different host:port pairs; expect all-but-one to be random-byte decoys and exactly one to decode to a real file. Group request bodies by destination host:port, ORDER each group by its chunk-index header before concatenating (wire order != chunk order), base64-decode, then rank groups by Shannon entropy of the decoded bytes and check for a valid file magic. Keep the LOWEST-entropy group with a valid header; discard anything near 8.0 bits/byte without even looking at it."
 
-That turned an ambiguous pile into a one-line selection criterion.
+The ordering clause is load-bearing — concatenating in capture order yields a scrambled file that dies right after the header.
 
-**Dead-ends to tell the model to AVOID up front:**
-- The **E01 disk image** is narrative. Explicitly forbid time in it — it contains *planted* fakes designed to look real: a fake `flag.txt` (`V1t{th1s_1s_n0t...}`), a 15 MB JPEG with a `v1t{`+garbage decoy at a specific offset, a "corrupted PNG that looks like LSB steg," and an uncrackable OpenSSL-AES `.enc`. Each of these is a model magnet that will happily generate hours of plausible-looking analysis. Say "do not analyze the disk image."
-- The **locked.zip (ZipCrypto)** — tell it not to attempt cracking; it's a dead decoy.
-- **pcap5** — tell it that one capture is a pure decoy so it doesn't try to force a fragment out of noise.
+**4. Classic dead-ends of this class — tell the model to AVOID them up front.** These are the planted "model magnets" that generate hours of plausible-looking analysis:
 
-**How I caught the model's mistakes (the verification loop):**
-- **Calibration from the clean fragment.** Once frag1 rendered as a 400×200 white-bg low-contrast image reading `v1t{1c3_`, I made that the *spec*: every other fragment should match the same dimensions and style. When the model claimed a "fragment" that didn't match (e.g., something pulled from the disk image), the mismatch was an instant red flag.
-- **Header sanity over model assertion.** When the model said "this is the JPEG," I had it print the first bytes — `FF D8 FF` or it's not. Same for PDF (`%PDF-`) and DOCX (`PK\x03\x04`). This is exactly how I *caught* fragments 2 and 3 failing: the model wanted to declare success, but the PDF Flate stream wouldn't `zlib.decompress` and the DOCX wouldn't `zipfile.ZipFile(...).namelist()` without a `BadZipFile`. I refused to count an unverified render as "read," which is why this writeup honestly reports a partial.
-- **Entropy as a lie-detector.** For the chunked decoys, I had the model print entropy values; a "fragment" stream sitting at ~7.99 bits/byte is noise, full stop — no need to even look at it.
+- **The big disk image (E01/raw/VMDK) is narrative.** Forbid time in it. State plainly: "Do not analyze the disk image." These ship *planted* fakes engineered to look real — a fake `flag.txt` (e.g. `V1t{th1s_1s_n0t...}`), an oversized JPEG with a `flag{`+garbage decoy at a fixed offset, a "corrupted PNG that looks like LSB-steg bait," an OpenSSL salted-AES `.enc` that is uncrackable by design, and heaps of encrypted zips. Each is a tar pit.
+- **Locked / ZipCrypto archives** — tell it not to attempt cracking unless you say so; in this class they hold `hint.txt`-style nothing.
+- **The one pure-noise capture** — warn it that at least one capture is a decoy full of binary/decimal junk, so it doesn't try to force a fragment out of noise.
+- **OCR / steg over-reach** — tell it not to reach for LSB steg, stegseek, or zsteg on the embedded images; the text here is *low-contrast plaintext drawn into the image*, recovered with autocontrast+upscale, not hidden in bit-planes.
 
-**Fast-path prompt recipe for next time:** *"Multi-capture forensics: assume one fragment per capture via a different protocol, payload is a file with text inside; carve base64 magics (`/9j/`, `iVBORw0`, `JVBER`) from raw bytes, force HTTP on odd ports, entropy-rank chunked streams and keep the low-entropy one, order chunks by X-Chunk-Index, autocontrast+upscale every recovered image, verify each file by its magic bytes before believing it, and stay out of the disk image and locked zip — they're bait."*
+**5. Verification — how to catch the model hallucinating a fragment.** This class invites false "success," so verify three ways:
+
+- **Magic bytes over assertion.** When it says "this is the JPEG/PDF/DOCX," make it print the first bytes and confirm: `FF D8 FF` (JPEG), `%PDF-` (PDF), `PK\x03\x04` (ZIP/DOCX), `89 50 4E 47` (PNG). This is exactly how fragments 2 and 3 were *caught* failing here — the PDF Flate stream wouldn't `zlib.decompress` and the DOCX raised `BadZipFile` on `zipfile.ZipFile(...).namelist()`. Refuse to count an unrendered fragment as "read."
+- **Calibrate from the clean fragment.** Once one fragment renders (here: a 400×200 white-bg low-contrast PNG reading `v1t{...`), make that the *spec*: every other fragment should match those dimensions and style. A claimed fragment that doesn't match the spec — or that came out of the disk image — is an instant red flag.
+- **Entropy as a lie-detector.** Have it print entropy for each candidate stream; anything at ~7.99 bits/byte is noise, no need to look.
+- **Semantic fit is a hint, not proof.** A fragment that reads as a coherent phrase (here, "ice bear is cute") is encouraging but does NOT substitute for a clean render — say so explicitly and report partials honestly.
+
+**Fast-path prompt recipe for this class:** *"Multi-capture exfil forensics: one fragment per capture via a different protocol, payload is a FILE with text drawn inside it. Carve base64 magics (`/9j/`, `iVBORw0`, `JVBER`, `UEsDB`) from raw bytes before dissecting; force the dissector on odd ports (`tshark -d tcp.port==P,http`); for chunked transfers order by chunk-index then entropy-rank and keep the lowest-entropy stream with a valid magic; autocontrast+upscale every recovered image and READ glyphs by eye; verify each file by magic bytes (and PDF/zip by clean decompress) before believing it; and stay entirely out of the disk image and locked archive — they are bait."*

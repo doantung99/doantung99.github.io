@@ -263,31 +263,33 @@ The flag spells out the root cause of CVE-2024-0582 precisely: the PFN-mapped PB
 
 ## Lessons learned - prompting the AI
 
-This challenge is the kind where an LLM is genuinely excellent at the labor (struct recovery, offset arithmetic, PoW grind) and genuinely prone to confident wrong turns (inventing crypto where there's only XOR, solving subproblems that are already solved for you). The skill is steering. Here's what actually moved this solve forward.
+**The class: a userland-CTF reimplementation of a named kernel CVE.** Whenever a pwn challenge ships a menu-driven binary whose options read like a kernel ABI (`IORING_*`, `bpf(2)`, `setxattr`, `msg_msg`, `userfaultfd`, page-table/MMU verbs) and whose banner hints at a lifetime bug ("freed but still mapped," "dangling," "stale," "after close"), you are almost certainly looking at a CVE lab — someone re-implemented a real kernel UAF/double-free/type-confusion in userland with a clean win-gate bolted on. The prompts below are written for *that whole class*, not just StaleMate; they transfer to the next io_uring/msg_msg/dirty-pagetable lab you meet.
 
-**1. Anchor the model to the CVE from the banner, don't let it free-explore.** The single best prompt I sent early:
+**1. Open by naming the CVE/subsystem and forcing an ABI-to-menu map.** Don't let the model free-explore the disassembly — give it the target and make it pattern-match. The single most effective opener for this class:
 
-> "This binary's banner mentions an io_uring provided buffer ring that's 'mapped but gone.' I think this is a userland re-implementation of CVE-2024-0582. Assume that. Map each menu option to the kernel ABI it imitates, and tell me which option is the unregister-while-mapped UAF."
+> "This menu-driven pwn binary imitates a kernel subsystem; the banner mentions `<paste banner>`. I believe it's a userland reimplementation of `<CVE-XXXX / the named subsystem>`. Assume that. Produce a table: each menu option → the kernel syscall/op it imitates → whether it allocates, frees, maps, reads, or writes. Then name the single option that is the lifetime bug (UAF / double-free / stale-mapping) and the option that triggers reuse."
 
-Naming the CVE turns the model from a blind disassembler into a pattern-matcher with a target. It immediately framed options 1/2/3 as register/mmap/unregister and flagged option 3 as the stale-mapping primitive. Without the anchor it spent its first pass narrating the menu instead of finding the bug.
+If you don't yet know the CVE, ask it to *propose* one: *"List the 3 most likely real kernel CVEs this menu reimplements, ranked, with the one-line bug each represents."* Naming the bug class converts a blind disassembler into a targeted pattern-matcher.
 
-**2. Force it to find the *minimum* primitive, not the maximal exploit.** The model's instinct was to leak the secret and recompute the splitmix64 hash. I redirected:
+**2. Force the *minimum* win condition before any exploit work.** CTF authors in this class routinely leave the hard cryptographic/secret subproblem already-solved at boot (here, `cred[0x20]` was a valid splitmix64 hash from the start). Make the model find that before it builds anything:
 
-> "Re-read the `open flag` check byte by byte. The boot cred already populates `cred[0x20]`. Which fields are wrong at boot, and what is the *smallest* set of writes that makes the check pass without recomputing any hash?"
+> "Read the win-gate function byte by byte. List every field/condition it checks and the value each holds at boot/init. Tell me the *smallest* set of writes that flips a failing check to passing — and explicitly flag any check that is already satisfied at boot so we don't recompute it."
 
-This collapsed a fragile crypto-recompute plan into three plain writes. The lesson: when the model proposes work, ask whether the expensive subproblem is already solved by the challenge author. CTF authors leave the hash valid on purpose — make the model notice.
+This is the prompt that collapsed a fragile "leak the secret + recompute the hash" plan into three plain memory writes. The transferable rule: when the model proposes expensive work (leak a key, brute a value, reverse a PRNG), ask whether the author already handed you that value.
 
-**3. Make it distinguish "looks cryptographic" from "is cryptographic."** The model called the PTE token a MAC. The fix was demanding the actual instructions:
+**3. Make it prove "cryptographic" claims with opcodes.** This class is full of values that *look* like MACs/hashes/signatures but are plain XOR/add obfuscation you can leak-then-forge. Never accept the prose label:
 
-> "Don't tell me what the token *is* — paste the exact disassembly that combines the token with the slot in a PTE. Is it a single `xor`, or a keyed construction?"
+> "Don't tell me what `<token/cookie/PTE/canary>` *is* — paste the exact disassembly that combines it with the data. Is it a single `xor`/`add`, or a real keyed construction (AES/SipHash/HMAC)? If it's reversible, give me the forge formula."
 
-It came back with one `xor`. A leakable XOR is a forgeable XOR — that single distinction is the difference between "need an oracle" and "forge anything." Whenever the model uses words like MAC/hash/signature about a check you control inputs to, make it show the opcode.
+A leakable XOR is a forgeable XOR; that one distinction is the difference between "need an oracle" and "forge anything," and it decides the entire exploit shape.
 
-**Dead-ends to tell it to AVOID up front:**
-- Do **not** try to leak the secret or reverse splitmix64 — `cred[0x20]` is already correct at boot.
-- Do **not** treat the inspect output as a heap pointer — it's a packed slot/PTE encoding across the `len`/`bid`/`resv` lanes; reassemble it before XORing.
-- Do **not** over-engineer the PoW — it's a known redpwn-style `pow(x, 1<<1277, (1<<1279)-1) ^ 1` loop; just iterate it `d` times.
+**Tell the model what to focus on — and the classic dead-ends of this class to avoid up front:**
+- Focus on: the alloc→free→reuse ordering of the buggy primitive, which *other* subsystem you can steer into the freed slot, and the exact lane/offset layout of leaked structs.
+- Avoid (this class burns hours here): do **not** leak a secret or reverse a PRNG/hash that the author left already-valid at boot — check the win-gate's init state first. Do **not** treat structured leaks (ring entries, msg_msg bodies, PTEs) as flat pointers — they're packed across fields and must be reassembled before any XOR/shift. Do **not** over-engineer the PoW — it's almost always a known redpwn/kctf loop, hand it to the model whole. Do **not** assume slot/cache reuse is deterministic without a spray — but here it was, so verify before adding noise.
 
-**How I verified and caught mistakes:** I cross-checked every model claim against observable behavior rather than trusting prose. After the leak I sanity-checked that `token ^ slot7` produced a value whose low 12 bits were the expected `flags=7` (the `assert` in the script) — that simultaneously confirms the XOR model is right and that the `len`/`bid`/`resv` lanes were assembled in the correct order. After the forged write I confirmed the cred slot actually changed by re-reading it before calling `open flag`, so a failed gate couldn't be silently blamed on the wrong slot. The discipline: never let `open flag` be your first observation — verify each primitive independently so failures are localized.
+**How to verify the model's output for this class (catch hallucinations):** validate every primitive *independently* before the win-gate, and embed the checks as asserts so failures localize:
+- After a leak, assert a *known* invariant of the decoded value — here, `(token ^ slot7) & 0xFFF == 7` confirms both the XOR model and the `len`/`bid`/`resv` lane order in one line. For a leaked pointer, assert it has the expected page alignment or top-byte; for a struct, assert a magic field.
+- After a forged write, *re-read the target through your read primitive* before calling the win-gate, so a bad slot/offset can't be silently blamed on the gate.
+- Never let `open flag` (the win-gate) be your first observation. If it fails, you must already know which primitive broke.
 
-**Fast-path prompt recipe for next time:** *"Assume this is a userland reimplementation of CVE-XXXX; map the menu to the kernel ABI, name the exact UAF primitive, find the minimum set of writes the win-gate needs (check what the author left already-valid), and paste the disassembly for any value you call a hash/MAC before we trust it."*
+**Fast-path prompt recipe for this class:** *"Assume this menu binary is a userland reimplementation of CVE-XXXX / `<subsystem>`; build the option→ABI table, name the exact lifetime-bug primitive and the reuse primitive, read the win-gate and give the minimum writes (flag anything already-valid at boot), and paste the disassembly for any value you call a hash/MAC/cookie before we trust it — then we verify each primitive with an asserted invariant before touching the gate."*

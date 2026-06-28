@@ -145,30 +145,32 @@ v1t{435_f1b0_w3bs1t3}
 
 ## Lessons learned - prompting the AI
 
-This is the part I actually care about, because the technique that won here was *prompting*, not raw reversing. The LLM read the disassembly and ground through the byte math; my job was to recognize the challenge class, point the model at the right structures, and refuse its wrong answers. Here is what reproducibly worked.
+**Challenge class: the multi-stage key/IV derivation crackme.** Whenever you face a *reconstruction* crackme — a small binary that takes a few innocuous inputs ("pet", "lucky number", "serial", "username"), never prints the flag on a wrong guess, and clearly *builds* the answer from a symmetric-crypto pipeline (AES/RC4/XOR) seeded by those inputs — the winning move is almost never raw reversing skill. It is prompting an LLM to read the disassembly while *you* supply the structure: name the class, force a role-assignment for every input and blob, and reject the model's first wrong instinct. The prompts below are written to work on the *next* crackme of this shape, not just `diddy`.
 
-**Frame the class up front, then make the model enumerate "what feeds what."** The single most useful instruction was forcing the model to separate *gate inputs* from *crypto-seed inputs*:
+**Open by naming the class and forcing a role table.** Do not ask "what does this binary do." Ask the model to commit to a structured mapping, because the whole game is figuring out which seed feeds the key vs. the IV vs. the mask:
 
-> "This is a multi-stage AES crackme, not a string-compare. For each of the three prompts (pet, lucky number, license name), tell me exactly one role: is it a gate check, the AES key, the AES IV, an XOR key, or a URL component? A single input may have TWO roles. Cite the offset where it's used."
+> "This is a multi-stage symmetric-crypto crackme that *reconstructs* a flag, not a string-compare. List every user input and every embedded constant/array. For each, give it exactly one role from {gate check, cipher key, cipher IV/nonce, XOR/mask key, KDF seed, URL/path component, unused decoy}, and note its byte-length. A single value MAY have two roles — flag any reuse. Cite the address/offset where each is consumed."
 
-That immediately surfaced the two facts that unlock everything: the license name is reused as both a URL path *and* a repeating-XOR key, and the "lucky number" is the IV. Without the explicit "an input may have two roles" nudge, the model picked the first use it saw (URL path) and stopped.
+The "a single value may have two roles" clause is the load-bearing line. On `diddy` it surfaced that the license name is *both* a URL path and a repeating-XOR key — without it the model picks the first use it reads and stops. On the next crackme it catches the same reuse pattern (a username that is also the RC4 key, a serial that is also the IV).
 
-**Tell it where the data is and how to interpret it — don't let it guess the type.** The array at `0x4120` is `int32` little-endian and only the low byte matters. Left alone, the model treated it as raw bytes and produced garbage:
+**Make the model declare byte-type before it computes.** Embedded arrays are the most common place these LLMs hallucinate. Force the interpretation explicitly and demand a sample:
 
-> "The blob at 0x4120 is 96 little-endian int32s. Extract ONLY the low byte of each (x & 0xFF) to get 96 bytes, then XOR with the repeating license name. The result must be 96 chars of valid lowercase hex — if it isn't, you have the endianness or byte-selection wrong. Show me the first 16 bytes before continuing."
+> "The blob at <addr> is an array of <int32/int16/byte> values, <little/big>-endian. Tell me which bytes actually carry data (e.g. only `x & 0xFF` of each int32) and which are padding/noise. Apply that extraction, then XOR with <the mask seed> repeated. Show me the first 16 output bytes BEFORE doing anything else with them."
 
-The "must be valid hex, show me 16 bytes first" clause does real work: it gives the model a built-in oracle and a checkpoint so it self-corrects before committing the whole pipeline to a bad buffer.
+**Tell it the self-check, and what 'correct' looks like at each stage.** This class hands you free oracles — use them in the prompt so the model self-corrects instead of marching a bad buffer through three more stages:
 
-**Dead-ends to explicitly forbid.** Three places the model wandered, and what I told it to avoid:
+> "After the XOR un-mask the output must be 96 chars of valid lowercase hex; if it isn't, you have the endianness, byte-selection, or mask seed wrong — stop and fix that before decrypting. After AES the plaintext will itself be ASCII (here, hex), not the literal flag yet."
 
-- The `http://v1t.site/` base64 string — I said "the network branch is a red herring for the base crackme; do NOT try to fetch anything, the flag is fully offline." Otherwise it kept proposing to curl the site.
-- The `pet="duck"` input — I told it "the pet is a gate only; it does not feed any crypto, stop trying to derive a key from it."
-- Stopping at the AES output — the model declared victory at `7631747b...337d` and called it a failed decrypt. I said "that output is ASCII hex; `76 31 74` is `v1t`. Hex-decode it ONE more time." The double-decode was the layer it most wanted to skip.
+**Dead-ends of this class to forbid up front.** These recur across derivation crackmes, so paste them in pre-emptively:
 
-**How I verified / caught mistakes.** Three cheap checks, each of which caught at least one wrong turn:
+- **The network/URL branch is usually a decoy for the offline tier.** Say: "There is a URL/HTTP branch (here `http://v1t.site/`); the base challenge is fully offline — do NOT propose fetching anything, the flag is derivable locally." LLMs love to suggest `curl`-ing the host and stall there.
+- **Gate inputs are not crypto seeds.** Say: "The `pet`/gate input only has to match a constant; it does NOT feed the key, IV, or mask — stop trying to derive a key from it." Models over-fit and try to KDF every input.
+- **An ASCII-looking decrypt is not a failed decrypt.** Say: "If the AES/RC4 output looks like printable hex or base64 (e.g. starts `7631747b…`), that is an *encoding layer*, not failure — decode it ONE more time (`76 31 74` is `v1t`)." The final decode is the layer models most want to skip and call it done.
 
-1. **Length checks as invariants.** IV must be 16 bytes, key must be 16 bytes, masked buffer must be 96 hex chars → 48-byte (3-block) ciphertext. Any mismatch means a stage is wrong; I made the model assert these rather than trust them.
-2. **The "valid hex" oracle** after the XOR un-mask. This single check distinguishes a correct low-byte / endianness / key combination from every common mistake.
-3. **Semantic confirmation from the flag itself.** Once I had `v1t{435_f1b0_w3bs1t3}`, the components (AES / fibo / website) map one-to-one onto the three stages I'd reversed. When the recovered flag *explains* the challenge, you know the reversing was right, not lucky.
+**How to verify the model's output (catch the hallucinations).** Three cheap, class-general checks, each of which caught a wrong turn here:
 
-**Fast-path prompt recipe for next time:** "Treat this as a multi-stage key/IV derivation crackme: for every input and every embedded blob, tell me its role and byte-type, assert the length at each stage, use 'output must be valid hex / printable' as an oracle, ignore the network branch as offline-irrelevant, and don't stop until a final hex-decode yields `v1t{...}`."
+1. **Length invariants as asserts, not vibes.** Key and IV must be exactly the cipher's block/key size (16 here); the masked buffer must be a clean multiple producing a whole number of cipher blocks (96 hex → 48 bytes → 3 blocks). Make the model emit `assert len(...) == N` at every stage; a mismatch localizes the broken stage instantly.
+2. **The "printable/valid-encoding" oracle after each un-mask.** "All bytes in `[0-9a-f]`" (or "all printable ASCII") distinguishes the one correct endianness/byte-selection/seed combination from every common mistake — this is the single most discriminating test for the class.
+3. **Semantic back-check from the recovered flag.** When the flag's tokens map one-to-one onto the stages you reversed (here `435`=AES, `f1b0`=fibo IV, `w3bs1t3`=the URL branch), the reversing was *correct*, not lucky. If the flag has parts that correspond to nothing you derived, you got a coincidental decrypt — re-audit.
+
+**Fast-path prompt recipe for this class:** "Treat this as a multi-stage symmetric-crypto reconstruction crackme: build a role table mapping every input and embedded blob to {gate, key, IV, mask, KDF seed, URL, decoy} with byte-lengths (flag any value used twice); declare each blob's byte-type and endianness and extract only the data-bearing bytes; assert the length at every stage; use 'output must be valid hex / printable' as the oracle after each un-mask; treat the network branch as offline-irrelevant; and don't stop until a final decode yields `v1t{...}`."

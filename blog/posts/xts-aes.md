@@ -196,32 +196,46 @@ V1T{7h15_5h1d_k1nd4_h4rd_1kn0w}
 
 ## Lessons learned - prompting the AI
 
-This challenge is a perfect case study in the human-steers / model-grinds split, because every individual step is something an LLM can do faster than me (read Xtensa, recall Espressif's XTS quirk, write `cryptography` boilerplate) but the *sequencing* and *failure detection* are pure judgment. Here's the reusable playbook for ESP32 flash-encryption / leaked-KDF challenges.
+**Whenever you face an embedded "encrypted-flash + read-protected key + leaked provisioning/firmware blob" challenge** (ESP32-S2/S3/C3 flash encryption, Nordic/STM32 secure-storage dumps, any "the key is in a fuse you can't read" setup), the shape is almost always the same: the key is *derived*, not random, and the derivation code shipped with the challenge. The model can do every individual sub-task — read the disassembly, recall the vendor's crypto quirks, write the `cryptography` boilerplate — faster than you. Your job is to classify the challenge, feed artifacts in the right order, and gate each inferential leap with a check the model can't fake. The prompts below are written to work on the *next* one of these, not just this XTS-AES instance.
 
-**1. Open by forcing the model to classify, not solve.** My first prompt was deliberately about strategy, not code:
+### 1. Force classification before code — this kills the brute-force rabbit hole
 
-> "Here are three files: an encrypted ESP32-S3 flash dump, an espefuse summary, and a leaked 'provisioning tool' firmware. Don't write any decryption code yet. Tell me what *class* of challenge this is and what the intended solve path is, in order, with a checkable artifact at each step."
+The number-one dead-end for this class is the model (or you) trying to *attack* the cipher. Open with a strategy-only prompt that names the artifacts and bans code:
 
-This stops the model from diving into "let me try to brute-force the key" nonsense and gets it to articulate the key-recovery-from-readable-inputs structure. It also produces the gated plan that makes verification cheap.
+> "Here are the challenge files: an encrypted embedded flash dump, a fuse/OTP summary showing the key is read-protected, and a leaked 'provisioning'/'debug' firmware. Don't write any decryption code yet. Tell me what *class* of challenge this is and the intended solve path, in order, with a single checkable artifact at each step. Assume the cipher is NOT meant to be broken."
 
-**2. Make it extract constants from the binary, then make it prove which ones matter.** The strings give the algorithm shape for free, but the constants are the trap. The prompt that moved the solve:
+Tell it up front to avoid these classic dead-ends for the class: (a) trying to cryptanalyze AES/XTS itself; (b) assuming the read-protected key is unrecoverable; (c) ignoring the leaked firmware as "just a tool." The output you want is the recognition that the key is re-derivable from *readable* fields (device MAC, user-data fuse, unique ID) using the KDF inside the leaked blob.
 
-> "From the literal pool around 0x42000b20, list every numeric constant and what role it plays. There are two round numbers, 6000 and 4096 — read the function at 0x420096a4 and tell me specifically which register holds the PBKDF2 iteration count at the call site, with the disassembly line. Do not guess from 'which looks more like an iteration count.'"
+### 2. Extract every constant, then make it cite the instruction that consumes each one
 
-The model's first instinct was to pick 6000 (it "looked like a reasonable round count"). Forcing it to point at the actual call-site argument register flipped it to 4096. **Tell the model explicitly to avoid reasoning from plausibility and to cite the instruction that consumes the constant.** The same discipline fixed the HMAC/PBKDF2 role assignment: I made it state, given the call signature `(USR,24,MAC,6,out,32)`, which argument is password and which is salt — it had them backwards on the first pass (MAC as password) and self-corrected when asked to map args onto the PBKDF2 prototype.
+`strings` on the firmware usually hands you the algorithm *shape* for free (`hmac-sha256` then `pbkdf2`, iteration/output counts as `%d`). The trap is the *constants*: salt vs. password role, iteration count, HMAC key, input lengths — all silent if wrong. Reusable prompt:
 
-**3. Demand the Espressif-specific XTS, not textbook XTS.** General LLM knowledge of "AES-XTS" is disk-encryption XTS (512-byte units, no byte reversal) and it will write that confidently. I anchored it to the source of truth:
+> "From the literal pool / .rodata around <addr>, list every numeric and byte constant and the role each plays in the KDF. Where there are multiple plausible values for the same role (e.g. two round-number constants for iteration count), read the function at <addr> and tell me which register holds that argument at the actual call site, quoting the disassembly line. Do NOT pick based on which value 'looks like' an iteration count / salt / key."
 
-> "This is ESP32-S3 flash encryption, not generic XTS. Reproduce the exact data-unit size, tweak construction, and any byte-reversal that espsecure.py / esptool 5.3 uses for decrypt_flash_data. If you're unsure of the unit size or reversal, say so — do not invent it."
+And for argument roles specifically:
 
-Adding "say so, do not invent it" is what kept it from hand-waving the byte-reversal, which is the single most-skipped detail and the one that silently produces garbage.
+> "Given the call signature `(arg0, len0, arg1, len1, out, outlen)`, map each argument onto the PBKDF2/HMAC prototype: which is the HMAC key, which is the HMAC message, which becomes the PBKDF2 password, which is the PBKDF2 salt? Justify from the call site, not from intuition."
 
-**Verification — how I caught the mistakes.** Every silent-failure step got a ground-truth gate I could check without trusting the model:
+In this challenge the model's *first* answers were wrong on exactly the two things you'd expect: it picked 6000 over 4096 because it "looked like a reasonable round count," and it put the MAC as the PBKDF2 password instead of the salt. Both flipped the instant I made it point at the consuming instruction instead of reasoning from plausibility. Also pre-warn it about architecture-specific constant loading: on Xtensa/MIPS/ARM-Thumb, constants live in a literal pool loaded via `l32r`/`ldr =`, so "find the immediate in the instruction" fails — tell it to resolve the pointer and read the literal.
 
-- After key derivation, I did **not** ask "is this right?" I had it decrypt flash `0x0` and assert byte `0xE9`. A wrong iteration count or wrong salt role sails through key derivation and only dies here, so this one assert catches both KDF mistakes at once.
-- I sanity-checked that the entry point (`0x403c88f4`) is a plausible IRAM address, not just that the magic byte matched — a single matching byte can be a coincidence.
-- I read the partition table myself from the plaintext `0x8000` region rather than trusting the model's recollection of where `flagdata` lives.
+### 3. Demand the vendor-exact crypto, not the textbook version
 
-The meta-lesson: in a challenge full of *silent* failures, the human's entire value is inserting cheap, objective checkpoints between the model's inferential leaps and refusing to advance until one passes. The model is fast; you are the assertion.
+For this whole class, the disk-encryption knowledge baked into the model is *wrong* for the device. Generic AES-XTS uses 512-byte data units and no byte reversal; Espressif flash encryption uses 128-byte units, a flash-address tweak, and a double byte-reversal. The model will write generic XTS confidently and it will silently produce noise. Anchor it to the source of truth and give it an out:
 
-**Fast-path prompt recipe for next time:** *"Classify the challenge and give me a gated solve path; extract every binary constant and cite the instruction that consumes each one (no plausibility guesses); use the vendor-exact crypto (say if unsure, don't invent); after each step give me one ground-truth assert I can run before continuing."*
+> "This is <vendor> <chip> flash encryption, not generic AES-XTS. Reproduce the EXACT data-unit size, tweak/IV construction, key-half ordering, and any byte-reversal that <vendor's tool, e.g. espsecure.py / esptool 5.3> uses in its decrypt path. Cite the version. If you are unsure of the unit size, tweak, or reversal, say so explicitly — do NOT invent a plausible-looking implementation."
+
+The phrase "say so, do not invent it" is load-bearing: it's what stopped the model from hand-waving the byte-reversal, which is the single most-skipped detail in this class and the one that fails most silently.
+
+### 4. Verification — insert a ground-truth assert between every step
+
+This class is defined by *silent* failure: wrong iteration count, wrong salt role, wrong unit size, and a colon-string-vs-raw-bytes MAC all sail through with no exception, just wrong output. So never ask the model "is this right?" — give it an objective gate instead:
+
+- **Known-plaintext at offset 0.** Embedded flash images start with a vendor magic (ESP image magic `0xE9`; for others, a known header/vector table). Decrypt the first unit and assert that byte. A wrong key *or* a wrong XTS impl both die here, so one assert catches multiple mistakes at once. The reusable instruction: *"After deriving the key, decrypt flash offset 0 and assert the first byte equals the image magic; give me the assert line, don't just claim it worked."*
+- **Second corroborating field.** Don't trust a single matching byte — it can be coincidence. Check that the decoded entry point / next header field is also plausible (e.g. a valid IRAM address like `0x403c88f4`).
+- **Parse structures yourself.** Read the partition/layout table from its plaintext region (Espressif leaves the partition table at `0x8000` unencrypted) rather than trusting the model's recollection of where the flag partition lives.
+
+The meta-rule for the class: the model is fast, you are the assertion. Refuse to advance past any step until a check you can run yourself passes.
+
+### Fast-path prompt recipe for this class
+
+*"Embedded encrypted-flash + read-protected-key + leaked-firmware challenge — classify it and give a gated solve path (the key is derived, not broken); from the leaked blob extract every KDF constant and cite the instruction/literal-pool entry that consumes each one (resolve `l32r`/`ldr =` loads, no plausibility guesses, map call args onto the HMAC/PBKDF2 prototype); decrypt using the vendor-EXACT XTS (unit size, tweak, byte-reversal — say if unsure, don't invent); after each step hand me one ground-truth assert (image-magic byte at offset 0) I can run before continuing."*

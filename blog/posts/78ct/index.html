@@ -238,33 +238,44 @@ flag:   v1t{W3_r34lly_l0v3_7h15_pl4c3}
 <pre><code class="language-text">v1t{W3_r34lly_l0v3_7h15_pl4c3}
 </code></pre>
 <h2 id="lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</h2>
-<p>This challenge is a perfect study in division of labor: the LLM is excellent at the two parts I'm slow at — generating native-language search variants and spotting/encoding a per-character pattern — but it has no idea where the <em>seams</em> of an OSINT challenge are. My value was naming the three stages up front and refusing to let the model skip the middle one.</p>
-<p><strong>Prompt 1 — set the whole skeleton, force the on-platform pivot.</strong> The single most useful thing I did was tell the model this is a three-stage challenge before it saw the artifact, so it wouldn't declare victory at the geolocation:</p>
+<p><strong>Whenever you face a multi-stage &quot;geolocate-then-pivot-to-user-content&quot; OSINT challenge</strong> — an image (or coordinates, or a place name) that you have to identify, after which the actual flag is a <em>planted artifact on that place's public page</em> (Google Maps reviews/photos/Q&amp;A, a Wikipedia talk page, a TripAdvisor entry, a Wikimedia caption, a geocache log) that is then encoded/stego'd — the prompts below transfer almost verbatim. This class has a fixed three-beat structure (identify location → pivot to UGC on that location → decode the plant), and an LLM is fast at beats 1 and 3 but blind to beat 2. The reusable lesson is: <strong>make the model treat it as a known 3-stage pipeline up front, search in the venue's native language, anchor identification on shape/uniqueness rather than fame, and hand it the encoding scheme rather than asking &quot;what is this?&quot;</strong> This instance was a Vietnamese dragon-lake park, a <code>#v1tnamese</code>-tagged Maps review, and case/digit-anomaly Base64 — but swap those nouns and the recipe holds.</p>
+<p><strong>Reusable prompts for this class</strong> (copy-paste, swap the bracketed nouns):</p>
+<ol>
+<li>Force the full pipeline before the model sees the artifact, so it can't declare victory at identification:</li>
+</ol>
 <blockquote>
-<p>&quot;This is a Vietnamese OSINT challenge with THREE stages: (1) geolocate this aerial dragon-shaped park, (2) open that location's Google Maps page and find a planted user review — it will be marked with a CTF-style hashtag, (3) decode the text in that review. Do not stop at stage 1. The park name is not the flag.&quot;</p>
+<p>&quot;This is a multi-stage OSINT challenge with THREE stages: (1) identify the location in this [image/clue], (2) open that location's [Google Maps / TripAdvisor / Wikipedia] page and find a planted user-generated artifact — it will carry a CTF-style marker such as a hashtag, an out-of-place review, or a caption, (3) decode the text in that artifact. Do NOT stop at stage 1 — the place name is not the flag. After you name the location, tell me exactly which UGC sections (reviews, photos, Q&amp;A) to open.&quot;</p>
 </blockquote>
-<p>That last sentence matters: left alone, the model wanted to hand me the park name as the answer. Explicitly stating &quot;the place is not the flag, there's a planted review on its Maps page&quot; is what made it look for <code>#v1tnamese</code>.</p>
-<p><strong>Prompt 2 — geolocation, in the right language, anchored on shape not keyword.</strong> I told it to ignore the obvious red herring and search natively:</p>
+<ol start="2">
+<li>Identification in the right language, anchored on the unique feature and steered off the famous decoy:</li>
+</ol>
 <blockquote>
-<p>&quot;Search in Vietnamese, not English. The shape is a dragon body curling next to a round 'pearl' island (rồng nhả ngọc). IGNORE famous dragon landmarks like the Đà Nẵng Dragon Bridge — match the satellite SILHOUETTE (curved water + round island), not the word 'dragon'. Give me 3 Vietnamese queries with a province guess.&quot;</p>
+<p>&quot;Search in [the venue's native language], not English. The distinctive feature is [describe the shape/silhouette/sign in plain words]. IGNORE famous landmarks that merely share the keyword '[keyword]' — match the satellite SILHOUETTE / the literal visible detail, not the word. Give me 3 native-language queries, each narrowed by a [province/region/city] guess.&quot;</p>
 </blockquote>
-<p>Telling it <em>what to avoid</em> (the Dragon Bridge) was as important as telling it what to find. The model's first instinct was the famous bridge; re-anchoring it on the silhouette produced <code>rồng nhả ngọc Phú Yên</code>, which is the query that hits Hồ Sơn.</p>
-<p><strong>Prompt 3 — name the stego class, don't ask &quot;what is this?&quot;</strong> Once I had the review text, I didn't ask the model to guess the scheme open-endedly (that invites ROT13 / Vigenère rabbit holes). I described the pattern I'd already half-seen and asked it to formalize and code it:</p>
+<ol start="3">
+<li>Pivot enumeration — make the model list where plants hide, so it doesn't stall after identifying:</li>
+</ol>
 <blockquote>
-<p>&quot;Each lake-themed word has exactly one anomalous character — a stray uppercase in a lowercase word, a stray lowercase in an uppercase word, or a digit. Extract that one character per word in order, INCLUDING the standalone '9' tokens, concatenate, and Base64-decode. Write the extractor and print both the Base64 and the decode.&quot;</p>
+<p>&quot;We have the location. List every place on its public page where a challenge author could plant a string: each review (sort newest and 'most relevant'), every uploaded photo's caption, the Q&amp;A, and the 'updates by owner' section. Flag anything containing a CTF marker (hashtag, flag-prefix substring, or text that reads like camouflage rather than a real review).&quot;</p>
 </blockquote>
-<p><strong>What to tell the model to focus on / avoid for this challenge class:</strong></p>
+<ol start="4">
+<li>Decode — name the scheme you already half-see instead of asking open-endedly (this is what avoids cipher rabbit holes):</li>
+</ol>
+<blockquote>
+<p>&quot;Each [lake-themed] word has exactly one anomalous character — a stray uppercase in a lowercase word, a stray lowercase in an uppercase word, or a digit where a letter belongs. Extract that one character per token IN ORDER, INCLUDING standalone digit tokens, concatenate, and Base64-decode. Write the extractor and print BOTH the raw concatenation and the decode.&quot;</p>
+</blockquote>
+<p><strong>What to tell the model to focus on, and the classic dead-ends to forbid up front:</strong></p>
 <ul>
-<li><em>Focus:</em> native-language search; matching a satellite <em>silhouette</em>; the post-geolocation pivot to reviews/photos/Q&amp;A; per-character anomaly extraction preserving token order.</li>
-<li><em>Avoid:</em> English-only geolocation searches; famous-landmark pattern-matching on the word &quot;dragon&quot;; treating standalone digits as noise; reordering/sorting the extracted characters; jumping to classical ciphers (ROT/Vigenère/XOR) before testing Base64 — the Base64 alphabet + length-multiple-of-4 + a recognizable encoded prefix should be ruled in or out first.</li>
+<li><em>Focus:</em> native-language search; matching the unique <em>silhouette / literal detail</em> rather than a keyword; explicit enumeration of UGC surfaces (reviews/photos/Q&amp;A/owner posts) after identification; per-character/positional extraction that preserves token order; testing Base64 (alphabet + length-multiple-of-4 + recognizable encoded prefix) before any classical cipher.</li>
+<li><em>Avoid (state these as bans in your prompt):</em> English-only geolocation searches; pattern-matching to the famous landmark that shares the keyword (here, Đà Nẵng Dragon Bridge — the model's first guess every time); declaring the solve done at the location name; treating standalone digits or single-character tokens as noise; reordering/sorting the extracted stream; jumping to ROT13/Vigenère/XOR before ruling Base64 in or out.</li>
 </ul>
-<p><strong>How I caught the model's mistakes (verification, not trust):</strong></p>
+<p><strong>How to verify the model's output for this class (so you catch hallucinations):</strong></p>
 <ul>
-<li><em>Geolocation:</em> I refused the answer until the model matched the aerial silhouette against the satellite view of the named park, not just a name that &quot;sounds dragon-y.&quot;</li>
-<li><em>Extraction:</em> the model's first extractor dropped the lone <code>9</code> tokens, producing a Base64 string whose length wasn't a multiple of 4 and that decoded with a mangled tail. The length-not-divisible-by-4 error was the smoking gun; I made it re-include single-digit tokens.</li>
-<li><em>Decode:</em> the definitive check was that the <em>encoded</em> string starts with <code>VjFU</code>, which is exactly <code>Base64(&quot;V1T&quot;)</code>. If the extraction had been even one character off, that prefix would not have appeared — so seeing it meant the whole chain was correct before I even ran <code>base64 -d</code>.</li>
+<li><em>Identification:</em> refuse the answer until the model has matched the actual silhouette/feature against the satellite or Street View of the <em>named</em> place — not a name that merely &quot;sounds like&quot; the keyword. A confident place name with no shape cross-check is a hallucination tell.</li>
+<li><em>Pivot:</em> make it quote the exact planted string and say which UGC surface it came from; if it can't produce a verbatim marker (hashtag / flag-prefix substring), it hasn't actually found the plant.</li>
+<li><em>Extraction/decode:</em> two cheap invariants catch nearly every extraction bug — (a) the candidate string is valid for its claimed encoding (for Base64, length divisible by 4 and only <code>A–Za–z0–9+/=</code>); (b) the <em>encoded</em> string begins with <code>Base64(flag_prefix)</code> — here <code>VjFU</code> == <code>Base64(&quot;V1T&quot;)</code>. If the decode would be off by even one extracted character, that prefix won't appear, so you know the chain is right <em>before</em> running <code>base64 -d</code>. The model's first extractor here dropped the lone <code>9</code> tokens, giving a non-multiple-of-4 length and a mangled tail — the length check alone exposed it.</li>
 </ul>
-<p><strong>Fast-path prompt recipe for next time:</strong> <em>&quot;Vietnamese-flavored OSINT: tell the model it's a 3-stage solve (native-language silhouette geolocation → pivot to the location's Google Maps reviews/photos for a hashtag-marked plant → decode), have it search natively and avoid famous-landmark guesses, then describe any casing/digit anomaly yourself and make it write a Base64-first extractor — verify by confirming the encoded prefix matches <code>Base64(flag_prefix)</code> and that the Base64 length is a multiple of 4.&quot;</em></p>
+<p><strong>Fast-path prompt recipe for the class:</strong> <em>&quot;Tell the model it's a 3-stage OSINT solve (native-language silhouette/detail identification → enumerate-and-pivot to the location's UGC page for a marker-tagged plant → decode), ban English-only search and famous-landmark guesses, describe the casing/digit/positional anomaly yourself and make it write an encoding-first extractor — then verify by confirming the encoded prefix equals <code>Base64(flag_prefix)</code> and the candidate length matches the encoding's rules before decoding.&quot;</em></p>
     </div>
 
     

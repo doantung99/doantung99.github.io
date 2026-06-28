@@ -252,41 +252,42 @@ The flag is even a hint about the mechanism: the duck (driver) never hands you t
 
 ## Lessons learned - prompting the AI
 
-This is the section I actually care about, because the solve was a collaboration: the LLM did the tedious lifting, and my contribution was recognizing the shape, aiming the model, and refusing to trust unverified output. Here is what reliably worked for this *class* of challenge — a user-mode/kernel commitment protocol where a static decrypt almost-but-not-quite works.
+**Whenever you face a user-mode/kernel commitment-protocol rev binary** — a client plus a `.sys` (or any privileged backend: kernel driver, TEE/enclave, signed service, MCU firmware) talking over IOCTLs, where the backend checks each step with a *keyed digest* instead of a plaintext compare, and a tempting static decrypt in the client gets you an almost-right prefix — the prompting playbook below transfers directly. The defining signature of this class: a `*-commit` / `*-verify` / `*-hmac` literal, per-stage `expected_digest[]` tables in `.data`, and a final blob whose static decrypt drifts after the first few bytes because it is missing protocol-derived state. Treat that signature as the trigger to switch the model from "decrypt this" to "reconstruct the protocol state," and reuse these prompts on the *next* such challenge, not just this duck.
 
-### Prompts that moved the solve forward
+### Reusable prompts for this class
 
-The first prompt that mattered set the frame correctly instead of asking for "the flag":
+Open every session by forcing the commitment framing, generalized so it fires on any client+backend pair:
 
-> "I have two PE64 files, a Windows console client and a native .sys driver that talk over `\\.\DucksKDv2`. The driver's strings include `stage-commit`. Treat this as a commitment protocol, not a static decrypt. From the driver's dispatch routine, identify the per-stage check: what gets hashed, what the domain separator is, and where the expected digests and salts live in `.data`. Give me the exact input layout to the KDF."
+> "I have a client binary and a privileged backend (`.sys` driver / enclave / signed service) that talk over device IOCTLs. The backend's strings include a `*-commit`/`*-verify`-style literal and per-stage digest tables. Treat this as a multi-stage keyed-commitment protocol, NOT a static decrypt of the client blob. From the backend's IOCTL dispatch, for each stage tell me exactly: (1) what bytes get hashed and in what order, (2) the per-stage domain separator / counter, (3) where the expected digests and salts live in `.data` with offsets. Give me the precise KDF input layout before writing any solver."
 
-That single instruction — "treat this as a commitment protocol, not a static decrypt" — kept the model from chasing the visible blob and produced the `KDF(0x50+stage, answer || salt || "stage-commit")` shape.
+Pin any embedded interpreter to known-good intermediates so the model cannot bluff its opcode table:
 
-The second prompt turned the embedded blobs from mystery into data:
+> "Some stages are produced by small embedded bytecode/VM interpreters. Lift the VM: give me the opcode table and a Python interpreter, then run each embedded program. Here are the raw outputs I already trust as checkpoints: `<hex>`, `<hex>`. If your interpreter does not reproduce those exact bytes, your opcode decoding is wrong — fix it and re-run before doing anything downstream."
 
-> "Two stages are produced by small bytecode interpreters in the binary. Lift the VM: give me the opcode table and a Python interpreter, then run the two embedded programs. The raw outputs should be `d76f83d50038ea79e041ab35` and `eff9982c8954a707e0b9e4841c` — if your interpreter doesn't reproduce those exact bytes, your opcode decoding is wrong, fix it before continuing."
+Force a mechanical explanation of the almost-right static decrypt instead of letting the model 'nudge' a constant:
 
-Pinning the model to known-good intermediates is the highest-leverage trick here. It cannot bluff past a hex checkpoint.
+> "A static XOR/transform of the final blob with the obvious constant gives a prefix that is correct for the first N bytes then drifts non-uniformly (e.g. `v1g...` where it should be `v1t{`). Explain mechanically what that drift implies about the key, why it rules out a single global key, and where the missing per-byte state must come from in the protocol. Do not propose tweaking the constant."
 
-The third prompt forced the model to explain the *almost-right* failure instead of hand-waving:
+Make the state-feeds-the-key coupling explicit, because it is the crux that defeats shortcuts:
 
-> "Static XOR of the final blob with the constant gives `v1g...` — first two bytes correct, third wrong, and the error is not uniform. Explain mechanically what that implies about the key, and where the missing per-byte state comes from."
+> "Confirm from the backend code whether a passing stage mutates internal state that the final decrypt later consumes. If so, the committed answer bytes ARE key material — so I need the genuine answers, not arbitrary bytes that happen to pass. Show me the exact state-update each stage performs and how it folds into the final transform."
 
-### What to focus on, and what to tell it to avoid
+### What to focus on, and the classic dead-ends to name up front
 
-- **Focus the model on the commitment input layout and the domain separator.** Everything downstream depends on hashing `answer || salt || "stage-commit"` with `0x50 + stage`. Make it state these explicitly before writing any code.
-- **Tell it the stage answers feed the final key.** Otherwise the model "optimizes" by trying to satisfy commitments with throwaway bytes. Spell out that the committed bytes ARE the key material, so genuine answers are mandatory.
-- **Avoid: "just XOR the blob with the constant."** Name this dead-end explicitly and tell the model the `v1g...` result is *evidence of missing state*, not a near-miss to nudge.
-- **Avoid: treating the VM blobs as the flag.** Tell it those hex strings are intermediate stage material that still must pass the commitment — not output.
-- **Avoid loading the test-signed driver.** Steer toward an offline replay of the KDF; kernel-loading is slow and the logic is fully recoverable statically.
+- **Focus: the commitment input layout and the domain separator.** Make the model state `hash(domain_sep || answer || salt || suffix)` explicitly, with the per-stage domain (here `0x50 + stage`), before any code. Everything downstream is wrong if this is wrong.
+- **Focus: the state-equals-gate coupling.** Tell it the committed bytes double as final key material, so genuine answers are mandatory.
+- **Avoid (name it first): "just statically decrypt the client blob."** The almost-right prefix is *evidence of missing protocol state*, not a near-miss to nudge. State this so the model does not burn the session tuning a constant.
+- **Avoid: treating embedded VM outputs as the flag.** Those hex strings are intermediate stage inputs that still must pass the commitment, never the answer.
+- **Avoid: loading/running the privileged backend.** Kernel-loading a test-signed driver (or spinning up the enclave/service) is slow and BSOD-prone; the check logic is fully recoverable statically, so steer to an offline replay.
+- **Avoid: reusing one stage's answer across stages.** Domain separation makes that fail by construction — remind the model so it does not "save time" by copying answers.
 
-### How I verified and caught its mistakes
+### How to verify the model's output (catch hallucinations)
 
-- I made the model reproduce the two VM blob hex strings exactly before accepting its interpreter. A wrong opcode table fails this instantly.
-- I checked every recovered answer against both gates myself: the `8 <= len <= 16` bound and `digest == expected[stage]`. An answer that hashes right but is out of length range is a transcription bug in the KDF, not a solution.
-- I treated the final output's prefix as the truth oracle: anything other than a clean `v1t{` meant the stage state was still wrong, and I sent the model back to the state-mixing step rather than fiddling the final XOR.
-- When the model proposed a single global XOR key, I rejected it on first principles (the `v1g...` drift proves per-byte keying) and made it re-derive a per-index key.
+- **Intermediate hex oracle:** require the model to reproduce every known intermediate (VM blob outputs, a sample digest you computed by hand) byte-for-byte before you accept its interpreter or KDF. A wrong opcode/endianness/truncation fails this instantly.
+- **Both gates, independently:** check each recovered answer against *both* constraints yourself — the length bound (`8 <= len <= 16` here) and `digest == expected[stage]`. An answer that hashes right but is out of range means the KDF transcription is off, not that you solved it.
+- **Flag-prefix as truth oracle:** the only acceptable final output is a clean, fully-correct flag prefix (`v1t{`). Anything that is correct-then-drifting means the stage state is still wrong — send the model back to the state-mixing step, never to the final XOR.
+- **Reject global keys on sight:** if the model proposes a single global XOR/key offset, reject it on first principles — the non-uniform drift proves per-byte keying — and make it re-derive a per-index key from the protocol state.
 
 ### Fast-path prompt recipe
 
-> "Two paired PE64 binaries (client + .sys) over a device IOCTL; driver strings show a `*-commit` literal — treat it as a per-stage keyed commitment, not a static decrypt. Extract salts/expected-digests, state the KDF input layout and `0x50+stage` domain separator, lift any embedded VM and pin it to the known intermediate hex, then replay all stages offline so the committed bytes rebuild the final key; verify by a clean `v1t{` prefix, not a near-miss."
+> "Client + privileged backend (`.sys`/enclave/service) over device IOCTLs; backend strings show a `*-commit` literal and per-stage digest tables — treat it as a per-stage keyed-commitment protocol, not a static client decrypt. Extract salts/expected-digests with offsets, state the exact KDF input layout and per-stage domain separator, lift any embedded VM and pin it to my known intermediate hex, then replay all stages offline so the committed bytes rebuild the final key; verify against both the length bound and the digest per stage, and accept only a clean flag prefix, never a near-miss."

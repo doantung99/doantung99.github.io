@@ -214,30 +214,40 @@ echo &quot;[+] FLAG: $FLAG&quot;
 <pre><code class="language-text">v1t{Tryna_cRacK_iS_BaCk_MtfK_dffdf21a13908662e27d8c5c875809e4}
 </code></pre>
 <h2 id="lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</h2>
-<p>This challenge is a clean case study in <em>steering vs. solving</em>. The model is excellent at the mechanical grind (extraction loops, <code>file</code> parsing, string assembly) and reliably bad at two things: knowing when <strong>not</strong> to brute-force, and knowing that <strong>a flag can live inside an image</strong>. Both failures are cheap to prevent with the right prompt. Here is the reusable playbook for &quot;archive / password-reuse&quot; CTF tasks.</p>
-<p><strong>1. Front-load the reframing so the model never starts a doomed crack.</strong> The single highest-value prompt was the one that forbade brute force and reframed the password as a known literal:</p>
+<p><strong>The class: archive-password-reuse crypto challenges</strong> — any task where you're given an encrypted ZIP/7z/RAR (or a nested stack of them) whose title, flavour text, author, or numbering back-references an earlier challenge, CTF edition, or sibling task. The whole puzzle is <em>recognizing that the password was recycled and locating that literal</em>, not breaking the crypto. The crypto is deliberately strong (AES-256 + slow KDF) precisely so brute force is a trap. The moment you smell a sequel name (&quot;Crack 202&quot;, &quot;... 2.0&quot;, &quot;Return of ...&quot;, reused mascot/meme text), assume the key is a known string from the prior artifact and pivot from <em>computing</em> it to <em>finding</em> it. Everything below is written to transfer to the <em>next</em> such challenge, not just this one.</p>
+<p>This class splits cleanly into &quot;steering&quot; (human pattern-recognition) and &quot;solving&quot; (model grinding extraction loops). The model is excellent at the grind and reliably bad at two things: knowing when <strong>not</strong> to brute-force, and knowing that <strong>a flag can live inside an image rather than as text</strong>. Both failures are cheap to pre-empt with the right opening prompts.</p>
+<p><strong>1. Reusable prompts for this class (copy-paste, swap the names):</strong></p>
 <blockquote>
-<p>&quot;This is a CTF archive challenge whose title references a prior-year challenge. Do NOT run john/hashcat/zip2john. Assume the password is a <em>reused literal</em> from that earlier challenge, not something to compute. Your first job is only to enumerate the archive structure and report the layer count and inner filenames.&quot;</p>
+<p>&quot;This is a CTF archive challenge titled <code>&lt;TITLE&gt;</code>. The title/text back-references a prior challenge <code>&lt;PRIOR NAME / EDITION&gt;</code>. Do NOT run john/hashcat/zip2john/7z2john and do NOT start any brute-force. Treat the password as a <em>reused literal</em> from that earlier challenge — something to locate, not compute. First job only: enumerate the archive structure (<code>7z l</code> / <code>unzip -l</code> / <code>rar l</code>) and report the number of encrypted layers and the inner filenames. Stop and report before extracting.&quot;</p>
 </blockquote>
-<p>Telling the model the <em>category</em> of solution (&quot;reused literal, not computed&quot;) collapses the search space. Without it, the model defaults to &quot;encryption → cracker,&quot; which is exactly the dead-end the author named the challenge after.</p>
-<p><strong>2. Force <code>file</code> before <code>grep</code>.</strong> The reliable way to stop the model from declaring defeat on an image-stored flag:</p>
 <blockquote>
-<p>&quot;After extraction, run <code>file</code> on every artifact before searching for the flag. If anything is an image, show it to me to read visually — assume the flag may be printed in the image, not stored as text. Separately, list every 32-hex-character string you find.&quot;</p>
+<p>&quot;Here is the candidate password from the prior challenge: <code>&lt;PASSWORD&gt;</code>. Try it against the OUTERMOST encrypted layer only. If it works, extract one layer, run <code>file</code> on what comes out, and tell me whether it is another archive or final content. Do not loop further until I confirm.&quot;</p>
 </blockquote>
-<p>This one prompt pre-empts the most common false-negative in archive challenges. The &quot;list 32-hex strings&quot; clause primed the model to surface the MD5-length suffix even though it lived outside any obvious flag string.</p>
-<p><strong>Dead-ends to explicitly tell the model to avoid:</strong></p>
+<blockquote>
+<p>&quot;After extraction, do NOT only grep for the flag string. Run <code>file</code> on every recovered artifact first. If anything is an image/PDF/rendered output, surface it to me to read visually — assume the flag may be printed inside it, not stored as text. Separately, list every hash-shaped token you find (e.g. <code>^[0-9a-f]{32}$</code> MD5-length, or 40/64-hex) in filenames, sidecars, or strings output.&quot;</p>
+</blockquote>
+<blockquote>
+<p>&quot;I have the human-readable flag prefix <code>&lt;PREFIX&gt;</code> read off the image and the token <code>&lt;HEX&gt;</code>. Assemble the flag, normalize ONLY the <code>&lt;wrapper&gt;{</code> prefix to the case in <code>flag_format</code>, and PRESERVE the inner mixed-case exactly. Then verify the token matches its expected hex length before you print.&quot;</p>
+</blockquote>
+<p><strong>2. What to tell the model to focus on — and the classic dead-ends to forbid up front:</strong></p>
+<p>Focus it on: enumerating layer structure before touching content; trying the <em>known literal</em> against the outer layer first; treating &quot;wrong password&quot; and &quot;last layer reached&quot; as <strong>distinct</strong> exit conditions; running <code>file</code> on every artifact; and surfacing images and hash-shaped tokens to you.</p>
+<p>Forbid these dead-ends explicitly in the first message (they are the recurring failure modes of the whole class):</p>
 <ul>
-<li>Brute-forcing modern AES-encrypted 7z/ZIP — KDF throughput makes it hopeless; the title is bait.</li>
-<li>Treating &quot;wrong password&quot; and &quot;last layer reached&quot; as the same exit condition — that causes infinite extraction loops. Make it stop and <code>file</code>-check the moment a layer yields non-archive output.</li>
-<li>Lowercasing the <em>entire</em> flag during normalization — only the <code>v1t{</code> wrapper is lowercase; the inner <code>cRacK_iS_BaCk_MtfK</code> is intentionally mixed-case.</li>
+<li><strong>Brute-forcing modern AES-encrypted 7z/ZIP/RAR.</strong> KDF throughput (thousands/sec) makes it hopeless in a CTF window; a sequel-style title is bait designed to lure you into exactly this.</li>
+<li><strong>Conflating &quot;wrong password&quot; with &quot;no more layers.&quot;</strong> 7z exits non-zero + <code>Wrong password</code> on a bad key but exits clean on the final plaintext layer — collapsing these two spins an extraction loop forever. Make it <code>file</code>-check the instant a layer yields non-archive output.</li>
+<li><strong>Grep-only flag hunting.</strong> If the flag is rendered in an image, <code>grep v1t{</code> returns nothing and the model falsely declares defeat. <code>file</code> before <code>grep</code>, always.</li>
+<li><strong>Lowercasing the entire flag during normalization.</strong> Only the <code>v1t{</code> wrapper is lowercase; inner human-readable parts are often intentionally mixed-case (<code>cRacK_iS_BaCk_MtfK</code>). Normalize the wrapper, preserve the interior.</li>
+<li><strong>Assuming the prior password is unchanged without testing it on the outer layer.</strong> Recycling is the <em>hypothesis</em>; confirm it on layer one before peeling deeper.</li>
 </ul>
-<p><strong>How I caught the model's mistakes:</strong></p>
+<p><strong>3. How to verify the model's output (so you catch hallucinations in this class):</strong></p>
 <ul>
-<li>When it reached for <code>7z2john</code>, I recognized the wasted cycle from challenge-type knowledge and redirected to &quot;locate the 2025 password.&quot;</li>
-<li>When its first extraction &quot;found nothing,&quot; I checked the <code>file</code> output myself, saw an image, and re-prompted to read it visually instead of trusting the empty <code>grep</code>.</li>
-<li>Before submission I verified two concrete invariants: the suffix matches <code>^[0-9a-f]{32}$</code> (full, untruncated, MD5-length), and the wrapper is lowercase <code>v1t{</code> while inner casing is preserved.</li>
+<li><strong>The password must actually extract a layer.</strong> A model will sometimes &quot;confirm&quot; a password it never ran. Demand the literal command + exit code + <code>file</code> output of the extracted content as proof, not a narrative claim.</li>
+<li><strong>Check the token shape against a regex, untruncated.</strong> Assert the suffix matches its expected hex length exactly (<code>^[0-9a-f]{32}$</code> for MD5, <code>{64}</code> for SHA-256). Models love to drop a trailing char or invent a plausible-looking hex string — a length+charset assertion catches both.</li>
+<li><strong>Eyeball the image yourself for the human-readable part.</strong> Do not trust OCR or a model's transcription of <code>cRacK</code> vs <code>Crack</code>; mixed case in flags is load-bearing and unguessable.</li>
+<li><strong>Confirm the wrapper case against <code>flag_format</code> before submission.</strong> One concrete invariant: wrapper lowercase, interior casing byte-for-byte as displayed.</li>
+<li><strong>Re-derive the token's source if claimed.</strong> If the model says the suffix is &quot;MD5 of the password,&quot; have it actually compute <code>echo -n &quot;$PASS&quot; | md5sum</code> and compare; if it does not match, the suffix came from the artifact, not a derivation — know which.</li>
 </ul>
-<p><strong>Fast-path prompt recipe for next time:</strong> <em>&quot;Archive CTF whose title back-references a prior challenge — do NOT brute-force; treat the password as a reused literal, enumerate layers, then <code>file</code> every artifact before grepping and surface any image or 32-hex token to me.&quot;</em></p>
+<p><strong>Fast-path prompt recipe for the class:</strong> <em>&quot;Sequel-titled archive CTF — do NOT brute-force; treat the password as the prior challenge's reused literal, try it on the outer layer, <code>file</code>-check every extracted artifact before grepping, surface any image or hash-shaped token to me, then assemble normalizing ONLY the wrapper case and assert the token's hex length.&quot;</em></p>
     </div>
 
     

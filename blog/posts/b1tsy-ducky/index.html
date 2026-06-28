@@ -277,30 +277,38 @@ print(flag.decode())
 <pre><code class="language-text">v1t{b1tsy_t1psy_duck_w4sm}
 </code></pre>
 <h2 id="lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</h2>
-<p>This challenge is the <em>perfect</em> shape for an LLM-driven solve, and recognizing the shape is the whole human contribution. The pattern: <strong>a binary that doesn't hold a secret, it rebuilds a key from observable page state.</strong> Once you name that, you don't reverse-engineer anything — you point the model at the artifacts and have it reconstruct the contract. Here's how I steered it.</p>
-<p><strong>Open by forbidding the obvious time-sink.</strong> The model's default reflex on a <code>.wasm</code> file is &quot;let's disassemble.&quot; For Go-WASM that's a swamp. My first prompt set the altitude:</p>
+<p>Whenever you face a <strong>client-side-key-reconstruction crypto challenge</strong> — a WASM/JS/obfuscated blob that does <em>not</em> store a flag but rebuilds an AES/ChaCha key at runtime from observable client state (<code>document.referrer</code>, <code>location</code>, cookies, DOM text, a scraped token, a serialized data block) and decrypts a baked-in ciphertext — the same prompting playbook applies. The flag is never <em>in</em> the binary; it is <em>derived</em>. Your entire job is to reproduce the derivation inputs byte-for-byte. These prompts are written so they transfer to the next one of these, not just to this duck.</p>
+<p><strong>1. Reusable prompts for this class</strong> (copy-paste, swap the filenames):</p>
 <blockquote>
-<p>&quot;This is a Go WebAssembly challenge. Do NOT try to disassemble the wasm or analyze <code>wasm_exec.js</code> — that's unmodified Go runtime glue. Instead: read <code>game.html</code>, find where it calls the wasm export, and tell me the exact list of arguments passed to that export, in order. Then run <code>strings</code> on the wasm binary and list every literal that looks like a crypto constant (labels, prefixes, long hex blobs).&quot;</p>
+<p>&quot;This is a client-side key-reconstruction challenge: the binary doesn't hold the flag, it rebuilds a key from page/browser state and decrypts a hardcoded ciphertext. Do NOT disassemble the WASM and do NOT read <code>wasm_exec.js</code> (it's stock Go runtime glue). Read the HTML/JS, find the call to the decrypt export, and give me the EXACT ordered list of arguments passed to it, naming the source of each argument (referrer? DOM scrape? serialized block?).&quot;</p>
 </blockquote>
-<p>That one prompt did the structural work: it produced the three-argument contract and the four constants, and it kept the model out of the disassembly swamp entirely.</p>
-<p><strong>Make it justify the KDF dimensionally, not by vibes.</strong> When the model proposed the key derivation, I didn't take it on faith — I made it defend the shapes:</p>
 <blockquote>
-<p>&quot;You said key = HMAC-SHA256(label, password) and nonce = SHA256('nonce|'+password)[:12]. Justify each output length against AES-256-GCM's required key and nonce sizes, and tell me how you'll know if any input is wrong.&quot;</p>
+<p>&quot;Run <code>strings -a</code> on the binary and list every literal that could be a crypto constant: short ASCII labels (HMAC keys / KDF salts), short prefixes ending in a separator like <code>|</code> or <code>:</code> (domain-separation tags), and any long hex/base64 blob (the ciphertext+tag). For each, state the role you think it plays and why.&quot;</p>
 </blockquote>
-<p>The answer I wanted — and got — was &quot;32 bytes = AES-256 key, 12 bytes = 96-bit GCM nonce, and the GCM tag will reject if anything's off.&quot; That last clause is the verification strategy baked into the crypto, and forcing the model to state it meant I trusted a clean decrypt as proof.</p>
-<p><strong>Where the model went wrong, and how I caught it.</strong> Two real dead-ends:</p>
-<ol>
-<li>
-<p><em>It grabbed the wrong 32-hex token.</em> The model's first pass took the <em>first</em> 32-hex match in the file. I caught it by re-reading <code>pick32()</code> myself and noticing the loop runs <code>document.scripts.length - 1</code> down to <code>0</code> — a <em>backward</em> scan. I corrected it: &quot;pick32 iterates scripts in reverse, so it's the LAST matching token, not the first — that's the Cloudflare beacon token at the bottom of the page.&quot; Lesson: when the model transcribes a scraper, have it explain the <em>iteration direction</em>, because that's exactly the kind of subtle inversion challenge authors plant.</p>
-</li>
-<li>
-<p><em>It left the referrer empty.</em> The model initially set <code>referrer = &quot;&quot;</code> (because <code>document.referrer</code> is empty when you open the file locally) and the decrypt failed its tag. The failure mode was useless — just &quot;InvalidTag&quot; — so the real skill was <em>diagnosing which of three inputs was wrong</em> rather than thrashing. I told it: &quot;GCM failing means one input's bytes are wrong. The referrer is the only input that depends on the live environment — hardcode <code>https://b1tsy.v1t.site/</code> <em>with the trailing slash</em> and try again.&quot; It worked. Lesson: enumerate which inputs are environment-derived vs. page-derived, and suspect the environment-derived ones first when authentication fails.</p>
-</li>
-</ol>
-<p><strong>Verification was free because of AES-GCM.</strong> I didn't have to eyeball anything. A passing tag is a cryptographic proof that all three reconstructed inputs and the entire KDF are byte-perfect. So my verification instruction was simply: &quot;Don't print the flag until <code>AESGCM.decrypt</code> returns without raising — if it raises, stop and tell me which input you suspect, don't guess-and-spray.&quot; That keeps the model from fabricating a flag or silently mangling inputs.</p>
-<p><strong>Fast-path prompt recipe for next time:</strong></p>
 <blockquote>
-<p>&quot;Treat this WASM/binary as a black box that rebuilds a key from page state. Forbid disassembly. (1) Read the HTML/JS and give me the exact ordered argument list to the export. (2) <code>strings</code> the binary and list crypto-looking literals. (3) Propose key+nonce derivation and justify each length against the cipher's required sizes. (4) Reproduce every input byte-for-byte — flag environment-derived inputs (referrer, cookies, location) as failure suspects and honor scraper iteration order exactly. (5) Trust nothing until the AES-GCM tag validates; on failure, name the suspect input instead of guessing.&quot;</p>
+<p>&quot;Propose the key and nonce derivation. Justify every output length against the cipher's required key/nonce sizes (e.g. AES-256-GCM needs 32-byte key, 12-byte nonce). Then write a standalone Python <code>solve.py</code> that reconstructs each input from the provided files and decrypts. Print the flag ONLY if the authenticated decrypt succeeds.&quot;</p>
+</blockquote>
+<blockquote>
+<p>&quot;For each derivation input, classify it as page-derived (re-creatable from the files we have) or environment-derived (referrer / cookies / location / time / server header — NOT present when we open the file locally). List the environment-derived ones explicitly; those are the prime suspects if authentication fails.&quot;</p>
+</blockquote>
+<p><strong>2. What to tell the model to focus on — and the classic dead-ends of this class to forbid up front:</strong></p>
+<ul>
+<li>Focus: the <em>call site</em> is the spec. The ordered argument list plus the <code>strings</code> constants is the whole challenge. Reproduce inputs exactly — concatenation order, separators, trailing newlines, and trailing slashes are all load-bearing.</li>
+<li>Dead-end to forbid: <em>disassembling the WASM / decompiling Go-from-WASM.</em> It's a swamp with zero payoff here. Say &quot;black-box it&quot; in the first prompt.</li>
+<li>Dead-end to forbid: <em>reading <code>wasm_exec.js</code>.</em> It's unmodified runtime glue. Tell the model so it doesn't burn a turn &quot;analyzing&quot; it.</li>
+<li>Dead-end to forbid: <em>trusting scraper transcription without checking iteration direction.</em> Challenge authors invert loops (here <code>pick32()</code> scans scripts in reverse → the LAST token, not the first). Tell it: &quot;when you transcribe any scraper/picker, state the iteration direction and whether it returns the first or last match.&quot;</li>
+<li>Dead-end to forbid: <em>assuming an empty/default environment value is fine.</em> An empty <code>document.referrer</code> locally silently changes the key. Tell it up front to hardcode the live origin (with the exact trailing slash) rather than letting <code>referrer = &quot;&quot;</code> slip through.</li>
+</ul>
+<p><strong>3. How to verify the model's output for this class (catch hallucinations):</strong></p>
+<p>The cipher does your verification for you, and that is the key insight to exploit. AES-GCM (and ChaCha20-Poly1305) are <em>authenticated</em> — a tag mismatch raises rather than returning garbage. So the verification rule is mechanical: <strong>a clean authenticated decrypt is cryptographic proof that every reconstructed input and the entire KDF are byte-perfect; anything short of that is unverified.</strong> Concretely, make the model:</p>
+<ul>
+<li>Never print a flag unless <code>AESGCM.decrypt(...)</code>/<code>...Poly1305.decrypt(...)</code> returns without raising. If it &quot;found the flag&quot; some other way, it hallucinated — reject it.</li>
+<li>Confirm the flag matches the challenge's format (<code>v1t{...}</code> here) and that the ciphertext length equals <code>plaintext_len + 16</code> (one GCM/Poly1305 tag), as a sanity check that the right blob was lifted.</li>
+<li>On <code>InvalidTag</code>, NOT guess-and-spray. Force a diagnosis prompt: <em>&quot;GCM failed, so exactly one input's bytes are wrong. Walk the inputs in suspicion order — environment-derived first (referrer/cookies/location), then separator/newline normalization, then scraper ordering — and change ONE thing per attempt, telling me which.&quot;</em></li>
+</ul>
+<p><strong>4. One-line fast-path prompt recipe for the class:</strong></p>
+<blockquote>
+<p>&quot;Client-side key-reconstruction challenge — flag is derived, not stored. Forbid WASM disassembly and <code>wasm_exec.js</code>. (1) From the HTML/JS give the exact ordered argument list to the decrypt export, naming each source. (2) <code>strings</code> the binary; list crypto labels, separator-prefixes, and the long hex/base64 ciphertext+tag. (3) Propose key+nonce derivation, justify each length against the cipher's required sizes. (4) Reproduce every input byte-for-byte; flag environment-derived inputs (referrer/cookies/location) as failure suspects and honor scraper iteration order exactly. (5) Trust nothing until the AEAD tag validates; on <code>InvalidTag</code>, name and change ONE suspect input at a time instead of guessing.&quot;</p>
 </blockquote>
     </div>
 

@@ -190,33 +190,36 @@ v1t{n0_dump_just_pain}
 
 ## Lessons learned - prompting the AI
 
-This is the section I care about most, because the technical solve was almost entirely the model's labor. My contribution was *direction*: recognizing the challenge class, refusing the obvious trap, and verifying. Here is the reusable playbook for "decoy-protector + tiny constraint-VM" reversing with an LLM.
+Whenever you face a **Windows rev binary that flaunts packer/protector section names while the real logic is a tiny custom input-verifier** (decoy-protector + constraint-VM-plus-hash keygen), the LLM can do nearly all the disassembly labor — but only if you front-load the meta-judgment it cannot make for itself. The whole class shares one shape: a contradictory pile of "protection" that is pure theater, and a small gate that maps `input -> accept/reject` through (a) cheap structural constraints and (b) one or more compare-against-constant checks. Your job is to forbid the theater, force the model to surface the constants, and make the attack mirror the defense. Below are the prompts I would paste again on the next one of these, verbatim.
 
-**1. Lead with the meta-call, not the disassembly.** The first thing I told the model set the entire trajectory:
+**1. Open with the decoy verdict and a hard ban on unpacking.** This is the single most valuable instruction for the entire class — without it the model will "begin analyzing the Enigma section" and burn the clock. The reusable wording, with the section names swapped for whatever your target shows:
 
-> "This is a CTF rev binary covered in fake packer section names (.enigma, .vmp, UPX0, WIBUKEY). Treat all of them as decoys unless you find runtime decryption that actually rebuilds an OEP. Do NOT try to unpack. Instead, find the accept/reject branch by xref-ing the strings '[+] accepted' and '[-] rejected', and show me only the verification function."
+> "This is a CTF rev binary whose section table lists mutually-exclusive packers at once (.enigma, .vmp, UPX0, .aspack, WinLicense) and whose strings name several DRM vendors (WIBUKEY/HASP/NVKEY). Real packers are mutually exclusive, so treat ALL of this as cosmetic decoy. Do NOT attempt to unpack or dump anything. Prove the decoy claim first: show me whether any 'protector' section is actually decrypted or jumped to at runtime (real OEP redirection). If not, ignore them and go straight to the user-visible verification logic."
 
-This single prompt killed the biggest dead-end before it started. Left to its defaults, the model will dutifully begin "analyzing the Enigma section." You have to forbid the rabbit hole explicitly.
+The transferable trigger is the contradiction itself: two or more *mutually-exclusive* packers, or vendor strings with no matching runtime behavior, means decoy. State that reasoning to the model so it generalizes.
 
-**2. Make it anchor on behavior, then extract the two numbers that matter.** Once it was in the verifier, I steered it to the discriminators:
+**2. Anchor on the accept/reject behavior, not the format.** Every binary in this class prints a prompt and branches to a pass/fail message. Drive the model straight there by string xref:
 
-> "In this verifier, find (a) the exact required input length and (b) any 64-bit constant the final hash is compared against. Give me those two values verbatim before doing anything else."
+> "Find the success and failure output strings (here '[+] accepted' / '[-] rejected'; adapt to 'Correct'/'Wrong'/'Access granted' etc.), xref them, and show me ONLY the function that decides between them — the verifier. Ignore everything not on the path from input to that branch."
 
-That produced `length = 22` and `target hash = 0xadbe8671d2150915` — the two facts that turn an impossible 95^22 brute force into a solvable problem. Forcing the model to surface the constants *first* stops it from wandering into a blind brute-force.
+**3. Force the discriminating constants out before any solving.** This is what turns an unsolvable blind search into a keygen. Make the model report the numbers verbatim first:
 
-**3. Tell it the attack must mirror the defense.** When it proposed brute-forcing the hash directly, I corrected course:
+> "In this verifier, extract verbatim, before proposing any solution: (a) the exact required input length / length gate, and (b) every constant the input (or a hash/checksum of it) is compared against, with its width. List them as a table. Do not start solving until these are on the table."
 
-> "A 64-bit hash over 22 printable bytes is not brute-forceable blind — that's 95^22. The VM constraint layer exists to collapse the space. Enumerate every per-byte constraint (prefix, suffix, length, and each xor/add relation between positions), apply them to fix the bytes, and only use the hash to confirm the surviving candidate."
+On `try` this produced `length = 22` and `target hash = 0xadbe8671d2150915` — the two facts that collapse a 95^22 space into a single candidate.
 
-This is the key judgment call. The model is happy to throw compute at a 64-bit target; the human has to know that's not where the freedom is.
+**4. Make the attack mirror the defense — constraints first, constant only to confirm.** The classic dead-end of this class is throwing compute at the final compare. Correct it explicitly:
 
-**Where to point the model, where to forbid it:**
-- *Focus:* the accept/reject branch and its caller; the length gate; the embedded 64-bit constant; the per-position xor/add relations in the VM loop.
-- *Avoid:* unpacking any "protector" section; trusting `strings`/PEiD packer detection; brute-forcing the hash before constraints are applied; "analyzing" the WIBUKEY/HASP/NVKEY driver strings (pure decoys).
+> "A 64-bit hash (or any single constant) over N printable bytes is NOT brute-forceable blind — that's 95^N. The cheap structural checks exist to collapse the space. Enumerate every per-byte / per-position constraint (prefix, suffix, length, and each xor/add/sub/rotate relation between positions or against a key schedule), apply them to fix as many bytes as possible, and only run the surviving candidates through the final constant-compare to pick the unique one."
 
-**How I caught its mistakes:**
-- It claimed a section was "encrypted and needs dumping." I asked it to prove the section is referenced at runtime with real control-flow redirection. It couldn't — so the claim was dropped. (Demand evidence of runtime use before believing any unpack story.)
-- When it reconstructed the body bytes, I did not take them on faith. The definitive check is free: run `chall.exe`, paste the candidate, and confirm `[+] accepted`. The binary is its own oracle — always close the loop on the real artifact, not on the model's arithmetic.
-- I sanity-checked the length and prefix/suffix against the flag format `v1t{...}` (22 == len of the answer) before trusting any interior byte.
+**What to point the model at, and the dead-ends to forbid up front:**
+- *Focus:* the accept/reject branch and its caller; the length gate; every embedded compare-constant and its width; the per-position arithmetic relations (xor/add/sub/rotate) that couple input bytes; the small interpreter/VM loop if there is one (look for a fetch-decode-dispatch on a bytecode/opcode table).
+- *Avoid (the classic time-sinks of this class):* unpacking or dumping any "protector" section; trusting `strings`/PEiD/DIE packer verdicts (the contradictory verdict *is* the bait); brute-forcing the final constant before constraints are applied; "analyzing" DRM/driver strings (WIBUKEY/HASP/NVKEY/skeydrv.dll) — pure decoys with no code behind them; assuming a renamed `UPX0`/`.vmp` section implies real packing without runtime evidence.
 
-**Fast-path prompt recipe for next time:** *"Rev binary with contradictory packer section names = decoys; forbid unpacking, xref '[+] accepted'/'[-] rejected' to the verifier, extract the input length and the 64-bit compare constant first, enumerate the VM's per-byte constraints to collapse the space, then use the hash only to confirm the one surviving candidate — and verify by running the binary, not by trusting the model."*
+**How to verify the model's output for this class (so you catch hallucinations):**
+- The binary is its own oracle, and the check is free: run it, paste the candidate, and confirm the success message. Never ship a flag this class produces without this step — the model's reconstructed arithmetic is the part most likely to be subtly wrong, and running the artifact catches it instantly.
+- Demand runtime evidence before believing any "it's encrypted / needs dumping" claim — ask the model to show the control-flow that actually reaches and decrypts the section. If it can't, the unpack story is a hallucination; drop it.
+- Cross-check the recovered length and prefix/suffix against the known flag format (here `v1t{...}`, 22 chars) before trusting any interior byte; a length or wrapper mismatch means the constraint extraction is off.
+- If the model reproduces a hash/checksum, sanity-check the constants it claims (FNV prime/offset, CRC poly, multiplier) against the disassembly's literals — a fold that "almost" matches usually means it guessed the algorithm.
+
+**Fast-path prompt recipe for this class:** *"Contradictory/mutually-exclusive packer sections = decoy — prove no runtime OEP redirection then ignore them and forbid unpacking; xref the success/failure strings to the verifier; extract the length gate and every compare-constant (with width) verbatim before solving; enumerate the per-byte constraints to collapse the space and use the constant-compare only to confirm the one survivor; then verify by feeding the candidate to the binary, not by trusting the model's arithmetic."*
