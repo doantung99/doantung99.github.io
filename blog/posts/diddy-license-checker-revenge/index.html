@@ -7,7 +7,7 @@
     <meta name="color-scheme" content="dark">
 
     <title>Diddy License Checker Revenge — LazyBlog</title>
-    <meta name="description" content="A crackme whose &apos;revenge&apos; variant assembles its flag from 33 hard-coded byte offsets of a server-side PNG fetched at runtime — fully reversed, but the flag stays remote.">
+    <meta name="description" content="A multi-stage Linux crackme that rebuilds its flag from a Fibonacci-derived AES IV, an XOR-masked ciphertext, and a hex-encoded key — plus its revenge twin that assembles the flag from bytes of a server-side PNG.">
             <meta name="author" content="tungdlm99">
         <meta name="generator" content="LazyBlog 1.11.0">
     <meta name="robots" content="index, follow, max-image-preview:large">
@@ -16,7 +16,7 @@
 
     <!-- Open Graph -->
     <meta property="og:title" content="Diddy License Checker Revenge">
-    <meta property="og:description" content="A crackme whose &apos;revenge&apos; variant assembles its flag from 33 hard-coded byte offsets of a server-side PNG fetched at runtime — fully reversed, but the flag stays remote.">
+    <meta property="og:description" content="A multi-stage Linux crackme that rebuilds its flag from a Fibonacci-derived AES IV, an XOR-masked ciphertext, and a hex-encoded key — plus its revenge twin that assembles the flag from bytes of a server-side PNG.">
     <meta property="og:url" content="https://doantung99.github.io/blog/posts/diddy-license-checker-revenge">
     <meta property="og:type" content="article">
     <meta property="og:site_name" content="LazyBlog">
@@ -31,7 +31,7 @@
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary">
     <meta name="twitter:title" content="Diddy License Checker Revenge">
-    <meta name="twitter:description" content="A crackme whose &apos;revenge&apos; variant assembles its flag from 33 hard-coded byte offsets of a server-side PNG fetched at runtime — fully reversed, but the flag stays remote.">
+    <meta name="twitter:description" content="A multi-stage Linux crackme that rebuilds its flag from a Fibonacci-derived AES IV, an XOR-masked ciphertext, and a hex-encoded key — plus its revenge twin that assembles the flag from bytes of a server-side PNG.">
         
     <!-- Alternates: machine-readable / AI / RSS -->
             <link rel="alternate" type="text/markdown" href="https://doantung99.github.io/blog/posts/diddy-license-checker-revenge.md">
@@ -41,7 +41,7 @@
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20fill%3D%22%230a0e0a%22%2F%3E%3Ctext%20x%3D%224%22%20y%3D%2224%22%20font-family%3D%22monospace%22%20font-size%3D%2222%22%20fill%3D%22%2339ff14%22%3E%26gt%3B_%3C%2Ftext%3E%3C%2Fsvg%3E">
 
-            <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Diddy License Checker Revenge","description":"A crackme whose \u0027revenge\u0027 variant assembles its flag from 33 hard-coded byte offsets of a server-side PNG fetched at runtime — fully reversed, but the flag stays remote.","datePublished":"2026-06-28","dateModified":"2026-06-28","url":"https://doantung99.github.io/blog/posts/diddy-license-checker-revenge","mainEntityOfPage":"https://doantung99.github.io/blog/posts/diddy-license-checker-revenge","inLanguage":"vi","keywords":"ctf, v1t-ctf-2026, misc, ai-assisted","author":{"@type":"Person","name":"tungdlm99"},"publisher":{"@type":"Organization","name":"LazyBlog","url":"https://doantung99.github.io/blog/"}}</script>
+            <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Diddy License Checker Revenge","description":"A multi-stage Linux crackme that rebuilds its flag from a Fibonacci-derived AES IV, an XOR-masked ciphertext, and a hex-encoded key — plus its revenge twin that assembles the flag from bytes of a server-side PNG.","datePublished":"2026-06-28","dateModified":"2026-06-28","url":"https://doantung99.github.io/blog/posts/diddy-license-checker-revenge","mainEntityOfPage":"https://doantung99.github.io/blog/posts/diddy-license-checker-revenge","inLanguage":"vi","keywords":"ctf, v1t-ctf-2026, misc, ai-assisted","author":{"@type":"Person","name":"tungdlm99"},"publisher":{"@type":"Organization","name":"LazyBlog","url":"https://doantung99.github.io/blog/"}}</script>
     
     <script>
     // Theme bootstrap — server already rendered the configured default on
@@ -74,7 +74,7 @@
 </div>
 
 <header>
-            <div class="callsign">XV5HP // MAYLAB // HẢI PHÒNG</div>
+            <div class="callsign">NAB // Hà Nội</div>
                     <p class="site-brand"><a href="/blog/" class="brand-link">LazyBlog</a></p>
                 <div class="subtitle">// A personal blog transmitting thoughts over imperfect radio waves. Expect noise, fading, and low bandwidth—but always authentic signals.</div>
         <div class="header-actions">
@@ -106,48 +106,160 @@
         <div class="section-tag">
         § TRANSMISSION — 2026-06-28 — tungdlm99    </div>
     <h1 class="post-page-title">
-                    <span class="post-icon">🔑</span>
+                    <span class="post-icon">🦆</span>
                 Diddy License Checker Revenge    </h1>
 
     
             <nav class="toc toc-inline" aria-label="Table of contents">
             <div class="toc-label">§ TOC — NAVIGATION</div>
-            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-2"><a href="#flag">Flag</a></li></ul>
+            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-3"><a href="#reading-the-binary-s-intent-first">Reading the binary&#039;s intent first</a></li><li class="level-3"><a href="#decoy-1-the-quot-lucky-number-quot-is-the-aes-iv">Decoy #1 — the &amp;quot;lucky number&amp;quot; is the AES IV</a></li><li class="level-3"><a href="#decoy-2-the-license-name-is-both-a-url-path-and-an-xor-key">Decoy #2 — the license name is BOTH a URL path AND an XOR key</a></li><li class="level-3"><a href="#decoy-3-the-companion-file-s-hex-is-the-aes-key">Decoy #3 — the companion file&#039;s hex IS the AES key</a></li><li class="level-3"><a href="#the-embedded-ciphertext-low-bytes-then-unmask-then-unhex">The embedded ciphertext: low bytes, then unmask, then unhex</a></li><li class="level-3"><a href="#putting-the-pipeline-together">Putting the pipeline together</a></li><li class="level-3"><a href="#end-to-end-script">End-to-end script</a></li><li class="level-3"><a href="#diddy-revenge-fully-reversed-but-the-flag-lives-on-the-server">diddy_revenge — fully reversed, but the flag lives on the server</a></li><li class="level-2"><a href="#flag">Flag</a></li><li class="level-2"><a href="#lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</a></li></ul>
         </nav>
     
     <div class="post-body">
         <h2 id="summary">Summary</h2>
-<p>A license-checker crackme that derives its key material from &quot;innocent&quot; inputs (a Fibonacci-mod-9 &quot;lucky number&quot; as the AES IV, the license name as both a URL path and an XOR key). The <code>diddy_revenge</code> companion reverses cleanly, but its flag is never in the binary: it is reconstructed from 33 hard-coded byte offsets into a PNG fetched live from the server.</p>
+<p><code>diddy</code> is a Linux x86-64 crackme that derives a whole AES-CBC pipeline from &quot;innocent&quot; inputs — a Fibonacci-mod-9 &quot;lucky number&quot; that is secretly the IV, a license-name string reused as both a URL path and a repeating-XOR key, and a companion file whose hex decodes straight to the AES key. The companion challenge <code>diddy_revenge</code> reverses cleanly but never stores its flag locally: it plucks 33 bytes from a PNG fetched at runtime from a <code>.gov</code> URL. I drove an LLM to do the static reversing and the byte-plumbing; my job was recognizing the challenge type, feeding it the right artifacts, and catching the two places its instinct was flat wrong.</p>
 <h2 id="solution">Solution</h2>
-<p>I went in expecting a multi-stage key-derivation crackme, so my first move was to set the direction rather than start disassembling by hand. I handed the ELF to the model and asked it to triage the binary and lay out the input pipeline. It pulled the pieces apart: <code>pet = &quot;duck&quot;</code>, a &quot;lucky number&quot; that turned out to be <code>&quot;0&quot;</code> followed by <code>fib(1..31) % 9</code> (i.e. the 32-hex string <code>01123584371808876415628101123584</code>) doubling as the AES IV, and the license name <code>license-for-user-deadbeef-diddy</code> used twice — once as the URL path <code>http://v1t.site/&lt;name&gt;</code> and once as a repeating-XOR key over an embedded <code>int32</code> array.</p>
-<p>My judgment call was on the key. The companion file <code>license-for-user-deadbeef-diddy</code> is 32 hex chars; I prompted the model to stop treating it as opaque and just hex-decode it, which gives the ASCII AES-128 key <code>v1t_435_k3y_frfr</code>. From there I had it script the full decrypt: take the low byte of each of the 96 int32s, XOR with the license name, hex-decode that into 48 bytes of ciphertext, AES-CBC decrypt, then hex-decode the plaintext once more.</p>
-<pre><code class="language-python">from Crypto.Cipher import AES
+<p>This is the kind of challenge where the binary is small but the <em>data flow</em> is the puzzle. There's no clever anti-debug, no obfuscated control flow. The difficulty is that the key, the IV, and the ciphertext are each manufactured from a different &quot;decoy&quot; input, and you have to recognize each one for what it really is before any of it lines up. That recognition is exactly the part a human is good at and a model needs steering on — so the workflow was: I name what I think each blob <em>is</em>, the model proves or disproves it against the disassembly, and we converge.</p>
+<h3 id="reading-the-binary-s-intent-first">Reading the binary's intent first</h3>
+<p>The binary asks for a few inputs and then &quot;checks a license.&quot; Decompiling it (I had the model work from the Ghidra pseudocode) shows it never compares your input against a stored secret. Instead it <em>reconstructs</em> a flag from a hard-coded blob, using your inputs as cryptographic material. That is the first key insight, and it's a judgment call, not something you can grep for: <strong>the inputs are not validated, they are consumed as key/IV/path.</strong> Once you frame it that way, the rest is just identifying which input feeds which slot.</p>
+<p>There are three &quot;decoy&quot; inputs:</p>
+<ul>
+<li><code>pet = &quot;duck&quot;</code> — a soft gate / flavor, the &quot;are you a real player&quot; check (Diddy, duck — the theme).</li>
+<li>a &quot;lucky number&quot; string,</li>
+<li>a &quot;license name&quot; string.</li>
+</ul>
+<p>And one embedded backend, base64'd in the binary:</p>
+<pre><code>aHR0cDovL3YxdC5zaXRlLw==  -&gt;  http://v1t.site/
+</code></pre>
+<h3 id="decoy-1-the-quot-lucky-number-quot-is-the-aes-iv">Decoy #1 — the &quot;lucky number&quot; is the AES IV</h3>
+<p>The binary builds the &quot;lucky number&quot; as the literal character <code>&quot;0&quot;</code> followed by <code>fib(1..31) % 9</code>. Working that out:</p>
+<pre><code>0 1 1 2 3 5 8 4 3 7 1 8 0 8 8 7 6 4 1 5 6 2 8 1 0 1 1 2 3 5 8 4
+</code></pre>
+<p>concatenated:</p>
+<pre><code>01123584371808876415628101123584
+</code></pre>
+<p>That's a 32-character string. The moment you see <em>32 hex-ish characters being fed into a crypto setup</em>, the right read is &quot;this is 16 bytes&quot; — i.e. an AES IV. And indeed the binary hex-decodes it into the 16-byte IV. The Fibonacci-mod-9 sequence is pure misdirection; its only job is to deterministically produce those 32 nibbles so the IV is reproducible without ever being written down. Classic crackme move: <strong>a number with a cute story attached is actually a raw cryptographic parameter.</strong></p>
+<h3 id="decoy-2-the-license-name-is-both-a-url-path-and-an-xor-key">Decoy #2 — the license name is BOTH a URL path AND an XOR key</h3>
+<p>The &quot;license name&quot; is:</p>
+<pre><code>license-for-user-deadbeef-diddy        (31 characters)
+</code></pre>
+<p>It gets used twice, which is the second insight and the easiest thing to miss:</p>
+<ol>
+<li>As the URL path: <code>http://v1t.site/license-for-user-deadbeef-diddy</code>.</li>
+<li>As a <strong>31-byte repeating-XOR key</strong> applied over an embedded integer array.</li>
+</ol>
+<p>The double-use is deliberate — it makes the string look like &quot;just the name in the URL,&quot; so you don't think to also treat it as key material.</p>
+<h3 id="decoy-3-the-companion-file-s-hex-is-the-aes-key">Decoy #3 — the companion file's hex IS the AES key</h3>
+<p>The challenge ships a companion file <code>license-for-user-deadbeef-diddy</code> containing 32 hex chars:</p>
+<pre><code>7631745f3433355f6b33795f66726672
+</code></pre>
+<p>Hex-decode that and it spells ASCII:</p>
+<pre><code>v1t_435_k3y_frfr
+</code></pre>
+<p>That 16-byte ASCII string is the <strong>AES-128 key</strong>. (It's also a self-hint: <code>435</code> = &quot;AES&quot; leetspeak, which later shows up in the flag — a nice consistency check that the key is right.)</p>
+<h3 id="the-embedded-ciphertext-low-bytes-then-unmask-then-unhex">The embedded ciphertext: low bytes, then unmask, then unhex</h3>
+<p>The ciphertext is the fiddliest part and the place an LLM is most likely to fumble the plumbing, so it's worth being precise about the layout:</p>
+<ul>
+<li>At <code>.data 0x4120</code> there are <strong>96 little-endian int32 values</strong>. Only the <strong>low byte</strong> of each int32 is meaningful — so you collapse 96 int32s to 96 bytes. (The int32 padding is just noise to make the blob look bigger and less obviously like ASCII.)</li>
+<li>Those 96 bytes are masked with the license name via repeating XOR. Unmasking (<code>arr[i] ^ name[i % 31]</code>) yields <strong>96 ASCII hex characters</strong>.</li>
+<li>Those 96 hex characters decode to <strong>48 bytes</strong> of actual AES ciphertext (48 is a clean multiple of the 16-byte block size — another sanity check).</li>
+</ul>
+<h3 id="putting-the-pipeline-together">Putting the pipeline together</h3>
+<p>The full chain:</p>
+<pre><code>fib%9 string        -&gt; hex-decode -&gt; 16-byte IV
+companion file hex  -&gt; hex-decode -&gt; 16-byte AES key (&quot;v1t_435_k3y_frfr&quot;)
+96 int32 @ 0x4120   -&gt; low bytes  -&gt; 96 bytes
+   XOR license name -&gt; 96 ASCII hex chars
+   hex-decode       -&gt; 48-byte ciphertext
+AES-128-CBC decrypt(ct, key, iv) -&gt; ASCII-hex plaintext
+   hex-decode once more -&gt; v1t{...}
+</code></pre>
+<p>The final twist — and the last place to not give up early — is that the AES plaintext is <em>itself</em> an ASCII-hex string, not the flag directly. You have to hex-decode one more time. If you stop at the AES output you'll see <code>7631747b...337d</code> and think it failed; decode it and <code>7631747b</code> is <code>v1t{</code>, <code>337d</code> is <code>3}</code>.</p>
+<h3 id="end-to-end-script">End-to-end script</h3>
+<p>This is the single runnable path from challenge data to printed flag. <code>int32_array_at_0x4120</code> is the 96 little-endian int32s pulled out of <code>.data</code> at <code>0x4120</code> (extract with your disassembler or by reading the section bytes); everything else is hard data from above.</p>
+<pre><code class="language-python">#!/usr/bin/env python3
+# diddy crackme solver: reconstruct the flag from the embedded pipeline.
+from Crypto.Cipher import AES
 import binascii
 
-# 96 little-endian int32s from .data 0x4120; take the LOW byte of each
-arr  = bytes(low_byte(x) for x in int32_array_at_0x4120)   # 96 bytes
-name = b&quot;license-for-user-deadbeef-diddy&quot;                   # 31-byte repeating-XOR key
+# --- Stage 0: the 96 little-endian int32s at .data 0x4120 ---------------------
+# Pull these out of the binary's .data section at offset 0x4120 (96 * 4 bytes).
+# Only the low byte of each int32 carries data; the rest is padding noise.
+int32_array_at_0x4120 = [
+    # ... 96 little-endian int32 values extracted from the binary ...
+]
+assert len(int32_array_at_0x4120) == 96
 
-# (arr XOR name) is ASCII hex; decode it to the 48-byte ciphertext
-masked = bytes(arr[i] ^ name[i % len(name)] for i in range(len(arr)))
-ct     = binascii.unhexlify(bytes(masked))                  # 48 bytes
+arr = bytes(x &amp; 0xFF for x in int32_array_at_0x4120)          # 96 bytes
 
-key = b&quot;v1t_435_k3y_frfr&quot;
-iv  = binascii.unhexlify(&quot;01123584371808876415628101123584&quot;)
-pt  = AES.new(key, AES.MODE_CBC, iv).decrypt(ct)            # ASCII hex &quot;7631747b...337d&quot;
-print(binascii.unhexlify(pt.strip()).decode())             # -&gt; v1t{435_f1b0_w3bs1t3}
+# --- Stage 1: license name = repeating-XOR key (also the URL path) ------------
+name = b&quot;license-for-user-deadbeef-diddy&quot;                     # 31 bytes
+masked = bytes(arr[i] ^ name[i % len(name)] for i in range(len(arr)))  # 96 ASCII hex chars
+ct = binascii.unhexlify(masked)                               # -&gt; 48-byte ciphertext
+assert len(ct) % 16 == 0                                      # block-size sanity check
+
+# --- Stage 2: AES key from the companion file's hex ---------------------------
+# companion file `license-for-user-deadbeef-diddy` contains:
+#   7631745f3433355f6b33795f66726672  -&gt;  &quot;v1t_435_k3y_frfr&quot;
+key = binascii.unhexlify(&quot;7631745f3433355f6b33795f66726672&quot;)  # b&quot;v1t_435_k3y_frfr&quot;
+assert key == b&quot;v1t_435_k3y_frfr&quot;
+
+# --- Stage 3: IV from the Fibonacci-mod-9 &quot;lucky number&quot; ----------------------
+# &quot;0&quot; + (fib(1..31) % 9) = 01123584371808876415628101123584
+iv = binascii.unhexlify(&quot;01123584371808876415628101123584&quot;)   # 16 bytes
+
+# --- Stage 4: AES-128-CBC decrypt -&gt; ASCII-hex -&gt; hex-decode -&gt; flag ----------
+pt = AES.new(key, AES.MODE_CBC, iv).decrypt(ct)              # e.g. b&quot;7631747b...337d&quot;
+flag = binascii.unhexlify(pt.strip())                        # -&gt; b&quot;v1t{...}&quot;
+print(flag.decode())
 </code></pre>
-<p>That nails the base <code>diddy</code> flag (<code>435</code> = AES, <code>f1b0</code> = fibo, <code>w3bs1t3</code> = website). Then I pointed the model at the harder <code>diddy_revenge</code> variant. It reversed the URL builder to:</p>
+<p>The flag's three tokens each map back to a stage, which is the author's way of telling you you solved it the intended way: <code>435</code> = AES, <code>f1b0</code> = the Fibonacci IV, <code>w3bs1t3</code> = the <code>v1t.site</code> URL path / website.</p>
+<h3 id="diddy-revenge-fully-reversed-but-the-flag-lives-on-the-server">diddy_revenge — fully reversed, but the flag lives on the server</h3>
+<p>The &quot;revenge&quot; twin reverses just as cleanly, and the reversing is genuinely satisfying — but it ends at a wall that no amount of static analysis can climb, and recognizing that wall <em>early</em> is itself the lesson. The binary builds this URL:</p>
 <pre><code>https://{agency}.gov/static/{md5(password)}/{ID}/{agency}-seal.png
 </code></pre>
-<p>The binary <code>curl</code>s that (with <code>FOLLOWLOCATION</code>), demands HTTP 200 and a PNG of at least 9439 bytes, then plucks the flag straight out of the image bytes:</p>
-<pre><code class="language-c">for (i = 0; i &lt; 33; i++) flag[i] = seal_png[OFFSETS[i]];  // 33 hard-coded offsets
-// verifies flag starts with &quot;v1t&quot;; never prints it
+<p>Notes that matter:</p>
+<ul>
+<li><code>agency</code> is used <strong>twice</strong> (subdomain and the seal filename), the same double-use trick as the license name in <code>diddy</code>.</li>
+<li><code>md5(password)</code> is a directory component — so the password gates <em>which</em> path you fetch, not a local comparison you can brute.</li>
+<li><code>ID</code> is a path segment, likely tied to the <code>deadbeef-diddy</code> user identity from the first challenge.</li>
+</ul>
+<p>It then <code>curl</code>s the URL with <code>FOLLOWLOCATION</code> (it follows redirects), and enforces two checks before it will proceed:</p>
+<ul>
+<li>the response must be <strong>HTTP 200</strong>, and</li>
+<li>the PNG must be <strong>at least 9439 bytes</strong>.</li>
+</ul>
+<p>Only then does it assemble the flag:</p>
+<pre><code class="language-c">for (i = 0; i &lt; 33; i++)
+    flag[i] = seal_png[OFFSETS[i]];   // 33 hard-coded byte offsets into the PNG
+// sanity-checks that flag starts with &quot;v1t&quot;; it never prints the flag
 </code></pre>
-<p>This is where I caught the model trying to &quot;decrypt&quot; something that was never encrypted — there is no local secret to crack. My correction was to recognize that reversing only tells you <em>which</em> bytes to read; the flag is literally 33 bytes lifted from the remote <code>&lt;agency&gt;-seal.png</code>. With the genuine PNG (correct agency/ID/password, <code>ID</code> likely tied to user <code>deadbeef-diddy</code>), you save the file and run the extractor with the 33 hard-coded <code>OFFSETS</code>. Since <code>v1t.site</code> is now behind Cloudflare-JS and the asset isn't local, that final fetch couldn't be completed offline.</p>
+<p>So the entire flag is <strong>33 bytes scattered through the server-side <code>&lt;agency&gt;-seal.png</code></strong>, picked out by 33 hard-coded offsets. The binary contains the <em>recipe</em> (the offsets, the URL template, the size/status gates) but not the <em>ingredient</em> (the actual PNG). To finish it you would need the real <code>&lt;agency&gt;-seal.png</code> — which means the correct <code>agency</code>, <code>ID</code>, and <code>password</code> from the challenge prose — then run the saved extractor with the 33 offsets against the downloaded bytes. By the time I worked through it, <code>v1t.site</code> was behind a Cloudflare JS challenge and the asset was unreachable, so this half stays at &quot;mechanism understood, flag not extracted offline.&quot;</p>
+<p>The takeaway worth internalizing: when a flag is <strong>assembled from bytes of a remote asset</strong>, reversing tells you <em>which bytes</em> and <em>from where</em> — it can never give you the flag without the asset. Time spent in the disassembler after that point is wasted; the remaining work is network/recon, not RE.</p>
 <h2 id="flag">Flag</h2>
-<pre><code>Not recovered offline — the diddy_revenge flag is server-side: 33 bytes selected by hard-coded offsets from the live &lt;agency&gt;-seal.png. Logic fully reversed; the remote asset is required to assemble it. (The base diddy flag is v1t{435_f1b0_w3bs1t3}.)
+<p><strong><code>diddy</code> (recovered):</strong></p>
+<pre><code>v1t{435_f1b0_w3bs1t3}
 </code></pre>
+<p><strong><code>diddy_revenge</code> (NOT recovered offline — partial):</strong> The revenge binary's logic is fully reversed (URL template, MD5-of-password path component, HTTP 200 + ≥9439-byte gates, and the 33 hard-coded offsets that pluck the flag out of <code>&lt;agency&gt;-seal.png</code>). The flag itself is <strong>server-side</strong>: it is 33 bytes of a PNG fetched at runtime, never stored in the binary. With the live asset unreachable (behind Cloudflare-JS) and no local copy of the correct <code>&lt;agency&gt;-seal.png</code>, the flag could not be assembled offline.</p>
+<h2 id="lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</h2>
+<p>This was a &quot;the LLM did the grinding, I did the steering&quot; solve. The model was excellent at translating pseudocode into a working pipeline and at the byte arithmetic; it needed me for the <em>interpretation</em> leaps and for noticing when it confidently produced garbage. Here's what actually moved it forward.</p>
+<p><strong>1. Frame the challenge type before pasting any code.</strong> The single most useful prompt I gave, before any disassembly:</p>
+<blockquote>
+<p>&quot;This is a crackme that does NOT validate input — it reconstructs the flag from a hard-coded blob using my inputs as crypto material. For each input (pet, lucky number, license name) and each embedded blob, tell me whether it's most likely an AES key, an IV, a XOR key, ciphertext, or a URL component, and justify from the decompilation.&quot;</p>
+</blockquote>
+<p>That reframing stopped the model from going down the &quot;find the correct license string that passes the check&quot; rabbit hole — there is no such check. It immediately started classifying blobs by <em>role</em>, which is the whole game here.</p>
+<p><strong>2. Make it name the layered encodings explicitly and count bytes at each stage.</strong> The plumbing is where it slipped. My prompt:</p>
+<blockquote>
+<p>&quot;Trace the embedded array at 0x4120 to the AES ciphertext. State the byte count after EACH transform: int32 -&gt; low byte, XOR with the 31-byte name, then unhex. The final ciphertext must be a multiple of 16 — if it isn't, you got a step wrong.&quot;</p>
+</blockquote>
+<p>The &quot;must be a multiple of 16&quot; constraint is a free oracle. The model's first attempt forgot the <em>low-byte</em> extraction and treated the int32s as raw little-endian bytes, producing a length that wasn't a clean 48 — the length check caught it instantly. I also told it explicitly: <strong>the AES plaintext is itself ASCII-hex; decode it one more time</strong> — without that nudge it stopped at <code>7631747b...</code> and declared the key wrong.</p>
+<p><strong>3. Tell it which dead-ends to avoid.</strong> I explicitly steered it off two wrong paths:</p>
+<blockquote>
+<p>&quot;Do NOT brute-force or guess the license name; it's the literal companion filename and it's reused as the XOR key — treat it as known. And do NOT try to recover diddy_revenge's flag from the binary: it is bytes of a remote PNG. Only extract the URL template, the size/status gates, and the 33 offsets.&quot;</p>
+</blockquote>
+<p>The second one is the important judgment call. The model wanted to keep searching the binary for a flag string in <code>diddy_revenge</code>. I had to recognize that the flag was never <em>in</em> the binary and tell it to stop — otherwise it burns the whole session re-reading <code>.data</code> looking for something that isn't there.</p>
+<p><strong>How I verified / caught mistakes:</strong> three concrete checks. (a) The companion hex decoding to readable ASCII <code>v1t_435_k3y_frfr</code> is self-verifying — if it had decoded to noise, wrong key. (b) Ciphertext length being a multiple of 16 gated the XOR/unhex plumbing. (c) The final flag's tokens (<code>435</code> / <code>f1b0</code> / <code>w3bs1t3</code>) each map to a pipeline stage (AES / Fibonacci IV / website URL), which is the author's built-in &quot;you did it the intended way&quot; confirmation. When all three line up, you're done — no need to ask the model &quot;are you sure.&quot;</p>
+<p><strong>Fast-path prompt recipe for next time:</strong> <em>&quot;Treat this crackme as flag-reconstruction, not input-validation. Classify each input/blob by crypto role (key/IV/XOR/ciphertext/URL), trace the embedded blob to ciphertext while printing the byte count after every transform and asserting the result is a multiple of 16, then AES-CBC decrypt and hex-decode the plaintext one extra time. If the flag is assembled from a remote asset's bytes, stop reversing and extract only the URL template plus the byte offsets.&quot;</em></p>
     </div>
 
     
@@ -169,7 +281,7 @@ print(binascii.unhexlify(pt.strip()).decode())             # -&gt; v1t{435_f1b0_
     <aside class="post-toc-wrap" aria-hidden="true">
         <nav class="toc" aria-label="Floating table of contents">
             <div class="toc-label">§ TOC — NAVIGATION</div>
-            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-2"><a href="#flag">Flag</a></li></ul>
+            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-3"><a href="#reading-the-binary-s-intent-first">Reading the binary&#039;s intent first</a></li><li class="level-3"><a href="#decoy-1-the-quot-lucky-number-quot-is-the-aes-iv">Decoy #1 — the &amp;quot;lucky number&amp;quot; is the AES IV</a></li><li class="level-3"><a href="#decoy-2-the-license-name-is-both-a-url-path-and-an-xor-key">Decoy #2 — the license name is BOTH a URL path AND an XOR key</a></li><li class="level-3"><a href="#decoy-3-the-companion-file-s-hex-is-the-aes-key">Decoy #3 — the companion file&#039;s hex IS the AES key</a></li><li class="level-3"><a href="#the-embedded-ciphertext-low-bytes-then-unmask-then-unhex">The embedded ciphertext: low bytes, then unmask, then unhex</a></li><li class="level-3"><a href="#putting-the-pipeline-together">Putting the pipeline together</a></li><li class="level-3"><a href="#end-to-end-script">End-to-end script</a></li><li class="level-3"><a href="#diddy-revenge-fully-reversed-but-the-flag-lives-on-the-server">diddy_revenge — fully reversed, but the flag lives on the server</a></li><li class="level-2"><a href="#flag">Flag</a></li><li class="level-2"><a href="#lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</a></li></ul>
         </nav>
     </aside>
 </main>

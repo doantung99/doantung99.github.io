@@ -7,7 +7,7 @@
     <meta name="color-scheme" content="dark">
 
     <title>BootRoot Root of No Return — LazyBlog</title>
-    <meta name="description" content="A Windows 2000 &apos;bootkit&apos; challenge where the real payload lives inside a recovered EXE that writes a 16-bit MBR; the flag is hidden in 19 bytes the boot code decodes with SUB 0x0D but never prints.">
+    <meta name="description" content="Carve a recovered bootkit installer out of a Windows 2000 disk image, disassemble the 512-byte MBR it writes, and reverse a tiny in-memory SUB-0x0D loop to recover a flag the boot code never prints.">
             <meta name="author" content="tungdlm99">
         <meta name="generator" content="LazyBlog 1.11.0">
     <meta name="robots" content="index, follow, max-image-preview:large">
@@ -16,7 +16,7 @@
 
     <!-- Open Graph -->
     <meta property="og:title" content="BootRoot Root of No Return">
-    <meta property="og:description" content="A Windows 2000 &apos;bootkit&apos; challenge where the real payload lives inside a recovered EXE that writes a 16-bit MBR; the flag is hidden in 19 bytes the boot code decodes with SUB 0x0D but never prints.">
+    <meta property="og:description" content="Carve a recovered bootkit installer out of a Windows 2000 disk image, disassemble the 512-byte MBR it writes, and reverse a tiny in-memory SUB-0x0D loop to recover a flag the boot code never prints.">
     <meta property="og:url" content="https://doantung99.github.io/blog/posts/bootroot-root-of-no-return">
     <meta property="og:type" content="article">
     <meta property="og:site_name" content="LazyBlog">
@@ -31,7 +31,7 @@
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary">
     <meta name="twitter:title" content="BootRoot Root of No Return">
-    <meta name="twitter:description" content="A Windows 2000 &apos;bootkit&apos; challenge where the real payload lives inside a recovered EXE that writes a 16-bit MBR; the flag is hidden in 19 bytes the boot code decodes with SUB 0x0D but never prints.">
+    <meta name="twitter:description" content="Carve a recovered bootkit installer out of a Windows 2000 disk image, disassemble the 512-byte MBR it writes, and reverse a tiny in-memory SUB-0x0D loop to recover a flag the boot code never prints.">
         
     <!-- Alternates: machine-readable / AI / RSS -->
             <link rel="alternate" type="text/markdown" href="https://doantung99.github.io/blog/posts/bootroot-root-of-no-return.md">
@@ -41,7 +41,7 @@
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20fill%3D%22%230a0e0a%22%2F%3E%3Ctext%20x%3D%224%22%20y%3D%2224%22%20font-family%3D%22monospace%22%20font-size%3D%2222%22%20fill%3D%22%2339ff14%22%3E%26gt%3B_%3C%2Ftext%3E%3C%2Fsvg%3E">
 
-            <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"BootRoot Root of No Return","description":"A Windows 2000 \u0027bootkit\u0027 challenge where the real payload lives inside a recovered EXE that writes a 16-bit MBR; the flag is hidden in 19 bytes the boot code decodes with SUB 0x0D but never prints.","datePublished":"2026-06-28","dateModified":"2026-06-28","url":"https://doantung99.github.io/blog/posts/bootroot-root-of-no-return","mainEntityOfPage":"https://doantung99.github.io/blog/posts/bootroot-root-of-no-return","inLanguage":"vi","keywords":"ctf, v1t-ctf-2026, rev, ai-assisted","author":{"@type":"Person","name":"tungdlm99"},"publisher":{"@type":"Organization","name":"LazyBlog","url":"https://doantung99.github.io/blog/"}}</script>
+            <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"BootRoot Root of No Return","description":"Carve a recovered bootkit installer out of a Windows 2000 disk image, disassemble the 512-byte MBR it writes, and reverse a tiny in-memory SUB-0x0D loop to recover a flag the boot code never prints.","datePublished":"2026-06-28","dateModified":"2026-06-28","url":"https://doantung99.github.io/blog/posts/bootroot-root-of-no-return","mainEntityOfPage":"https://doantung99.github.io/blog/posts/bootroot-root-of-no-return","inLanguage":"vi","keywords":"ctf, v1t-ctf-2026, rev, ai-assisted","author":{"@type":"Person","name":"tungdlm99"},"publisher":{"@type":"Organization","name":"LazyBlog","url":"https://doantung99.github.io/blog/"}}</script>
     
     <script>
     // Theme bootstrap — server already rendered the configured default on
@@ -74,7 +74,7 @@
 </div>
 
 <header>
-            <div class="callsign">XV5HP // MAYLAB // HẢI PHÒNG</div>
+            <div class="callsign">NAB // Hà Nội</div>
                     <p class="site-brand"><a href="/blog/" class="brand-link">LazyBlog</a></p>
                 <div class="subtitle">// A personal blog transmitting thoughts over imperfect radio waves. Expect noise, fading, and low bandwidth—but always authentic signals.</div>
         <div class="header-actions">
@@ -112,28 +112,150 @@
     
             <nav class="toc toc-inline" aria-label="Table of contents">
             <div class="toc-label">§ TOC — NAVIGATION</div>
-            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-2"><a href="#flag">Flag</a></li></ul>
+            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-3"><a href="#reading-the-shape-of-the-problem-before-touching-a-disassembler">Reading the shape of the problem before touching a disassembler</a></li><li class="level-3"><a href="#step-1-convert-and-confirm-the-disk-is-a-decoy">Step 1 - convert and confirm the disk is a decoy</a></li><li class="level-3"><a href="#step-2-carve-the-exe-out-of-ntfs">Step 2 - carve the EXE out of NTFS</a></li><li class="level-3"><a href="#step-3-what-the-exe-actually-does">Step 3 - what the EXE actually does</a></li><li class="level-3"><a href="#step-4-disassemble-the-embedded-boot-sector-16-bit-org-0x7c00">Step 4 - disassemble the embedded boot sector (16-bit, org 0x7C00)</a></li><li class="level-3"><a href="#step-5-locate-the-encoded-bytes-and-reverse-the-loop">Step 5 - locate the encoded bytes and reverse the loop</a></li><li class="level-3"><a href="#end-to-end-script">End-to-end script</a></li><li class="level-2"><a href="#flag">Flag</a></li><li class="level-2"><a href="#lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</a></li></ul>
         </nav>
     
     <div class="post-body">
         <h2 id="summary">Summary</h2>
-<p>We're handed a Windows 2000 disk image and the story of a bricked machine flashing a red taunt. The disk's boot chain is actually stock — the payload lives inside a recovered <code>eEyeBootRoot2005.exe</code> that writes a 16-bit MBR, and the flag is 19 bytes the boot code decodes in memory (<code>sub byte [bx], 0x0D</code>) but never shows. Static RE plus a one-line decode recovers it.</p>
+<p><code>BootRoot</code> hands you a Windows 2000 <code>qcow2</code> disk and a story about a machine &quot;bricked&quot; by a recovered <code>eEyeBootRoot2005.exe</code> (a nod to the real eEye BootRoot bootkit from Black Hat 2005). The disk itself is a decoy: its MBR and VBR are stock, so the payload lives entirely inside the recovered EXE, which writes a custom 512-byte boot sector to <code>\\.\PhysicalDrive0</code>. The core technique is static RE of that embedded 16-bit boot sector, where a <code>loop</code> runs <code>sub byte [bx], 0x0D</code> over 19 bytes that are decoded in memory but <strong>never displayed</strong> — so the only way to the flag is to reproduce the subtraction by hand.</p>
+<p>This was a human-AI collaboration. The LLM did the grinding: it disassembled the 16-bit blob, traced the BIOS interrupts, and ran the decode arithmetic. My job was prompting and judgment: I recognized the &quot;bootkit installer + embedded MBR&quot; shape, pointed the model at the right artifact instead of letting it rabbit-hole on disk forensics, and caught the one mistake that would have produced a garbage flag (reading the decode op as XOR instead of SUB).</p>
 <h2 id="solution">Solution</h2>
-<p>My read going in: the eEye BootRoot name is a known 2005 PoC bootkit, and the prompt's &quot;reinstalling Windows didn't help&quot; framing smelled like misdirection. So I set the direction early — treat the disk as clean and hunt the payload in the EXE — and let the model do the carving and disassembly.</p>
-<p>I converted the qcow2 to raw and had the model triage the boot chain. It confirmed the MBR (sector 0) was the stock NT MBR and the VBR (sector 63) a stock NTFS record, with the MBR gap zeroed — so nothing was persisted on disk. That matched my hypothesis, so I pivoted it to pull the EXE out of NTFS and reverse it.</p>
-<p>The model triaged the PE (a MinGW/GCC build with DWARF symbols, imports <code>CreateFileA</code>/<code>WriteFile</code>/<code>CloseHandle</code>, references <code>\\.\PhysicalDrive0</code>) and located the 512-byte boot sector built in <code>.data</code> at file offset <code>0x8220</code>, ending in <code>55 AA</code>. I asked it to disassemble that sector as 16-bit code at <code>org 0x7C00</code>. It surfaced the red-screen BIOS calls, the Vietnamese taunt at <code>0x7C34</code>, and a decode loop over 19 bytes at <code>0x7DEB</code>.</p>
-<p>Here's where I caught a wrong turn: the model's first instinct was to read the loop as XOR 0x0D. I had it re-check the raw opcode <code>80 2F 0D</code> — the ModR/M <code>2F</code> has reg field 5, which is group-1 <strong>SUB</strong>, not XOR (<code>/6</code>). XOR produces garbage; SUB produces clean ASCII. With the operation pinned down, the decode is trivial — those 19 bytes sit at sector offset <code>0x1EB</code>, right before the boot signature, and are decoded but never printed.</p>
-<pre><code class="language-python"># boot.bin = the 512-byte sector carved from the EXE:
-#   dd if=eEyeBootRoot2005.exe of=boot.bin bs=1 skip=$((0x8220)) count=512
-data = open(&quot;boot.bin&quot;, &quot;rb&quot;).read()
-enc = data[0x1EB:0x1EB + 0x13]   # 19 encoded bytes, just before the 55 AA signature
-print(bytes((b - 0x0D) &amp; 0xFF for b in enc).decode())
-# -&gt; v1t{12x10_Yen_lang}
+<h3 id="reading-the-shape-of-the-problem-before-touching-a-disassembler">Reading the shape of the problem before touching a disassembler</h3>
+<p>The brief gives away more than it looks. &quot;Bricked, reinstalling Windows didn't help, recovered <code>eEyeBootRoot2005.exe</code> executed right before death&quot; plus a red-screen taunt is the signature of a <strong>bootkit installer</strong>: a normal user-mode program whose only purpose is to overwrite the master boot record so the malicious code runs before the OS. The real eEye BootRoot (Soeder &amp; Permeh, 2005) does exactly this — it hooks <code>INT 13h</code> during boot. So before any tooling, the hypothesis is: the EXE opens the physical drive and writes a 512-byte sector, and the interesting logic is inside that sector, not the EXE's C runtime.</p>
+<p>That hypothesis is what kept the whole solve cheap. It tells you which 512 bytes matter out of a 115 KB binary, and it tells you the disk image is probably a red herring. Both turned out true.</p>
+<h3 id="step-1-convert-and-confirm-the-disk-is-a-decoy">Step 1 - convert and confirm the disk is a decoy</h3>
+<p>The image is <code>qcow2</code>; convert to raw so we can carve sectors and walk the filesystem with ordinary tools:</p>
+<pre><code class="language-bash">qemu-img convert -f qcow2 -O raw V1t_win2k_disk.qcow2 disk.raw
 </code></pre>
-<p>I verified the output by sanity-checking the delimiters: clean <code>v1t{...}</code> with sensible underscores (<code>Yen_lang</code> ~ Vietnamese &quot;yen lang&quot;, silence) confirmed the SUB direction was right.</p>
+<p>Now check the boot chain. This is the step that saves hours, because it proves where the payload is <em>not</em>:</p>
+<ul>
+<li><strong>MBR (sector 0)</strong> is the stock Windows NT MBR. The boot code begins <code>33 C0 8E D0 BC 00 7C</code> (the classic <code>xor ax,ax; mov ss,ax; mov sp,0x7c00</code> prologue) and contains the strings <code>Invalid partition table</code>, <code>Error loading operating system</code>, <code>Missing operating system</code>. That is Microsoft's, not the attacker's.</li>
+<li><strong>VBR (sector 63, the NTFS partition start)</strong> is a stock NTFS boot record — <code>NTLDR is missing</code>, etc.</li>
+<li><strong>Sectors 1-62</strong> (the &quot;MBR gap&quot; where bootkits love to hide stage-2 code) are all zero.</li>
+</ul>
+<p>The taunt string is nowhere in plaintext on the disk either. Conclusion: the disk is clean; &quot;reinstalling didn't help&quot; is pure narrative flavor. The payload only ever existed inside the recovered installer. <strong>Intended path = static RE of the EXE, not disk forensics.</strong> This is the dead-end I most needed to steer the model away from, because &quot;Windows 2000 disk image&quot; screams forensics and an LLM will happily volunteer <code>tsk_recover</code>, registry hive parsing, and Volatility plugins for an hour.</p>
+<h3 id="step-2-carve-the-exe-out-of-ntfs">Step 2 - carve the EXE out of NTFS</h3>
+<p><code>7z</code> reads both the partition table and the NTFS volume directly, no mounting required:</p>
+<pre><code class="language-bash">7z l disk.raw                          # shows partition 0.ntfs at offset 32256 (= sector 63 * 512)
+dd if=disk.raw of=ntfs.img bs=512 skip=63
+7z e ntfs.img &quot;Documents and Settings/test/Desktop/eEyeBootRoot2005.exe&quot; -o./extracted
+</code></pre>
+<pre><code>eEyeBootRoot2005.exe : PE32 executable (console) Intel 80386, for MS Windows  (115873 bytes)
+</code></pre>
+<h3 id="step-3-what-the-exe-actually-does">Step 3 - what the EXE actually does</h3>
+<p>The binary is a <strong>MinGW/GCC</strong> build compiled with <code>-g</code>, so it still carries DWARF <code>.debug_*</code> sections and even the original <code>main.cpp</code> reference. That is a gift — symbols make the C-level logic legible immediately. The imports are minimal and damning: <code>CreateFileA</code>, <code>WriteFile</code>, <code>CloseHandle</code>, plus a reference to the string <code>\\.\PhysicalDrive0</code>. There is no encryption library, no networking, nothing. The EXE opens the raw physical drive and writes a single 512-byte boot sector. It installs an MBR. Hypothesis confirmed.</p>
+<p>Where is that sector? It is a static blob in <code>.data</code>:</p>
+<ul>
+<li>file offset <code>0x8220</code>, virtual address <code>0x409220</code></li>
+<li>the <code>55 AA</code> boot signature sits at file offset <code>0x841E</code> (<code>= 0x8220 + 0x1FE</code>), exactly where a valid boot sector's signature belongs</li>
+</ul>
+<p><code>main()</code> references <code>0x409220</code> repeatedly and hands it to <code>WriteFile</code>. So the 512 bytes at <code>0x8220</code> <em>are</em> the malicious MBR. Carve them:</p>
+<pre><code class="language-bash">dd if=eEyeBootRoot2005.exe of=boot.bin bs=1 skip=$((0x8220)) count=512
+</code></pre>
+<h3 id="step-4-disassemble-the-embedded-boot-sector-16-bit-org-0x7c00">Step 4 - disassemble the embedded boot sector (16-bit, org 0x7C00)</h3>
+<p>A boot sector is loaded by the BIOS at linear <code>0x7C00</code> and runs in 16-bit real mode. You must tell the disassembler both facts or the addresses and operands come out wrong:</p>
+<pre><code class="language-bash">r2 -q -a x86 -b 16 -m 0x7c00 -c &quot;e asm.bits=16; pd 40 @ 0x7c00&quot; boot.bin
+</code></pre>
+<pre><code class="language-asm">7c00  mov ah, 6          ; INT 10h AH=6 -&gt; scroll/clear window
+7c02  mov al, 0          ;   AL=0 -&gt; clear the entire window
+7c04  mov bh, 0x4F       ;   attribute 0x4F = RED background, white text  &lt;- the &quot;red screen&quot;
+7c06  mov cx, 0          ;   top-left  (row 0, col 0)
+7c09  mov dx, 0x184f     ;   bottom-right (row 0x18=24, col 0x4F=79)
+7c0c  int 0x10
+7c0e  mov ah, 2          ; INT 10h AH=2 -&gt; set cursor position
+...
+7c18  mov si, 0x7c34     ; -&gt; &quot;Bo may de dia chi lai roi, co gioi thi tim toi va chan bo may de&quot;
+7c1b  lodsb              ; teletype-print the taunt until NUL
+7c1c  or al, al
+7c1e  je 0x7c26
+7c20  mov ah, 0x0e       ; INT 10h AH=0Eh -&gt; teletype output
+7c22  int 0x10
+7c24  jmp 0x7c1b
+7c26  mov bx, 0x7deb     ; decode target
+7c29  mov cx, 0x13       ; 19 bytes
+7c2c  sub byte [bx], 0x0d ; &lt;-- DECODE LOOP: subtract 0x0D from each byte
+7c2f  inc bx
+7c30  loop 0x7c2c
+7c32  jmp 0x7c32         ; halt forever  (this is what &quot;bricks&quot; the boot)
+</code></pre>
+<p>Read top to bottom this is a complete little program:</p>
+<ol>
+<li><code>INT 10h / AH=06h</code> clears the screen with attribute <code>0x4F</code> — red background, white foreground. That is the &quot;red screen&quot; from the story, encoded as a single attribute byte.</li>
+<li>A <code>lodsb</code> + <code>INT 10h / AH=0Eh</code> loop teletypes the Vietnamese taunt at <code>0x7C34</code>: <em>&quot;Bo may de dia chi lai roi, co gioi thi tim toi va chan bo may de&quot;</em> — roughly &quot;I left my address; if you're any good, come find me and stop me.&quot; This is the visible message.</li>
+<li>The payload: <code>mov bx,0x7deb; mov cx,0x13; sub byte [bx],0x0d; inc bx; loop</code> decodes 19 bytes in place.</li>
+<li><code>jmp $</code> spins forever, so the machine never boots. That is the &quot;brick.&quot;</li>
+</ol>
+<p>The crucial observation: <strong>the decode loop writes its result into memory but nothing ever prints it.</strong> The taunt-printing loop already finished before the decode runs, and after decoding the CPU just halts. So the decoded 19 bytes are pure CTF payload — visible only to someone who reverses the loop. That is the flag.</p>
+<h3 id="step-5-locate-the-encoded-bytes-and-reverse-the-loop">Step 5 - locate the encoded bytes and reverse the loop</h3>
+<p>The sector loads at <code>0x7C00</code>, and the loop targets <code>0x7DEB</code>. Convert to a file offset within <code>boot.bin</code>:</p>
+<pre><code>0x7DEB - 0x7C00 = 0x1EB        (offset within the 512-byte sector)
+</code></pre>
+<p>Within the full EXE that is <code>0x8220 + 0x1EB = 0x840B</code> — the 19 bytes sitting immediately before the <code>55 AA</code> signature, exactly the &quot;spare&quot; space at the end of a boot sector where you would tuck hidden data. Length <code>0x13 = 19</code> bytes.</p>
+<p>Now the one subtlety that decides success or failure: <strong>the decode is SUB, not XOR.</strong> The raw opcode bytes are <code>80 2F 0D</code>. In <code>80 /n</code>, the ModR/M byte <code>2F</code> has reg field = <code>101b = 5</code>, and group-1 reg <code>/5</code> is <strong>SUB</strong>; <code>/6</code> would be XOR. Getting this backwards is the natural LLM mistake here, because a &quot;single-byte transform over a buffer with constant <code>0x0D</code>&quot; pattern-matches to XOR in any model's training distribution. XOR with <code>0x0D</code> produces garbage; SUB produces clean printable ASCII with <code>v1t{</code> and <code>}</code> delimiters. The disassembler, the opcode decode, and the output all agree — it is subtraction.</p>
+<h3 id="end-to-end-script">End-to-end script</h3>
+<p>This takes the carved EXE to the printed flag, doing the carve math and the decode in one place. The encoded bytes are read straight out of the EXE so nothing is hardcoded except the well-justified offsets.</p>
+<pre><code class="language-python">#!/usr/bin/env python3
+# BootRoot - recover the flag from the embedded boot sector.
+# Input: eEyeBootRoot2005.exe (carved from the NTFS volume on the qcow2).
+
+EXE = &quot;eEyeBootRoot2005.exe&quot;
+
+# The 512-byte malicious boot sector is a static .data blob.
+SECTOR_FILE_OFF = 0x8220             # file offset of the boot sector inside the EXE
+LOAD_BASE       = 0x7C00            # BIOS loads a boot sector here in real mode
+
+# Decode loop from the disassembly:
+#   mov bx, 0x7DEB ; mov cx, 0x13 ; sub byte [bx], 0x0D ; inc bx ; loop
+DECODE_VADDR = 0x7DEB               # in-memory address the loop walks
+DECODE_LEN   = 0x13                # 19 bytes
+DELTA        = 0x0D                # SUB constant (opcode 80 2F 0D = SUB, reg field /5 -- NOT XOR)
+
+with open(EXE, &quot;rb&quot;) as f:
+    exe = f.read()
+
+# Sanity check: the boot signature must be at sector offset 0x1FE.
+sector = exe[SECTOR_FILE_OFF:SECTOR_FILE_OFF + 512]
+assert sector[0x1FE:0x200] == b&quot;\x55\xAA&quot;, &quot;boot signature 55 AA not found - wrong offset&quot;
+
+# Map the in-memory decode address back to a sector offset, then read the encoded bytes.
+sector_off = DECODE_VADDR - LOAD_BASE       # 0x7DEB - 0x7C00 = 0x1EB
+enc = sector[sector_off:sector_off + DECODE_LEN]
+# enc = 83 3e 81 88 3e 3f 85 3e 3d 6c 66 72 7b 6c 79 6e 7b 74 8a
+
+flag = bytes((b - DELTA) &amp; 0xFF for b in enc).decode(&quot;ascii&quot;)
+print(flag)
+</code></pre>
+<p>Output:</p>
+<pre><code>v1t{12x10_Yen_lang}
+</code></pre>
+<p>The result carries the <code>v1t{</code>/<code>}</code> delimiters and clean underscores, which is the verification signal that the SUB direction was right. <code>Yen_lang</code> reads as the Vietnamese <em>&quot;yen lang&quot;</em> (&quot;silence&quot;), fitting the bootkit's &quot;no return&quot; theme.</p>
 <h2 id="flag">Flag</h2>
 <pre><code>v1t{12x10_Yen_lang}
 </code></pre>
+<h2 id="lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</h2>
+<p>This challenge is a great template for how to drive an LLM through a &quot;bootkit installer + hidden boot-sector payload&quot; problem fast. The model is excellent at the mechanical parts (disassembly, opcode decoding, byte arithmetic) and reliably bad at one thing (it pattern-matches single-byte transforms to XOR). Steer accordingly.</p>
+<p><strong>1. Set the hypothesis before letting it explore.</strong> The single most valuable prompt was the one that named the shape and forbade the wrong direction:</p>
+<blockquote>
+<p>&quot;This is a recovered bootkit <em>installer</em> (<code>eEyeBootRoot2005.exe</code>) plus a Windows 2000 disk image. First verify whether the disk's MBR (sector 0) and NTFS VBR (sector 63) are stock or modified — check for <code>Invalid partition table</code> / <code>NTLDR is missing</code> strings and the <code>33 C0 8E D0</code> MBR prologue. If they're stock, the disk is a decoy and the payload is a 512-byte boot sector embedded in the EXE's <code>.data</code>. Do NOT run Volatility, registry, or filesystem-timeline forensics until we've ruled out the static-RE path.&quot;</p>
+</blockquote>
+<p>That one paragraph collapsed the search space. Without the explicit &quot;do not run forensics,&quot; the model wanted to treat &quot;Windows 2000 image&quot; as a memory/disk forensics challenge and would have burned the session on <code>tsk_recover</code>, hive parsing, and timeline analysis.</p>
+<p><strong>2. Pin the disassembly mode, or every address is wrong.</strong> Boot sectors are 16-bit real mode at org <code>0x7C00</code>. I told the model exactly that:</p>
+<blockquote>
+<p>&quot;Carve 512 bytes at file offset <code>0x8220</code> from the EXE (the <code>55 AA</code> signature should land at <code>0x841E</code>). Disassemble as 16-bit x86 with origin <code>0x7C00</code>. Identify every <code>INT 10h</code> call by AH value, and find any in-memory write/decode loop — give me the target address, byte count, and the exact opcode bytes of the transform instruction.&quot;</p>
+</blockquote>
+<p>Asking for &quot;the exact opcode bytes of the transform instruction&quot; is what set up the SUB-vs-XOR catch. If you let the model just <em>describe</em> the loop in prose, it will write &quot;XORs each byte with 0x0D&quot; and you will never know.</p>
+<p><strong>3. The dead-ends to name explicitly:</strong></p>
+<ul>
+<li>Forensics tooling on the disk — it is stock. Tell the model the MBR/VBR are Microsoft's and move on.</li>
+<li>Assuming XOR for the decode loop. Make the model decode the actual ModR/M: in <code>80 /n</code>, reg field <code>/5</code> = SUB, <code>/6</code> = XOR. The opcode here is <code>80 2F 0D</code>, and <code>2F</code> -&gt; reg <code>101b</code> = 5 = SUB.</li>
+<li>Trying to find the flag string on disk or in the EXE in plaintext — it is encoded, only materialized in memory at runtime, and never printed.</li>
+</ul>
+<p><strong>4. How I caught the mistakes and verified.</strong> When the model first produced an XOR-with-<code>0x0D</code> decode, the output was non-printable garbage with no <code>v1t{</code>. That failed output <em>is</em> the verification: a CTF flag must be printable ASCII and start with <code>v1t{</code>. I fed that back —</p>
+<blockquote>
+<p>&quot;That output is garbage and has no <code>v1t{</code> prefix. Recheck the transform opcode <code>80 2F 0D</code> — decode the ModR/M reg field and tell me whether it's SUB or XOR, then redo the decode.&quot;</p>
+</blockquote>
+<p>— and the model self-corrected to SUB, which immediately produced <code>v1t{12x10_Yen_lang}</code>. The double check at the end (signature <code>55 AA</code> at offset <code>0x1FE</code>, plus the <code>v1t{...}</code> delimiters in the result) confirmed both the offset math and the operation. My judgment was the loop: <em>if the decoded bytes aren't printable and brace-delimited, the transform or offset is wrong</em> — and I refused to accept the first answer that violated that.</p>
+<p><strong>Fast-path prompt recipe for next time:</strong> &quot;Recovered bootkit installer writes a 512-byte MBR — verify the disk's MBR/VBR are stock (decoy), carve the boot sector from <code>.data</code> (<code>55 AA</code> at +0x1FE), disassemble as 16-bit org 0x7C00, find the in-memory decode loop, and decode the actual ModR/M (<code>80 /5</code> = SUB, not XOR) — flag is the buffer the loop writes but never prints, so it must come out as printable <code>v1t{...}</code>.&quot;</p>
     </div>
 
     
@@ -155,7 +277,7 @@ print(bytes((b - 0x0D) &amp; 0xFF for b in enc).decode())
     <aside class="post-toc-wrap" aria-hidden="true">
         <nav class="toc" aria-label="Floating table of contents">
             <div class="toc-label">§ TOC — NAVIGATION</div>
-            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-2"><a href="#flag">Flag</a></li></ul>
+            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-3"><a href="#reading-the-shape-of-the-problem-before-touching-a-disassembler">Reading the shape of the problem before touching a disassembler</a></li><li class="level-3"><a href="#step-1-convert-and-confirm-the-disk-is-a-decoy">Step 1 - convert and confirm the disk is a decoy</a></li><li class="level-3"><a href="#step-2-carve-the-exe-out-of-ntfs">Step 2 - carve the EXE out of NTFS</a></li><li class="level-3"><a href="#step-3-what-the-exe-actually-does">Step 3 - what the EXE actually does</a></li><li class="level-3"><a href="#step-4-disassemble-the-embedded-boot-sector-16-bit-org-0x7c00">Step 4 - disassemble the embedded boot sector (16-bit, org 0x7C00)</a></li><li class="level-3"><a href="#step-5-locate-the-encoded-bytes-and-reverse-the-loop">Step 5 - locate the encoded bytes and reverse the loop</a></li><li class="level-3"><a href="#end-to-end-script">End-to-end script</a></li><li class="level-2"><a href="#flag">Flag</a></li><li class="level-2"><a href="#lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</a></li></ul>
         </nav>
     </aside>
 </main>

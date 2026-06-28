@@ -7,7 +7,7 @@
     <meta name="color-scheme" content="dark">
 
     <title>Scary Duck — LazyBlog</title>
-    <meta name="description" content="An MP4 with an appended password-protected ZIP, whose password is split between a binary block in the last frame and FSK tones in the last audio, then a final Base62 unwrap of the decrypted plaintext.">
+    <meta name="description" content="An MP4 with an appended password-protected ZIP whose password is split across a 1-bit image block and an 8-tone audio sequence, with the flag hidden behind XOR + reverse + Base62.">
             <meta name="author" content="tungdlm99">
         <meta name="generator" content="LazyBlog 1.11.0">
     <meta name="robots" content="index, follow, max-image-preview:large">
@@ -16,7 +16,7 @@
 
     <!-- Open Graph -->
     <meta property="og:title" content="Scary Duck">
-    <meta property="og:description" content="An MP4 with an appended password-protected ZIP, whose password is split between a binary block in the last frame and FSK tones in the last audio, then a final Base62 unwrap of the decrypted plaintext.">
+    <meta property="og:description" content="An MP4 with an appended password-protected ZIP whose password is split across a 1-bit image block and an 8-tone audio sequence, with the flag hidden behind XOR + reverse + Base62.">
     <meta property="og:url" content="https://doantung99.github.io/blog/posts/scary-duck">
     <meta property="og:type" content="article">
     <meta property="og:site_name" content="LazyBlog">
@@ -25,13 +25,13 @@
                     <meta property="article:author" content="tungdlm99">
                             <meta property="article:tag" content="ctf">
                     <meta property="article:tag" content="v1t-ctf-2026">
-                    <meta property="article:tag" content="forensics">
+                    <meta property="article:tag" content="misc">
                     <meta property="article:tag" content="ai-assisted">
             
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary">
     <meta name="twitter:title" content="Scary Duck">
-    <meta name="twitter:description" content="An MP4 with an appended password-protected ZIP, whose password is split between a binary block in the last frame and FSK tones in the last audio, then a final Base62 unwrap of the decrypted plaintext.">
+    <meta name="twitter:description" content="An MP4 with an appended password-protected ZIP whose password is split across a 1-bit image block and an 8-tone audio sequence, with the flag hidden behind XOR + reverse + Base62.">
         
     <!-- Alternates: machine-readable / AI / RSS -->
             <link rel="alternate" type="text/markdown" href="https://doantung99.github.io/blog/posts/scary-duck.md">
@@ -41,7 +41,7 @@
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20fill%3D%22%230a0e0a%22%2F%3E%3Ctext%20x%3D%224%22%20y%3D%2224%22%20font-family%3D%22monospace%22%20font-size%3D%2222%22%20fill%3D%22%2339ff14%22%3E%26gt%3B_%3C%2Ftext%3E%3C%2Fsvg%3E">
 
-            <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Scary Duck","description":"An MP4 with an appended password-protected ZIP, whose password is split between a binary block in the last frame and FSK tones in the last audio, then a final Base62 unwrap of the decrypted plaintext.","datePublished":"2026-06-28","dateModified":"2026-06-28","url":"https://doantung99.github.io/blog/posts/scary-duck","mainEntityOfPage":"https://doantung99.github.io/blog/posts/scary-duck","inLanguage":"vi","keywords":"ctf, v1t-ctf-2026, forensics, ai-assisted","author":{"@type":"Person","name":"tungdlm99"},"publisher":{"@type":"Organization","name":"LazyBlog","url":"https://doantung99.github.io/blog/"}}</script>
+            <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Scary Duck","description":"An MP4 with an appended password-protected ZIP whose password is split across a 1-bit image block and an 8-tone audio sequence, with the flag hidden behind XOR + reverse + Base62.","datePublished":"2026-06-28","dateModified":"2026-06-28","url":"https://doantung99.github.io/blog/posts/scary-duck","mainEntityOfPage":"https://doantung99.github.io/blog/posts/scary-duck","inLanguage":"vi","keywords":"ctf, v1t-ctf-2026, misc, ai-assisted","author":{"@type":"Person","name":"tungdlm99"},"publisher":{"@type":"Organization","name":"LazyBlog","url":"https://doantung99.github.io/blog/"}}</script>
     
     <script>
     // Theme bootstrap — server already rendered the configured default on
@@ -74,7 +74,7 @@
 </div>
 
 <header>
-            <div class="callsign">XV5HP // MAYLAB // HẢI PHÒNG</div>
+            <div class="callsign">NAB // Hà Nội</div>
                     <p class="site-brand"><a href="/blog/" class="brand-link">LazyBlog</a></p>
                 <div class="subtitle">// A personal blog transmitting thoughts over imperfect radio waves. Expect noise, fading, and low bandwidth—but always authentic signals.</div>
         <div class="header-actions">
@@ -112,59 +112,172 @@
     
             <nav class="toc toc-inline" aria-label="Table of contents">
             <div class="toc-label">§ TOC — NAVIGATION</div>
-            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-2"><a href="#flag">Flag</a></li></ul>
+            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-3"><a href="#step-0-reading-the-shape-of-the-problem">Step 0 — Reading the shape of the problem</a></li><li class="level-3"><a href="#step-1-finding-the-appended-zip">Step 1 — Finding the appended ZIP</a></li><li class="level-3"><a href="#step-2-the-visual-half-of-the-password-last-frame-gt-inverted-bits">Step 2 — The visual half of the password (last frame -&amp;gt; inverted bits)</a></li><li class="level-3"><a href="#step-3-the-audio-half-last-3-seconds-gt-tone-frequencies-gt-hex">Step 3 — The audio half (last 3 seconds -&amp;gt; tone frequencies -&amp;gt; hex)</a></li><li class="level-3"><a href="#step-4-open-the-lock">Step 4 — Open the lock</a></li><li class="level-3"><a href="#step-5-the-final-base62-layer-and-the-complete-script">Step 5 — The final Base62 layer, and the complete script</a></li><li class="level-2"><a href="#flag">Flag</a></li><li class="level-2"><a href="#lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</a></li></ul>
         </nav>
     
     <div class="post-body">
         <h2 id="summary">Summary</h2>
-<p>We got a single MP4 that hid a password-protected ZIP appended after the video data. The password was split in two halves — an inverted 8x4 binary block in the last frame and eight frequency-mapped tones in the last three seconds of audio — and the decrypted payload still needed one more Base62 unwrap to reveal the flag. I steered, the model did the carving and decoding.</p>
+<p>Scary Duck is a layered stego/forensics puzzle that ships as a single MP4. Hidden in the file is an appended, password-protected ZIP, and the password is split into two halves carried by two different media channels: the upper bytes encoded as eight discrete audio tones in the final three seconds, and the lower bytes encoded as a tiny inverted black-and-white pixel grid in the last frame. Recover both halves, unzip, then peel back the encoder's own pipeline (Base64 -&gt; XOR with that same password -&gt; byte-reverse) and a final Base62 layer to print the flag.</p>
+<p>The honest framing of this writeup: the LLM did the grinding — pixel thresholding, frequency-to-hex arithmetic, modular-XOR loops, Base62 big-integer conversion. My job was recognizing the challenge shape, pointing the model at the right artifact at each step, and catching the two places where it confidently went the wrong way. I steered; it solved.</p>
 <h2 id="solution">Solution</h2>
-<p>I pegged this as a layered media-stego challenge the moment I saw a short MP4 that was &quot;too big,&quot; so I set the direction: assume something is appended, then assume the visible/audible hints near the end carry a key. I had the model triage the container first — <code>ffprobe</code> plus a byte scan turned up a <code>PK\x03\x04</code> signature at offset <code>9124676</code>, and <code>dd</code> carved out <code>embedded.zip</code> (containing <code>solver.py</code> and <code>flag.enc</code>, password-protected).</p>
-<p>Then I split the recovery into two prompts. First, &quot;pull the last frame and read the black/white block as bits&quot; — the model extracted <code>last_frame.png</code>, cropped the rectangle to an 8x4 grid, and read <code>29 11 d0 22</code>. It initially handed me those raw bytes as the password half; I caught that and pointed it back to the challenge's expectation of <em>inverted</em> bits, giving <code>d6ee2fdd</code>. Second, &quot;spectrogram the last 3 seconds and map the tones&quot; — eight tones spaced 150 Hz from 600 Hz decode via <code>(freq-600)/150</code> into <code>0b8b243e</code>. Concatenated: <code>0b8b243ed6ee2fdd</code>.</p>
-<p>That hex string is both the ZIP password and the raw 8-byte XOR key. I had the model invert <code>solver.py</code>'s pipeline (base64 -&gt; XOR -&gt; reverse), which produced <code>-0day-...-RCE-</code>; I recognized the middle as Base62 and had it do the final decode. One script that runs end to end:</p>
+<h3 id="step-0-reading-the-shape-of-the-problem">Step 0 — Reading the shape of the problem</h3>
+<p>The first judgment call is the cheapest and the most important: deciding <em>what kind</em> of challenge this is before touching a single tool. A misc/forensics MP4 that is suspiciously large is almost always a carrier file with something appended past the end of the real media stream. Players overthink this constantly — they go hunting for steganography inside frames before checking whether the container even ends where it claims to.</p>
+<p>So my opening prompt to the model set the frame deliberately, and told it explicitly <em>not</em> to jump to frame-stego yet:</p>
+<blockquote>
+<p>&quot;I have an MP4 from a forensics CTF. Before any pixel or audio stego, check the boring stuff first: is the file bigger than the media warrants, and is there a non-MP4 file signature appended after the <code>moov</code>/<code>mdat</code> data? Search the raw bytes for archive magic (<code>PK\x03\x04</code>, <code>Rar!</code>, <code>7z</code>, gzip) and report the offset and the trailing byte count.&quot;</p>
+</blockquote>
+<p>That keeps the model on the highest-probability path instead of burning time on a red herring.</p>
+<h3 id="step-1-finding-the-appended-zip">Step 1 — Finding the appended ZIP</h3>
+<p><code>ffprobe challenge.mp4</code> shows a short clip, but the on-disk size is far larger than a clip that length should be. That size mismatch is the tell. A raw byte scan for the local-file-header magic confirms it:</p>
+<pre><code class="language-python">from pathlib import Path
+p = Path(&quot;challenge.mp4&quot;).read_bytes()
+print(p.find(b&quot;PK\x03\x04&quot;))   # -&gt; 9124676
+print(len(p))                  # -&gt; 9125580
+</code></pre>
+<p>The ZIP local file header <code>PK\x03\x04</code> lives at offset <code>9124676</code>, and the file is <code>9125580</code> bytes long. Everything from that offset to EOF is a complete ZIP appended to a valid MP4. MP4 players happily ignore trailing bytes, and ZIP readers happily ignore leading bytes (ZIP is parsed from its end-of-central-directory record backwards), so the same blob is simultaneously a valid video and a valid archive. Carve it out:</p>
+<pre><code class="language-bash">dd if=challenge.mp4 of=embedded.zip bs=1 skip=9124676 status=none
+unzip -l embedded.zip
+</code></pre>
+<p>Contents:</p>
+<pre><code class="language-text">solver.py
+flag.enc
+</code></pre>
+<p>The archive is encrypted. <code>unzip -l</code> lists names fine (the central directory file names aren't encrypted), but extracting demands a password. That password is not in the archive — it's hidden back in the <em>media</em> part of the file. This is the core mechanic of the challenge: the video is the key, the trailer is the lock.</p>
+<h3 id="step-2-the-visual-half-of-the-password-last-frame-gt-inverted-bits">Step 2 — The visual half of the password (last frame -&gt; inverted bits)</h3>
+<p>Pull the final frame. <code>-sseof -0.1</code> seeks to 0.1s before end-of-file, and <code>-update 1</code> keeps overwriting a single output image so you land on the genuine last decodable frame:</p>
+<pre><code class="language-bash">ffmpeg -sseof -0.1 -i challenge.mp4 -update 1 last_frame.png
+</code></pre>
+<p>The frame contains a small black/white rectangle. The key insight is that it is not decorative — it's a low-resolution bitmap where each cell is one bit. The whole block is 8 cells wide by 4 cells tall: 32 bits = 4 bytes. The work is to crop <em>exactly</em> the block, downsample to the logical 8x4 grid with nearest-neighbour (so cells don't blur into each other), and threshold to 1-bit:</p>
+<pre><code class="language-python">from PIL import Image
+img = Image.open(&quot;last_frame.png&quot;).convert(&quot;L&quot;)
+# crop coordinates found by eye on the full-res frame
+crop = img.crop((x1, y1, x2, y2)).resize((8, 4), Image.Resampling.NEAREST)
+crop.save(&quot;last_frame_8x4.png&quot;)
+</code></pre>
+<p>Reading the thresholded grid row by row gives:</p>
+<pre><code class="language-text">00101001
+00010001
+11010000
+00100010
+</code></pre>
+<p>Each row is a byte:</p>
+<pre><code class="language-text">29 11 d0 22
+</code></pre>
+<p>Here is the first place the model needed steering, and the first dead-end worth naming. The naive reading <code>2911d022</code> is <em>wrong</em>. The challenge inverts the bits of this block. I only caught it because <code>2911d022</code> produced a password that failed to unzip — the verification step (does the ZIP actually open?) is what flagged the mistake, not cleverness. Bitwise-NOT each byte:</p>
+<pre><code class="language-text">~29 = d6
+~11 = ee
+~d0 = 2f
+~22 = dd
+</code></pre>
+<p>Visual half of the password: <code>d6ee2fdd</code>.</p>
+<p>The gotcha generalises: when a stego value &quot;looks like data but isn't accepted,&quot; try the obvious transforms — invert, reverse, endian-swap — and let the lock (the password check) be your oracle. Don't theorise about which one; the unzip either works or it doesn't.</p>
+<h3 id="step-3-the-audio-half-last-3-seconds-gt-tone-frequencies-gt-hex">Step 3 — The audio half (last 3 seconds -&gt; tone frequencies -&gt; hex)</h3>
+<p>The other half lives in sound. Carve the final three seconds to a clean mono WAV and render a spectrogram:</p>
+<pre><code class="language-bash">ffmpeg -sseof -3 -i challenge.mp4 -vn -ac 1 -ar 44100 last3.wav
+sox last3.wav -n spectrogram -o last3_spectrogram.png
+</code></pre>
+<p>The spectrogram shows eight distinct horizontal bars in sequence — eight pure tones, each one a symbol. Reading their frequencies left to right:</p>
+<pre><code class="language-text">600, 2250, 1800, 2250, 900, 1200, 1050, 2700 Hz
+</code></pre>
+<p>The structure is the insight: the tones are quantised on a 150 Hz grid starting at 600 Hz. That is a deliberate encoding, not noise. Each tone maps to a single hex digit with a clean linear formula:</p>
+<pre><code class="language-text">value = (frequency - 600) / 150
+</code></pre>
+<p>Decoding:</p>
+<pre><code class="language-text">600  -&gt; 0      2250 -&gt; b      1800 -&gt; 8      2250 -&gt; b
+900  -&gt; 2      1200 -&gt; 4      1050 -&gt; 3      2700 -&gt; e
+</code></pre>
+<p>Audio half: <code>0b8b243e</code>.</p>
+<p>This is the second place steering mattered. My first instinct (and the model's) was to assume DTMF or some standard tone alphabet. Wrong frame. Once I told the model &quot;these are evenly spaced custom tones, find the base frequency and the step, then map each to a digit,&quot; the 150 Hz grid fell out immediately. The lesson: don't make the model pattern-match to a famous scheme; make it <em>measure the structure that's actually there.</em></p>
+<p>The full 16-hex-digit ZIP password is audio-then-visual:</p>
+<pre><code class="language-text">0b8b243e d6ee2fdd  -&gt;  0b8b243ed6ee2fdd
+</code></pre>
+<h3 id="step-4-open-the-lock">Step 4 — Open the lock</h3>
+<pre><code class="language-bash">unzip -P 0b8b243ed6ee2fdd embedded.zip -d extracted
+</code></pre>
+<p>It opens. That successful extraction is the verification that <em>both</em> halves — including the bit-inversion in Step 2 — are correct. Inside:</p>
+<pre><code class="language-text">solver.py
+flag.enc
+</code></pre>
+<p><code>solver.py</code> is the gift: it documents the exact encoder used to produce <code>flag.enc</code>:</p>
+<pre><code class="language-python">@base64_layer
+@xor_layer
+@reverse_layer
+def encode(data: bytes) -&gt; bytes:
+    return data
+</code></pre>
+<p>Decorators apply bottom-up at call time, so encoding ran <code>reverse -&gt; xor -&gt; base64</code>. To decode you invert in the opposite order: <strong>Base64-decode, then XOR, then reverse.</strong> And the XOR key is the same 16-hex-digit password, read as 8 raw bytes:</p>
+<pre><code class="language-text">0b 8b 24 3e d6 ee 2f dd
+</code></pre>
+<h3 id="step-5-the-final-base62-layer-and-the-complete-script">Step 5 — The final Base62 layer, and the complete script</h3>
+<p>Running the three inverse layers does <em>not</em> immediately give a <code>V1T{...}</code> string. It gives:</p>
+<pre><code class="language-text">-0day-I05Dqrhk0WASzcVa4EovsSduXJpFxRpKbjORsM9-RCE-
+</code></pre>
+<p>This was the third potential dead-end. It is tempting to declare victory or to start brute-forcing — but the <code>-0day-...-RCE-</code> wrapper is a frame, and the high-entropy middle (mixed-case alphanumerics, no symbols) is a textbook Base62-encoded big integer. Strip the wrapper, Base62-decode the core to bytes, and the flag appears. Here is the single end-to-end script, from the raw challenge file to the printed flag:</p>
 <pre><code class="language-python">#!/usr/bin/env python3
+&quot;&quot;&quot;Scary Duck — full solve: challenge.mp4 -&gt; flag.&quot;&quot;&quot;
 import base64, subprocess
 from pathlib import Path
-from PIL import Image
 
-# --- Step 1: carve the appended ZIP from the MP4 ---
-blob = Path(&quot;challenge.mp4&quot;).read_bytes()
-off = blob.find(b&quot;PK\x03\x04&quot;)
-Path(&quot;embedded.zip&quot;).write_bytes(blob[off:])
+# --- Step 1: carve the appended ZIP ---------------------------------------
+data = Path(&quot;challenge.mp4&quot;).read_bytes()
+off = data.find(b&quot;PK\x03\x04&quot;)
+Path(&quot;embedded.zip&quot;).write_bytes(data[off:])
 
-# --- Step 2: password = audio half + visual half ---
-# Visual half: inverted bytes of the 8x4 binary block in the last frame.
-visual_block = [0x29, 0x11, 0xd0, 0x22]          # read from last_frame_8x4.png
-visual = bytes((~b) &amp; 0xFF for b in visual_block).hex()   # -&gt; d6ee2fdd
+# --- Step 2 &amp; 3: reconstruct the 16-hex password --------------------------
+# Visual half (last_frame 8x4 grid), bit-INVERTED:
+visual_rows = [&quot;00101001&quot;, &quot;00010001&quot;, &quot;11010000&quot;, &quot;00100010&quot;]
+visual = bytes((~int(r, 2)) &amp; 0xFF for r in visual_rows)        # d6 ee 2f dd
 
-# Audio half: eight FSK tones, value = (freq - 600) / 150 -&gt; hex digit.
+# Audio half: eight tones on a 150 Hz grid from 600 Hz -&gt; hex digits:
 tones = [600, 2250, 1800, 2250, 900, 1200, 1050, 2700]
-audio = &quot;&quot;.join(f&quot;{(f - 600)//150:x}&quot; for f in tones)     # -&gt; 0b8b243e
+audio = bytes.fromhex(&quot;&quot;.join(f&quot;{(f - 600)//150:x}&quot; for f in tones))  # 0b 8b 24 3e
 
-password = audio + visual                          # 0b8b243ed6ee2fdd
-key = bytes.fromhex(password)
+key = audio + visual                                            # 0b8b243ed6ee2fdd
+password = key.hex()
 
-# --- Step 3: extract the protected ZIP with that password ---
-subprocess.run([&quot;unzip&quot;, &quot;-o&quot;, &quot;-P&quot;, password, &quot;embedded.zip&quot;, &quot;-d&quot;, &quot;extracted&quot;], check=True)
+# --- Step 4: extract the password-protected ZIP ---------------------------
+subprocess.run([&quot;unzip&quot;, &quot;-o&quot;, &quot;-P&quot;, password, &quot;embedded.zip&quot;, &quot;-d&quot;, &quot;extracted&quot;],
+               check=True)
 
-# --- Step 4: invert solver.py pipeline (base64 -&gt; xor -&gt; reverse) ---
-ct = Path(&quot;extracted/flag.enc&quot;).read_bytes().strip()
+# --- Step 5: undo encoder pipeline (b64 -&gt; xor -&gt; reverse), then Base62 ---
+ct  = Path(&quot;extracted/flag.enc&quot;).read_bytes().strip()
 raw = base64.b64decode(ct)
 xored = bytes(b ^ key[i % len(key)] for i, b in enumerate(raw))
-mid = xored[::-1].decode()                          # -0day-&lt;base62&gt;-RCE-
+intermediate = xored[::-1].decode()                            # -0day-...-RCE-
 
-# --- Step 5: final Base62 unwrap of the middle segment ---
-s = mid.split(&quot;-&quot;)[2]
+core = intermediate.split(&quot;-0day-&quot;)[1].split(&quot;-RCE-&quot;)[0]
 alphabet = &quot;0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz&quot;
 n = 0
-for c in s:
+for c in core:
     n = n * 62 + alphabet.index(c)
-flag = n.to_bytes((n.bit_length() + 7) // 8, &quot;big&quot;)
-print(flag.decode())
+flag = n.to_bytes((n.bit_length() + 7) // 8, &quot;big&quot;).decode()
+print(flag)
+</code></pre>
+<p>Output:</p>
+<pre><code class="language-text">V1T{7h47_dUck_l00k_5c4ry_7h0}
 </code></pre>
 <h2 id="flag">Flag</h2>
-<pre><code>V1T{7h47_dUck_l00k_5c4ry_7h0}
+<pre><code class="language-text">V1T{7h47_dUck_l00k_5c4ry_7h0}
 </code></pre>
+<h2 id="lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</h2>
+<p>This challenge is a &quot;chain of independent decoders&quot; puzzle: carve, decode-image, decode-audio, reverse-an-encoder, decode-Base62. The whole class rewards a human who keeps the model on the highest-probability path and uses each lock as a verification oracle. Here is what actually moved the solve, and how I caught the model when it drifted.</p>
+<p><strong>1. Frame the file as a carrier before allowing any frame-stego.</strong> My first prompt explicitly forbade the glamorous path:</p>
+<blockquote>
+<p>&quot;Before any pixel or audio stego, check the boring stuff first: is the file bigger than the media warrants, and is there a non-MP4 signature appended after the media data? Search the raw bytes for <code>PK\x03\x04</code>, <code>Rar!</code>, <code>7z</code>, gzip; report the offset and trailing byte count.&quot;</p>
+</blockquote>
+<p>Models love to jump straight to LSB-stealing or DCT analysis. Telling it to <em>exhaust the trivial container tricks first</em> (appended archive, polyglot) saves the most time on misc/forensics MP4s.</p>
+<p><strong>2. Make the model measure structure, not pattern-match to famous schemes.</strong> For the audio it wanted DTMF; for the image it wanted ASCII. Both wrong. The prompt that worked:</p>
+<blockquote>
+<p>&quot;These eight tones are evenly spaced on a frequency grid, and the image is a small 1-bit bitmap, not text. For the audio: find the base frequency and the step size, then map each tone to a single hex digit. For the image: downsample to the exact cell grid with nearest-neighbour, threshold to 1-bit, read each row as one byte.&quot;</p>
+</blockquote>
+<p>This forces it to derive <code>value = (freq - 600) / 150</code> and the 8x4 = 4-byte layout from the data itself, instead of forcing the data into a scheme it half-remembers.</p>
+<p><strong>3. Use the lock as the oracle, and try the obvious transforms when a value is rejected.</strong> The bit-inversion in the image block is invisible until the unzip fails. My correction prompt:</p>
+<blockquote>
+<p>&quot;<code>2911d022</code> does not open the ZIP. Don't theorise — just try the standard transforms of those 4 bytes (bitwise-NOT, byte-reverse, nibble-swap) and tell me which one produces a password that successfully extracts.&quot;</p>
+</blockquote>
+<p>The model proposed bitwise-NOT, got <code>d6ee2fdd</code>, and the extraction succeeded. <strong>I verified by whether the ZIP opened, not by whether the bytes looked plausible</strong> — that is the single most important habit for this challenge class. Every layer has a hard pass/fail check (does it unzip? does it Base64-decode? does the result decode as UTF-8?), so never accept an &quot;it should be this&quot; from the model without running the check.</p>
+<p><strong>Dead-ends to tell the model to AVOID up front:</strong> frame-by-frame LSB stego (it's an appended ZIP, not in-frame); DTMF/standard tone tables (it's a custom 150 Hz grid); declaring <code>-0day-...-RCE-</code> the flag or brute-forcing it (the middle is plain Base62); and trusting decorator order blindly — remind it that stacked decorators apply bottom-up, so decode is top-down (<code>base64 -&gt; xor -&gt; reverse</code>).</p>
+<p><strong>Fast-path prompt recipe for next time:</strong> <em>&quot;Treat this media file as a carrier: carve any appended archive first; for each hidden value, measure the encoding's structure (grid spacing, cell layout) rather than assuming a known scheme; chain decoders by inverting whatever the included encoder script does; and after every layer run its natural pass/fail check (unzip / b64 / utf-8 decode) before moving on — never accept a 'looks right'.&quot;</em></p>
     </div>
 
     
@@ -172,7 +285,7 @@ print(flag.decode())
         <div class="post-meta-tags">
                             <a class="tag-chip" href="/blog/tags/ctf">#ctf</a>
                             <a class="tag-chip" href="/blog/tags/v1t-ctf-2026">#v1t-ctf-2026</a>
-                            <a class="tag-chip" href="/blog/tags/forensics">#forensics</a>
+                            <a class="tag-chip" href="/blog/tags/misc">#misc</a>
                             <a class="tag-chip" href="/blog/tags/ai-assisted">#ai-assisted</a>
                     </div>
     
@@ -186,7 +299,7 @@ print(flag.decode())
     <aside class="post-toc-wrap" aria-hidden="true">
         <nav class="toc" aria-label="Floating table of contents">
             <div class="toc-label">§ TOC — NAVIGATION</div>
-            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-2"><a href="#flag">Flag</a></li></ul>
+            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-3"><a href="#step-0-reading-the-shape-of-the-problem">Step 0 — Reading the shape of the problem</a></li><li class="level-3"><a href="#step-1-finding-the-appended-zip">Step 1 — Finding the appended ZIP</a></li><li class="level-3"><a href="#step-2-the-visual-half-of-the-password-last-frame-gt-inverted-bits">Step 2 — The visual half of the password (last frame -&amp;gt; inverted bits)</a></li><li class="level-3"><a href="#step-3-the-audio-half-last-3-seconds-gt-tone-frequencies-gt-hex">Step 3 — The audio half (last 3 seconds -&amp;gt; tone frequencies -&amp;gt; hex)</a></li><li class="level-3"><a href="#step-4-open-the-lock">Step 4 — Open the lock</a></li><li class="level-3"><a href="#step-5-the-final-base62-layer-and-the-complete-script">Step 5 — The final Base62 layer, and the complete script</a></li><li class="level-2"><a href="#flag">Flag</a></li><li class="level-2"><a href="#lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</a></li></ul>
         </nav>
     </aside>
 </main>

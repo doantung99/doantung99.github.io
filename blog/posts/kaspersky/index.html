@@ -7,7 +7,7 @@
     <meta name="color-scheme" content="dark">
 
     <title>Kaspersky — LazyBlog</title>
-    <meta name="description" content="A 5-question Kaspersky / Kaspersky Academy OSINT quiz at kaspersky.v1t.site, industrialized by scripting the grader&apos;s API — and the final question only accepted the course title in its native Cyrillic, not any romanization.">
+    <meta name="description" content="A 5-question Kaspersky OSINT quiz solved by an LLM grinding artifacts while I steered the search, killed a costly false trail, and forced the final answer into native Cyrillic.">
             <meta name="author" content="tungdlm99">
         <meta name="generator" content="LazyBlog 1.11.0">
     <meta name="robots" content="index, follow, max-image-preview:large">
@@ -16,7 +16,7 @@
 
     <!-- Open Graph -->
     <meta property="og:title" content="Kaspersky">
-    <meta property="og:description" content="A 5-question Kaspersky / Kaspersky Academy OSINT quiz at kaspersky.v1t.site, industrialized by scripting the grader&apos;s API — and the final question only accepted the course title in its native Cyrillic, not any romanization.">
+    <meta property="og:description" content="A 5-question Kaspersky OSINT quiz solved by an LLM grinding artifacts while I steered the search, killed a costly false trail, and forced the final answer into native Cyrillic.">
     <meta property="og:url" content="https://doantung99.github.io/blog/posts/kaspersky">
     <meta property="og:type" content="article">
     <meta property="og:site_name" content="LazyBlog">
@@ -31,7 +31,7 @@
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary">
     <meta name="twitter:title" content="Kaspersky">
-    <meta name="twitter:description" content="A 5-question Kaspersky / Kaspersky Academy OSINT quiz at kaspersky.v1t.site, industrialized by scripting the grader&apos;s API — and the final question only accepted the course title in its native Cyrillic, not any romanization.">
+    <meta name="twitter:description" content="A 5-question Kaspersky OSINT quiz solved by an LLM grinding artifacts while I steered the search, killed a costly false trail, and forced the final answer into native Cyrillic.">
         
     <!-- Alternates: machine-readable / AI / RSS -->
             <link rel="alternate" type="text/markdown" href="https://doantung99.github.io/blog/posts/kaspersky.md">
@@ -41,7 +41,7 @@
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20fill%3D%22%230a0e0a%22%2F%3E%3Ctext%20x%3D%224%22%20y%3D%2224%22%20font-family%3D%22monospace%22%20font-size%3D%2222%22%20fill%3D%22%2339ff14%22%3E%26gt%3B_%3C%2Ftext%3E%3C%2Fsvg%3E">
 
-            <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Kaspersky","description":"A 5-question Kaspersky / Kaspersky Academy OSINT quiz at kaspersky.v1t.site, industrialized by scripting the grader\u0027s API — and the final question only accepted the course title in its native Cyrillic, not any romanization.","datePublished":"2026-06-28","dateModified":"2026-06-28","url":"https://doantung99.github.io/blog/posts/kaspersky","mainEntityOfPage":"https://doantung99.github.io/blog/posts/kaspersky","inLanguage":"vi","keywords":"ctf, v1t-ctf-2026, osint, ai-assisted","author":{"@type":"Person","name":"tungdlm99"},"publisher":{"@type":"Organization","name":"LazyBlog","url":"https://doantung99.github.io/blog/"}}</script>
+            <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Kaspersky","description":"A 5-question Kaspersky OSINT quiz solved by an LLM grinding artifacts while I steered the search, killed a costly false trail, and forced the final answer into native Cyrillic.","datePublished":"2026-06-28","dateModified":"2026-06-28","url":"https://doantung99.github.io/blog/posts/kaspersky","mainEntityOfPage":"https://doantung99.github.io/blog/posts/kaspersky","inLanguage":"vi","keywords":"ctf, v1t-ctf-2026, osint, ai-assisted","author":{"@type":"Person","name":"tungdlm99"},"publisher":{"@type":"Organization","name":"LazyBlog","url":"https://doantung99.github.io/blog/"}}</script>
     
     <script>
     // Theme bootstrap — server already rendered the configured default on
@@ -74,7 +74,7 @@
 </div>
 
 <header>
-            <div class="callsign">XV5HP // MAYLAB // HẢI PHÒNG</div>
+            <div class="callsign">NAB // Hà Nội</div>
                     <p class="site-brand"><a href="/blog/" class="brand-link">LazyBlog</a></p>
                 <div class="subtitle">// A personal blog transmitting thoughts over imperfect radio waves. Expect noise, fading, and low bandwidth—but always authentic signals.</div>
         <div class="header-actions">
@@ -106,62 +106,288 @@
         <div class="section-tag">
         § TRANSMISSION — 2026-06-28 — tungdlm99    </div>
     <h1 class="post-page-title">
-                    <span class="post-icon">🛰️</span>
+                    <span class="post-icon">🕵️</span>
                 Kaspersky    </h1>
 
     
             <nav class="toc toc-inline" aria-label="Table of contents">
             <div class="toc-label">§ TOC — NAVIGATION</div>
-            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-3"><a href="#step-1-make-the-grader-scriptable">Step 1 — Make the grader scriptable</a></li><li class="level-3"><a href="#step-2-the-five-answers-and-how-i-steered-each">Step 2 — The five answers (and how I steered each)</a></li><li class="level-3"><a href="#step-3-q5-answer-in-the-source-s-native-script">Step 3 — Q5: answer in the source&#039;s native script</a></li><li class="level-2"><a href="#flag">Flag</a></li></ul>
+            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-3"><a href="#the-machine-a-scriptable-server-side-grader">The machine: a scriptable, server-side grader</a></li><li class="level-3"><a href="#q1-modified-date-of-the-quot-advanced-membership-quot-file-10-04-2025">Q1 — Modified date of the &amp;quot;Advanced Membership&amp;quot; file → 10/04/2025</a></li><li class="level-3"><a href="#q2-who-led-quot-malware-reverse-engineering-quot-victorchebyshev-borislarin">Q2 — Who led &amp;quot;Malware Reverse Engineering&amp;quot; → VictorChebyshev_BorisLarin</a></li><li class="level-3"><a href="#q3-the-aug-3-2017-re-posted-album-surveymonkey-com-r-z8m9c2d">Q3 — The Aug 3, 2017 re-posted album → surveymonkey.com/r/Z8M9C2D</a></li><li class="level-3"><a href="#q4-the-man-who-visited-the-fitness-room-50-times-dimmchern">Q4 — The man who visited the fitness room 50+ times → DimmChern</a></li><li class="level-3"><a href="#q5-the-course-with-5-instructors-3m-2f">Q5 — The course with 5 instructors (3M/2F) → Кибергигиена</a></li><li class="level-3"><a href="#end-to-end-script-challenge-data-printed-flag">End-to-end script (challenge data → printed flag)</a></li><li class="level-2"><a href="#flag">Flag</a></li><li class="level-2"><a href="#lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</a></li></ul>
         </nav>
     
     <div class="post-body">
         <h2 id="summary">Summary</h2>
-<p><code>kaspersky.v1t.site</code> is a linear 5-question OSINT quiz on Kaspersky / Kaspersky Academy — file metadata, course curricula, an archived social repost, and a Foursquare check-in badge. Validation is server-side but scriptable, so I had the model build a replay harness to batch-test answers; the last question only accepted the course's <strong>native Cyrillic</strong> title, <code>Кибергигиена</code>.</p>
+<p><code>kaspersky.v1t.site</code> is a linear 5-question OSINT quiz about Kaspersky / Kaspersky Academy: each correct answer unlocks the next, and the fifth returns the flag. The interesting part is the collaboration — an LLM did almost all the grinding (enumerating Wayback slugs, scraping speaker panels, parsing PDFs, batch-testing answers against a scriptable grader), while my job was to recognize each question's <em>real</em> OSINT primitive (file metadata, archived curriculum, a Foursquare badge, a native-locale API), to kill a multi-hour dead-end the model talked itself into, and to make the final call that the grader wanted the course title in <strong>Cyrillic</strong>, not English. That last judgment is what turned <code>Кибергигиена</code> into <code>v1t{kaspersky_pls_collabbb}</code>.</p>
 <h2 id="solution">Solution</h2>
-<p>I split this into two problems and let the model do the legwork on both: turn the grader into a cheap oracle, then grind five OSINT sub-puzzles against it. My job was reading each question's <em>real</em> intent (metadata vs. page text, on-domain vs. off-domain, English vs. Cyrillic) and killing wrong hypotheses fast.</p>
-<h3 id="step-1-make-the-grader-scriptable">Step 1 — Make the grader scriptable</h3>
-<p>I had the model reverse the SPA's inline script and it surfaced a clean API: <code>POST /api/start</code> → <code>{token, question}</code>, <code>POST /api/answer {token, answer}</code> → <code>Correct.</code> + next token (Q1–Q4) or <code>Completed.</code> + <code>flag</code> (Q5). The base64 token carries a wrong-counter, but in practice the only limiter was a burst rate limit (HTTP 429) — so I told the model to build a replay harness with a ~250 ms delay + retry-on-429, which lets us re-mint a Q5 token by replaying Q1–Q4 and batch-test candidates.</p>
-<h3 id="step-2-the-five-answers-and-how-i-steered-each">Step 2 — The five answers (and how I steered each)</h3>
+<h3 id="the-machine-a-scriptable-server-side-grader">The machine: a scriptable, server-side grader</h3>
+<p>Before any OSINT, I had the model reverse-engineer the SPA's inline script so we'd have a programmatic loop instead of clicking through a UI. The API is small and clean:</p>
 <ul>
-<li><strong>Q1 — &quot;modified date of the Advanced Membership file&quot;:</strong> I flagged &quot;<em>of the file</em>&quot; as a metadata steer, not the page's publish date. Had the model check the <code>Last-Modified</code> header / PDF <code>ModDate</code> on the Kaspersky Academy Alliance Program doc → <strong><code>10/04/2025</code></strong>.</li>
-<li><strong>Q2 — who led &quot;Malware Reverse Engineering&quot;:</strong> the live SPA only credits Victor Chebyshev; I had the model pull the curriculum PDF + Wayback capture, which adds Boris Larin → <strong><code>VictorChebyshev_BorisLarin</code></strong>. (This also fingerprinted &quot;instructor data lives in curriculum docs&quot; — a fact I had to <em>not</em> over-trust in Q5.)</li>
-<li><strong>Q3 — Aug 3 2017 reposted album → registration link:</strong> I insisted the link was off-domain (the format hint <code>example.com/abcxyz</code> was literal). Wayback of the Academy Twitter timeline → the event's <strong><code>surveymonkey.com/r/Z8M9C2D</code></strong> (every kaspersky.com / Starmus / JunctionX guess was rejected — JunctionX didn't even exist until 2018).</li>
-<li><strong>Q4 — man who visited the fitness room 50+ times:</strong> &quot;50+ times&quot; = a Foursquare/Swarm badge. The model found the <strong>Kaspersky Lab Gym</strong> venue, hit Foursquare's auth wall, so I logged in (passwordless email code) and read the Tips — only <strong><code>DimmChern</code></strong> carries &quot;Been here 50+ times&quot;.</li>
-<li><strong>Q5 — the course with 5 instructors (3M/2F):</strong> see below.</li>
+<li><code>POST /api/start</code> → <code>{ token, question, max_wrong_attempts }</code></li>
+<li><code>POST /api/answer</code> with <code>{ token, answer }</code> → <code>{ message, token?, question?, flag? }</code>
+<ul>
+<li>Intermediate correct (Q1–Q4): <code>{ message: &quot;Correct.&quot;, token, question }</code> — a <strong>fresh token</strong> plus the <strong>next</strong> question.</li>
+<li>Final correct (Q5): <code>{ message: &quot;Completed.&quot;, flag: &quot;v1t{…}&quot; }</code> — note the <em>different</em> message string.</li>
+<li>Wrong: <code>{ message: &quot;Wrong answer. Try again.&quot;, flag: null }</code>.</li>
 </ul>
-<h3 id="step-3-q5-answer-in-the-source-s-native-script">Step 3 — Q5: answer in the source's native script</h3>
-<p>The model identified the course almost immediately: on the <strong>Russian-locale</strong> API (<code>domainType=1</code>) exactly one course returns 5 speakers, 3 male / 2 female — <code>cyberhygiene</code> / <strong><code>Кибергигиена</code></strong> (the English page shows 8, which doesn't match). The trap was the <em>spelling</em>: ~200 English/transliterated forms (<code>Cyberhygiene</code>, <code>Kibergigiena</code>, <code>Kaspersky_Cyber_Hygiene</code>, …) were all rejected, and I briefly over-generalized Q2's &quot;data lives in PDFs&quot; insight into a long, useless Wayback/SOCKS5 PDF hunt. The fix was simple once I trusted the live API: the grader stores the <strong>literal Cyrillic title</strong> from the Russian page. The format hint <code>(Kaspersky_Next_EDR_Optimum)</code> only meant &quot;underscore-join multiple words&quot; — a one-word Cyrillic title needs neither.</p>
-<pre><code class="language-js">// Replay harness: mint a fresh token, answer Q1-Q4, then submit each Q5 candidate.
-// Run on the kaspersky.v1t.site origin (browser console / Playwright evaluate).
-const KNOWN = [&quot;10/04/2025&quot;, &quot;VictorChebyshev_BorisLarin&quot;,
-               &quot;surveymonkey.com/r/Z8M9C2D&quot;, &quot;DimmChern&quot;];
-const Q5 = [&quot;Кибергигиена&quot;,            // &lt;- native Cyrillic title (the winner)
-            &quot;CyberHygiene&quot;, &quot;cyber_hygiene&quot;, &quot;Kiberhigiena&quot;, &quot;Kaspersky_Cyberhygiene&quot;];
-const sleep = ms =&gt; new Promise(r =&gt; setTimeout(r, ms));
-
-async function post(path, body) {
-  for (;;) {                                   // retry on 429 rate limit
-    const r = await fetch(path, {method:&quot;POST&quot;, headers:{&quot;Content-Type&quot;:&quot;application/json&quot;},
-                                 body: JSON.stringify(body)});
-    if (r.status === 429) { await sleep(800); continue; }
-    return r.json();
-  }
-}
-for (const cand of Q5) {
-  let { token } = await post(&quot;/api/start&quot;, {});
-  for (const a of KNOWN) {                      // replay Q1-Q4 to reach Q5
-    const res = await post(&quot;/api/answer&quot;, {token, answer: a}); token = res.token; await sleep(250);
-  }
-  const res = await post(&quot;/api/answer&quot;, {token, answer: cand});
-  await sleep(250);
-  if (res.flag) { console.log(&quot;FLAG via&quot;, cand, &quot;-&gt;&quot;, res.flag); break; }
+</li>
+</ul>
+<p>The token is a base64 payload <code>{&quot;i&quot;:&lt;questionIndex&gt;,&quot;w&quot;:&lt;wrongCount&gt;,&quot;exp&quot;:&lt;ts&gt;}</code>. The model's first read of this was: <code>w</code> plus <code>max_wrong_attempts = 3</code> means a 3-strikes lockout, so be careful. That inference was <em>wrong in practice</em>, and this is the first place I had to correct it. Empirically the lockout never fired — a wrong answer left the token usable — so we could hammer candidates back-to-back. The only real limiter was a burst <strong>rate limit (HTTP 429)</strong>, which we handled with a ~200–250 ms delay and a retry-on-429 loop.</p>
+<p>Why this matters: because validation is <strong>server-side</strong>, you cannot read answers from the page. But you <em>can</em> replay the four known answers to re-mint a fresh Q5 token and then brute-test hypotheses cheaply. That replay harness is what eventually cracked Q5 after ~200 string variants. Establishing it early, before we knew any answers, is the single highest-leverage thing we did — it turned &quot;guess and despair&quot; into &quot;enumerate and verify.&quot;</p>
+<h3 id="q1-modified-date-of-the-quot-advanced-membership-quot-file-10-04-2025">Q1 — Modified date of the &quot;Advanced Membership&quot; file → <code>10/04/2025</code></h3>
+<blockquote>
+<p>What is the modified date of the <em>Advanced Membership</em> file in the Kaspersky Academy <strong>Alliance Program</strong>? Format <code>(DD/MM/YYYY)</code>.</p>
+</blockquote>
+<p>The trap here is treating &quot;modified date&quot; as a search-engine question. It is not — it is a <strong>document-metadata</strong> question, and the phrasing &quot;<em>modified date of the file</em>&quot; is a deliberate steer away from the publish/upload date shown on the page. The Kaspersky Academy Alliance Program (the partner/university section of academy.kaspersky.com) publishes downloadable membership documents, including an &quot;Advanced Membership&quot; brochure PDF.</p>
+<p>The &quot;modified date&quot; is a file property, recoverable three ways, in order of reliability:</p>
+<ol>
+<li>The HTTP <code>Last-Modified</code> response header when fetching the file directly.</li>
+<li>The PDF's internal document-info / XMP <code>ModDate</code> field (<code>exiftool</code>, <code>pdfinfo</code>, or any PDF properties dialog).</li>
+<li>The &quot;last modified&quot; timestamp in the hosting/listing UI.</li>
+</ol>
+<p>All three converge on <strong>10 April 2025</strong> → <code>10/04/2025</code>. My steer to the model was simply &quot;don't Google this; fetch the file and read its metadata&quot; — the kind of redirect a human gives once and the machine then executes flawlessly.</p>
+<h3 id="q2-who-led-quot-malware-reverse-engineering-quot-victorchebyshev-borislarin">Q2 — Who led &quot;Malware Reverse Engineering&quot; → <code>VictorChebyshev_BorisLarin</code></h3>
+<blockquote>
+<p>Who led the <em>Malware Reverse Engineering</em> training course on academy.kaspersky.com? Format <code>(BillGates_LinusTorvalds)</code>.</p>
+</blockquote>
+<p>This is the <strong>Rosetta Stone</strong> of the whole challenge, and getting it right shaped (and later mis-shaped) the rest. The live academy.kaspersky.com is a JS SPA, and the &quot;Our Experts&quot; section on the Malware Reverse Engineering page credits only <strong>Victor Chebyshev</strong>. The second lead, <strong>Boris Larin</strong>, is <em>absent from the live DOM</em> — the string &quot;Larin&quot; simply isn't on the rendered page.</p>
+<p>Where the model found him:</p>
+<ol>
+<li>The course's linked <strong>&quot;detailed course program&quot; / curriculum document</strong>, which credits both leads.</li>
+<li><strong>Wayback Machine</strong> snapshots of the pre-SPA course page.</li>
+</ol>
+<p>Both are well-known Kaspersky GReAT researchers, which corroborates the pairing → <code>VictorChebyshev_BorisLarin</code>.</p>
+<p>The lasting lesson — and the seed of a later trap — is that the author's instructor data sometimes lives in <strong>curriculum PDFs / archived pages, not the live SPA</strong>. I noted that as a <em>hypothesis to test per-question</em>, not a law. The model wanted to promote it to a law. Hold that thought; it costs us hours in Q5.</p>
+<h3 id="q3-the-aug-3-2017-re-posted-album-surveymonkey-com-r-z8m9c2d">Q3 — The Aug 3, 2017 re-posted album → <code>surveymonkey.com/r/Z8M9C2D</code></h3>
+<blockquote>
+<p>On August 3, 2017, Kaspersky Academy re-posted a photo album from an event — send the registration link. Format <code>(example.com/abcxyz)</code>.</p>
+</blockquote>
+<p>This is <strong>temporal social-media OSINT</strong>: pin what Kaspersky Academy shared on a precise date, identify the event, then find that event's registration URL. The key facts:</p>
+<ul>
+<li>The repost was Kaspersky Academy <strong>sharing another page's album</strong> (their own Flickr only holds 2013 content), so the artifact lived on <strong>Twitter</strong>, recoverable via a <strong>Wayback capture</strong> of the Academy timeline near 3 Aug 2017.</li>
+<li>The registration page for that event is an <strong>off-domain SurveyMonkey form</strong>: <code>surveymonkey.com/r/Z8M9C2D</code>.</li>
+</ul>
+<p>The reason this took real iteration is a pile of plausible-but-wrong guesses the model generated, all of which I let it fire at the grader to <em>prove</em> dead rather than argue:</p>
+<ul>
+<li><code>academy.kaspersky.com/cyberday2017</code></li>
+<li><code>www.kaspersky.vn/ransomware-workshop-2017/</code></li>
+<li><code>academy.kaspersky.com/talentlab</code></li>
+<li><code>bit.ly/junctionxhanoi-registration</code>, <code>bit.ly/JunctionXAsia</code> — <strong>temporally impossible</strong>: Kaspersky's worldwide JunctionX program only began in <strong>2018</strong>, so it can't be an Aug-2017 repost. (I caught this one by date arithmetic, not by submitting it.)</li>
+<li><code>academy.kaspersky.com/subprojects/kaspersky-faculty-days.html</code></li>
+<li><code>starmus.com</code> / <code>starmus2017.starmus.com</code> — seductive because Kaspersky title-sponsored Starmus IV that summer. Wrong.</li>
+<li>various <code>academy.kaspersky.com/news</code> / &quot;nextgen&quot; / &quot;Hot Event&quot; pages.</li>
+</ul>
+<p>The unifying insight: the format hint <code>(example.com/abcxyz)</code> was <strong>literal</strong> — a third-party host with a short path. The registration link is <strong>off the organiser's domain</strong>. Every kaspersky.com / Starmus / JunctionX guess failed because of an unstated assumption that the sign-up page lived on Kaspersky's own site. Once I told the model to stop privileging kaspersky.com and treat the hint as &quot;third-party short link,&quot; the SurveyMonkey form fell out.</p>
+<h3 id="q4-the-man-who-visited-the-fitness-room-50-times-dimmchern">Q4 — The man who visited the fitness room 50+ times → <code>DimmChern</code></h3>
+<blockquote>
+<p>Kaspersky has a fitness room for employees, and there's a man who visited it more than 50 times. What is his name? Format <code>(ChrisMartin)</code>.</p>
+</blockquote>
+<p>&quot;Visited more than 50 times&quot; is not prose — it is a <strong>literal check-in counter</strong> on a location-based social network. An <em>indoor</em> &quot;fitness room&quot; rules out GPS/Strava segments and points squarely at <strong>Foursquare / Swarm</strong>. The chain:</p>
+<ol>
+<li><strong>Locate HQ:</strong> Kaspersky HQ = <em>39A/3 Leningradskoe Shosse, Moscow</em> (BC «Olympia Park», Voykovsky district).</li>
+<li><strong>Find the venue:</strong> → <strong>&quot;Kaspersky Lab Gym&quot;</strong> on Foursquare: <code>foursquare.com/v/kaspersky-lab-gym/51f7c6f6498ea22aecbef517</code>.</li>
+<li><strong>Hit the auth wall</strong> (this is the whole puzzle): every Foursquare venue/tip URL <strong>302-redirects to login</strong> for anonymous users; search-index snippets held only boilerplate (rating 7.6, hours, 2 tips); Wayback / archive.today had no usable snapshot; and spoofing Googlebot returned <code>503 &quot;fake google bot reject&quot;</code> because Foursquare verifies real Googlebot by reverse-DNS. Conclusion: <strong>the visit data is only visible while authenticated.</strong></li>
+<li><strong>Authenticate:</strong> Foursquare uses passwordless <strong>email-code</strong> login. A valid <code>oauth_token</code> session in the browser made the venue page render.</li>
+<li><strong>Read the Tips section</strong>, where each user carries a check-in-frequency badge:
+<ul>
+<li><em>Evgeny Ablesov</em> — &quot;Been here <strong>10+</strong> times&quot;</li>
+<li><strong>Dimm Chern — &quot;Been here 50+ times&quot;</strong> — tip: <em>&quot;Вышел с работы и на треню :)&quot;</em> (&quot;Left work and off to training&quot;).</li>
+</ul>
+</li>
+</ol>
+<p>The only &quot;Been here 50+ times&quot; badge belongs to <strong>Dimm Chern</strong> → <code>DimmChern</code>. The model's instinct was to keep trying to scrape the page anonymously; my contribution was recognizing the 302→login pattern as &quot;auth-gated, stop scraping, log in&quot; rather than &quot;try another proxy.&quot; That same auth-gating instinct, ironically, is what the model over-applied in Q5.</p>
+<h3 id="q5-the-course-with-5-instructors-3m-2f">Q5 — The course with 5 instructors (3M/2F) → <code>Кибергигиена</code></h3>
+<blockquote>
+<p>I learned from <strong>five exceptional instructors — three male and two female experts</strong>. Which course was it? Example format <code>(Kaspersky_Next_EDR_Optimum)</code>.</p>
+</blockquote>
+<p>This question consumed more time than the other four combined, and almost none of that time was spent <em>finding</em> the answer — it was spent un-learning a false trail and then beating a string-format trap. Both failures are instructive, so here they are in full.</p>
+<p><strong>The data was found almost immediately, and was correct.</strong> Scanning the modern academy.kaspersky.com course API across locales (<code>domainType</code> 0/1/2), exactly one course reaches a five-person panel, and it is <strong>locale-dependent</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Locale</th>
+<th>Panel</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Russian (<code>domainType=1</code>)</td>
+<td><strong>5 speakers (3M/2F)</strong> — matches the clue</td>
+</tr>
+<tr>
+<td>English</td>
+<td><strong>8 speakers</strong> — does <em>not</em> match 3M/2F</td>
+</tr>
+</tbody>
+</table>
+<p>The Russian-locale panel, exactly as the API returns it:</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Speaker (RU)</th>
+<th>Latin</th>
+<th>Gender</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Иван Лауре</td>
+<td>Ivan Laure</td>
+<td>M</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Максим Королёв</td>
+<td>Maxim Korolev</td>
+<td>M</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Георгий Лавриненко</td>
+<td>Georgy Lavrinenko</td>
+<td>M</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Елена Сивенкова</td>
+<td>Elena Sivenkova</td>
+<td>F</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Ксения Ипполитова</td>
+<td>Ksenia Ippolitova</td>
+<td>F</td>
+</tr>
+</tbody>
+</table>
+<p>3 male + 2 female = 5. The course is <strong>Кибергигиена</strong> (&quot;Cyberhygiene&quot;). So why didn't we win in five minutes?</p>
+<p><strong>Trap #1 — the string-format trap.</strong> Every natural way of spelling it for the grader was submitted and rejected:</p>
+<pre><code>Cyberhygiene        Cyber_Hygiene        CyberHygiene        cyber_hygiene
+Kibergigiena        Kiberhigiena         Kiberhigiyena
+Kaspersky_Cyberhygiene   Kaspersky_Cyber_Hygiene
+</code></pre>
+<p>…plus ~200 other candidate course names (live + retired courses, in <code>A_B_C</code>, <code>Title_Case</code>, <code>lowercase</code>, and <code>Kaspersky_</code>-prefixed forms). All wrong. The grader keys on the <strong>exact Cyrillic title</strong> the Russian page displays.</p>
+<p><strong>Trap #2 — the over-generalized fingerprint (the expensive one).</strong> Because every English / transliterated spelling failed, the model concluded the modern API's &quot;Cyberhygiene = 5&quot; must be a <strong>locale-dependent decoy</strong>, and that the real answer lived elsewhere. It reached for Q2's lesson — <em>&quot;instructor data sometimes lives in curriculum PDFs, not the live page&quot;</em> — and promoted that one-question observation into a law:</p>
+<blockquote>
+<p>&quot;The real course is some retired old-site <code>academy.kaspersky.com/courses/&lt;slug&gt;/</code> whose curriculum cover lists 5 lecturers (3M/2F), and the modern API is a red herring.&quot;</p>
+</blockquote>
+<p>That hypothesis was wrong, and chasing it was costly:</p>
+<ul>
+<li><strong>88 retired old-site slugs</strong> enumerated via the Wayback <strong>CDX</strong> API.</li>
+<li>&quot;Our Experts&quot; sections scraped for ~35 of ~43 old courses — they top out at 1–4 named experts; none cleanly give 3M/2F = 5 on the page.</li>
+<li>Bigger panels were assumed to hide in <strong>curriculum PDFs</strong>, which were network-blocked from our box (<code>web.archive.org</code> hard-blocked; PDFs wouldn't load via jina / allorigins / translate.goog). A whole sub-project stood up <strong>public SOCKS5 proxies</strong> (from <code>TheSpeedX/PROXY-List</code>) just to reach <code>web.archive.org</code> and pull PDFs with <code>pdftotext</code>.</li>
+<li><strong>xtraining.kaspersky.com</strong> expert-training PDFs (LLM, Ghidra, YARA, Suricata…) were downloaded and read — each credits only 1–3 leads.</li>
+<li>A stray 8-name panel (<em>Youssef, Losyukova, Kotthoff, Shikova, Koval, Gavenko, Burdova, Ivanov</em>) surfaced and was chased as a possible 5-person sub-listing — another dead end.</li>
+</ul>
+<p>All of that was the price of <em>distrusting the modern API</em>. The API had been right the entire time.</p>
+<p><strong>The breakthrough.</strong> I made the model go back to first principles: re-query the Russian domain (<code>domainType=1</code>) directly and <em>read the raw <code>name</code> field</em> instead of inventing how to spell it. It returned, unambiguously:</p>
+<pre><code class="language-json">{
+  &quot;domain&quot;: 1,
+  &quot;groupName&quot;: &quot;cyberhygiene&quot;,
+  &quot;name&quot;: &quot;Кибергигиена&quot;,
+  &quot;count&quot;: 5,
+  &quot;speakers&quot;: [&quot;Елена Сивенкова&quot;,&quot;Иван Лауре&quot;,&quot;Ксения Ипполитова&quot;,&quot;Максим Королёв&quot;,&quot;Георгий Лавриненко&quot;]
 }
 </code></pre>
-<p><code>Кибергигиена</code> returned <code>{&quot;message&quot;:&quot;Completed.&quot;,&quot;flag&quot;:&quot;v1t{kaspersky_pls_collabbb}&quot;}</code> on the first try — 5/5.</p>
+<p>The realization: the grader stores the answer as the <strong>literal title string from the source it used — the Russian-locale page — which is Cyrillic.</strong> The example <code>(Kaspersky_Next_EDR_Optimum)</code> only signals &quot;join multi-word titles with underscores&quot;; a single-word Cyrillic title needs neither transliteration nor underscores. The candidate to try was simply the value of the API's <code>name</code> field, character-for-character: <strong><code>Кибергигиена</code></strong>.</p>
+<h3 id="end-to-end-script-challenge-data-printed-flag">End-to-end script (challenge data → printed flag)</h3>
+<p>This is the complete replay-and-submit harness, run on the <code>kaspersky.v1t.site</code> origin (e.g. via a browser <code>evaluate</code> / devtools console so cookies and CORS are satisfied). It mints a fresh token, replays the four confirmed answers to re-reach Q5, then submits Q5 candidates with the native Cyrillic title first. It handles the only real constraint — HTTP 429 — and prints the flag the instant it sees <code>&quot;Completed.&quot;</code>.</p>
+<pre><code class="language-js">// Run on https://kaspersky.v1t.site (browser console / evaluate harness).
+const SLEEP = ms =&gt; new Promise(r =&gt; setTimeout(r, ms));
+
+// POST helper with retry-on-429 (the only real limiter; the &quot;3-wrong lockout&quot; never fires).
+async function post(path, body) {
+  for (let attempt = 0; attempt &lt; 8; attempt++) {
+    const res = await fetch(path, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (res.status === 429) { await SLEEP(400 + attempt * 200); continue; }
+    return res.json();
+  }
+  throw new Error('rate-limited too long: ' + path);
+}
+
+// Confirmed Q1–Q4 answers, in order. Replaying these re-mints a fresh Q5 token.
+const KNOWN = [
+  '10/04/2025',                  // Q1: file ModDate / Last-Modified
+  'VictorChebyshev_BorisLarin',  // Q2: leads (Larin only in curriculum doc / Wayback)
+  'surveymonkey.com/r/Z8M9C2D',  // Q3: off-domain SurveyMonkey registration link
+  'DimmChern',                   // Q4: Foursquare &quot;Been here 50+ times&quot; badge
+];
+
+// Q5 candidates — native Cyrillic FIRST; the rest are the failed forms, kept for the record.
+const Q5 = [
+  'Кибергигиена',                // ← native Cyrillic title (the winner)
+  'CyberHygiene', 'cyber_hygiene', 'Kiberhigiena', 'Kiberhigiyena',
+  'Kaspersky_Cyberhygiene', 'Kaspersky_Cyber_Hygiene',
+];
+
+async function attempt(q5cand) {
+  let { token } = await post('/api/start', {});      // fresh session
+  for (const ans of KNOWN) {                          // replay Q1–Q4
+    const r = await post('/api/answer', { token, answer: ans });
+    await SLEEP(250);
+    if (r.message !== 'Correct.') {
+      return { cand: q5cand, msg: 'replay failed at: ' + ans, raw: r };
+    }
+    token = r.token;                                  // advance to next question
+  }
+  const r = await post('/api/answer', { token, answer: q5cand }); // submit Q5
+  await SLEEP(250);
+  return { cand: q5cand, msg: r.message, flag: r.flag, raw: r };
+}
+
+(async () =&gt; {
+  for (const cand of Q5) {
+    const out = await attempt(cand);
+    console.log(JSON.stringify({ cand: out.cand, msg: out.msg, flag: out.flag }));
+    if (out.msg === 'Completed.' &amp;&amp; out.flag) {
+      console.log('FLAG =', out.flag);                // &lt;-- printed flag
+      return;
+    }
+  }
+  console.log('no candidate completed the quiz');
+})();
+</code></pre>
+<p>The very first candidate hit:</p>
+<pre><code class="language-json">[ { &quot;cand&quot;: &quot;Кибергигиена&quot;, &quot;msg&quot;: &quot;Completed.&quot;, &quot;flag&quot;: &quot;v1t{kaspersky_pls_collabbb}&quot; } ]
+</code></pre>
+<p><code>&quot;Completed.&quot;</code> (not the intermediate <code>&quot;Correct.&quot;</code>) plus a non-null <code>flag</code> is the unambiguous &quot;you're done, 5/5&quot; signal.</p>
 <h2 id="flag">Flag</h2>
 <pre><code>v1t{kaspersky_pls_collabbb}
 </code></pre>
+<h2 id="lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</h2>
+<p>This challenge is a near-perfect case study in division of labour: the LLM is extraordinary at <em>grinding</em> (enumerate 88 slugs, parse dozens of PDFs, batch-submit 200 strings, reverse a SPA's fetch calls), and reliably bad at <em>two</em> things that decided the whole challenge — over-generalizing a single observation into a law, and assuming the answer's <em>language</em> from a <em>format</em> hint. My value was prompting precisely around those two weaknesses.</p>
+<p><strong>Prompt the OSINT primitive, not the question.</strong> The phrasings are designed to mislead a literal reader. Translate each into the platform/artifact it actually denotes before letting the model search. The prompts that moved things:</p>
+<blockquote>
+<p>&quot;'Modified date of the file' is a metadata question, not a search question. Don't Google it — fetch the file directly and read its <code>Last-Modified</code> header and the PDF <code>ModDate</code>/XMP field. Report all three dates you find.&quot;</p>
+</blockquote>
+<blockquote>
+<p>&quot;'Visited more than 50 times' is a literal check-in badge on a location-based social network, and a <em>room</em> (indoor) rules out Strava. This is Foursquare/Swarm. Find the Kaspersky HQ gym venue, and if the page 302-redirects to login, stop scraping — the data is auth-gated; we log in and read the 'Been here 50+ times' badge in Tips.&quot;</p>
+</blockquote>
+<p><strong>Tell it which dead-ends to avoid, by name.</strong> Two were predictable and worth pre-empting in the prompt:</p>
+<ul>
+<li><em>Domain bias on Q3:</em> &quot;The registration link is almost certainly <strong>off-domain</strong> — the format hint <code>example.com/abcxyz</code> means a third-party short link. Do NOT keep guessing kaspersky.com / Starmus / JunctionX paths. (And JunctionX is impossible here: that program started in 2018, the repost is Aug 2017.)&quot;</li>
+<li><em>Over-generalizing Q2 on Q5:</em> &quot;Q2's 'data lives in curriculum PDFs' is a hypothesis for <em>this</em> question only, not a law. Before you commit to a Wayback/SOCKS5 PDF hunt for Q5, re-query the <strong>live modern API</strong> and prove it wrong first. Cheapest experiment first.&quot; — Had I issued this earlier, we'd have skipped the entire SOCKS5/PDF detour.</li>
+</ul>
+<p><strong>For graded-string challenges, exploit the grader and force the source's native script.</strong> The two prompts that actually finished it:</p>
+<blockquote>
+<p>&quot;Build a replay harness: <code>POST /api/start</code>, replay the four confirmed answers to re-mint a Q5 token, then submit each Q5 candidate. The 3-wrong lockout doesn't actually fire — only HTTP 429 does, so add a 250 ms delay and retry on 429. Watch for <code>message: 'Completed.'</code>, not 'Correct.', as the success signal.&quot;</p>
+</blockquote>
+<blockquote>
+<p>&quot;Stop transliterating. The Russian-locale page is the source, so the canonical answer is <strong>Cyrillic</strong>. Submit the raw <code>name</code> field from the <code>domainType=1</code> API verbatim — <code>Кибергигиена</code> — and put it first in the batch. The underscore format hint describes punctuation, not language.&quot;</p>
+</blockquote>
+<p><strong>How I verified / caught the model's mistakes.</strong> Three habits did all the work:</p>
+<ol>
+<li><em>Make every hypothesis cheap and falsifiable.</em> I never argued with a guess — I had the model fire it at the grader (or do the date arithmetic) so the <em>server</em> ruled it out. That converted &quot;I think it's Starmus&quot; into a one-line <code>Wrong answer</code> and moved on.</li>
+<li><em>Distrust derived strings; trust raw fields.</em> The model kept inventing romanizations; the fix was &quot;read the <code>name</code> field, don't spell it yourself.&quot; When an authoritative source returns the exact string, submit <em>that</em>, byte-for-byte.</li>
+<li><em>Cheapest experiment first.</em> The SOCKS5/PDF marathon happened because we committed to an expensive hypothesis before testing a free one (re-query the live API). The check I now apply: &quot;what is the laziest possible way to disprove this?&quot; — and do that before any infrastructure work.</li>
+</ol>
+<p><strong>Fast-path prompt recipe for next time:</strong> <em>&quot;Translate each clue into the concrete platform/artifact it denotes (metadata, archived curriculum, check-in badge, native-locale API); script the grader and replay known answers to batch-test cheaply; submit the source's raw field verbatim — in its native script, not your transliteration; and before any expensive hunt, disprove the cheap on-the-live-site hypothesis first.&quot;</em></p>
     </div>
 
     
@@ -183,7 +409,7 @@ for (const cand of Q5) {
     <aside class="post-toc-wrap" aria-hidden="true">
         <nav class="toc" aria-label="Floating table of contents">
             <div class="toc-label">§ TOC — NAVIGATION</div>
-            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-3"><a href="#step-1-make-the-grader-scriptable">Step 1 — Make the grader scriptable</a></li><li class="level-3"><a href="#step-2-the-five-answers-and-how-i-steered-each">Step 2 — The five answers (and how I steered each)</a></li><li class="level-3"><a href="#step-3-q5-answer-in-the-source-s-native-script">Step 3 — Q5: answer in the source&#039;s native script</a></li><li class="level-2"><a href="#flag">Flag</a></li></ul>
+            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-3"><a href="#the-machine-a-scriptable-server-side-grader">The machine: a scriptable, server-side grader</a></li><li class="level-3"><a href="#q1-modified-date-of-the-quot-advanced-membership-quot-file-10-04-2025">Q1 — Modified date of the &amp;quot;Advanced Membership&amp;quot; file → 10/04/2025</a></li><li class="level-3"><a href="#q2-who-led-quot-malware-reverse-engineering-quot-victorchebyshev-borislarin">Q2 — Who led &amp;quot;Malware Reverse Engineering&amp;quot; → VictorChebyshev_BorisLarin</a></li><li class="level-3"><a href="#q3-the-aug-3-2017-re-posted-album-surveymonkey-com-r-z8m9c2d">Q3 — The Aug 3, 2017 re-posted album → surveymonkey.com/r/Z8M9C2D</a></li><li class="level-3"><a href="#q4-the-man-who-visited-the-fitness-room-50-times-dimmchern">Q4 — The man who visited the fitness room 50+ times → DimmChern</a></li><li class="level-3"><a href="#q5-the-course-with-5-instructors-3m-2f">Q5 — The course with 5 instructors (3M/2F) → Кибергигиена</a></li><li class="level-3"><a href="#end-to-end-script-challenge-data-printed-flag">End-to-end script (challenge data → printed flag)</a></li><li class="level-2"><a href="#flag">Flag</a></li><li class="level-2"><a href="#lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</a></li></ul>
         </nav>
     </aside>
 </main>

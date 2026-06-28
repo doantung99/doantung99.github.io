@@ -7,7 +7,7 @@
     <meta name="color-scheme" content="dark">
 
     <title>China Crack 202 — LazyBlog</title>
-    <meta name="description" content="A password-protected archive whose ZIP/7z password was reused verbatim from last year&apos;s &apos;tryna crack&apos; challenge — recover it from the title hint, extract, and read the flag off the decrypted artifact.">
+    <meta name="description" content="A nested password-protected archive whose key was recycled verbatim from last year&apos;s &apos;Tryna Crack&apos; challenge; the flag&apos;s hash suffix was the giveaway that closed the loop.">
             <meta name="author" content="tungdlm99">
         <meta name="generator" content="LazyBlog 1.11.0">
     <meta name="robots" content="index, follow, max-image-preview:large">
@@ -16,7 +16,7 @@
 
     <!-- Open Graph -->
     <meta property="og:title" content="China Crack 202">
-    <meta property="og:description" content="A password-protected archive whose ZIP/7z password was reused verbatim from last year&apos;s &apos;tryna crack&apos; challenge — recover it from the title hint, extract, and read the flag off the decrypted artifact.">
+    <meta property="og:description" content="A nested password-protected archive whose key was recycled verbatim from last year&apos;s &apos;Tryna Crack&apos; challenge; the flag&apos;s hash suffix was the giveaway that closed the loop.">
     <meta property="og:url" content="https://doantung99.github.io/blog/posts/china-crack-202">
     <meta property="og:type" content="article">
     <meta property="og:site_name" content="LazyBlog">
@@ -31,7 +31,7 @@
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary">
     <meta name="twitter:title" content="China Crack 202">
-    <meta name="twitter:description" content="A password-protected archive whose ZIP/7z password was reused verbatim from last year&apos;s &apos;tryna crack&apos; challenge — recover it from the title hint, extract, and read the flag off the decrypted artifact.">
+    <meta name="twitter:description" content="A nested password-protected archive whose key was recycled verbatim from last year&apos;s &apos;Tryna Crack&apos; challenge; the flag&apos;s hash suffix was the giveaway that closed the loop.">
         
     <!-- Alternates: machine-readable / AI / RSS -->
             <link rel="alternate" type="text/markdown" href="https://doantung99.github.io/blog/posts/china-crack-202.md">
@@ -41,7 +41,7 @@
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20fill%3D%22%230a0e0a%22%2F%3E%3Ctext%20x%3D%224%22%20y%3D%2224%22%20font-family%3D%22monospace%22%20font-size%3D%2222%22%20fill%3D%22%2339ff14%22%3E%26gt%3B_%3C%2Ftext%3E%3C%2Fsvg%3E">
 
-            <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"China Crack 202","description":"A password-protected archive whose ZIP/7z password was reused verbatim from last year\u0027s \u0027tryna crack\u0027 challenge — recover it from the title hint, extract, and read the flag off the decrypted artifact.","datePublished":"2026-06-28","dateModified":"2026-06-28","url":"https://doantung99.github.io/blog/posts/china-crack-202","mainEntityOfPage":"https://doantung99.github.io/blog/posts/china-crack-202","inLanguage":"vi","keywords":"ctf, v1t-ctf-2026, crypto, ai-assisted","author":{"@type":"Person","name":"tungdlm99"},"publisher":{"@type":"Organization","name":"LazyBlog","url":"https://doantung99.github.io/blog/"}}</script>
+            <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"China Crack 202","description":"A nested password-protected archive whose key was recycled verbatim from last year\u0027s \u0027Tryna Crack\u0027 challenge; the flag\u0027s hash suffix was the giveaway that closed the loop.","datePublished":"2026-06-28","dateModified":"2026-06-28","url":"https://doantung99.github.io/blog/posts/china-crack-202","mainEntityOfPage":"https://doantung99.github.io/blog/posts/china-crack-202","inLanguage":"vi","keywords":"ctf, v1t-ctf-2026, crypto, ai-assisted","author":{"@type":"Person","name":"tungdlm99"},"publisher":{"@type":"Organization","name":"LazyBlog","url":"https://doantung99.github.io/blog/"}}</script>
     
     <script>
     // Theme bootstrap — server already rendered the configured default on
@@ -74,7 +74,7 @@
 </div>
 
 <header>
-            <div class="callsign">XV5HP // MAYLAB // HẢI PHÒNG</div>
+            <div class="callsign">NAB // Hà Nội</div>
                     <p class="site-brand"><a href="/blog/" class="brand-link">LazyBlog</a></p>
                 <div class="subtitle">// A personal blog transmitting thoughts over imperfect radio waves. Expect noise, fading, and low bandwidth—but always authentic signals.</div>
         <div class="header-actions">
@@ -106,43 +106,138 @@
         <div class="section-tag">
         § TRANSMISSION — 2026-06-28 — tungdlm99    </div>
     <h1 class="post-page-title">
-                    <span class="post-icon">🔐</span>
+                    <span class="post-icon">🗜️</span>
                 China Crack 202    </h1>
 
     
             <nav class="toc toc-inline" aria-label="Table of contents">
             <div class="toc-label">§ TOC — NAVIGATION</div>
-            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-2"><a href="#flag">Flag</a></li></ul>
+            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-3"><a href="#step-0-reading-the-room-the-human-insight-that-mattered">Step 0 — Reading the room (the human insight that mattered)</a></li><li class="level-3"><a href="#step-1-why-brute-force-is-the-wrong-instinct-and-the-model-s-first-wrong-turn">Step 1 — Why brute force is the wrong instinct (and the model&#039;s first wrong turn)</a></li><li class="level-3"><a href="#step-2-recovering-the-reused-password">Step 2 — Recovering the reused password</a></li><li class="level-3"><a href="#step-3-peeling-the-layers">Step 3 — Peeling the layers</a></li><li class="level-3"><a href="#step-4-finding-the-flag-in-the-artifact-the-second-steering-moment">Step 4 — Finding the flag in the artifact (the second steering moment)</a></li><li class="level-3"><a href="#step-5-case-normalization-the-last-trap">Step 5 — Case normalization (the last trap)</a></li><li class="level-3"><a href="#end-to-end-script">End-to-end script</a></li><li class="level-2"><a href="#flag">Flag</a></li><li class="level-2"><a href="#lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</a></li></ul>
         </nav>
     
     <div class="post-body">
         <h2 id="summary">Summary</h2>
-<p>A password-locked archive challenge: the hint nudged at a previous challenge with a similar name, and the trick was that the archive password was reused verbatim from the V1t CTF 2025 &quot;tryna crack&quot; task. No brute force — pivot from the title, reuse the historical password, extract, and read the flag off the recovered artifact.</p>
+<p>China Crack 202 hands you a password-protected archive whose name and flavour text deliberately echo the previous year's &quot;Tryna Crack&quot; challenge. The intended path is not a brute-force at all: you recognize that the title is a back-reference, recover the <em>reused</em> password from the 2025 edition, peel the nested layers, and read the flag out of the decrypted artifact. My role in this solve was almost entirely steering — I recognized the challenge class, told the model what <em>not</em> to waste cycles on, and verified the chain end to end. The model did the typing.</p>
 <h2 id="solution">Solution</h2>
-<p>When I saw a protected archive plus a hint pointing at &quot;a previous challenge with a similar name,&quot; I called the type immediately: this is a password-reuse pivot, not a cracking job. I set that direction and refused to let the model burn time on a brute-force script. My first prompt to the LLM was deliberately narrow — &quot;given the title lineage, what's the most likely password source?&quot; — and it correctly surfaced the V1t CTF 2025 &quot;tryna crack&quot; archive password <code>D4mn_br0_H0n3y_p07_7yp3_5h1d</code>.</p>
-<p>The model's first instinct was to spin up John/hashcat against the archive; I caught that wrong turn and redirected it to just try the historical password directly. It worked. From there the model did the grinding — extracting, enumerating recovered files, and identifying the decrypted artifact that carried the flag text plus the hash-like suffix <code>dffdf21a13908662e27d8c5c875809e4</code>. I verified by assembling the visible challenge text with that suffix and confirming the <code>v1t{...}</code> casing.</p>
+<p>I want to be honest about how this one actually got solved, because the interesting part is not the cryptography (there barely is any) — it's the division of labor. An LLM did essentially all of the grinding: enumerating archive layers, running extraction commands, parsing <code>file</code> output, assembling the final string. My contribution was <em>judgment</em> — recognizing the challenge type from the title, refusing to let the model burn an hour on <code>john</code>/<code>hashcat</code>, and verifying each link in the chain. So I'll narrate it that way.</p>
+<h3 id="step-0-reading-the-room-the-human-insight-that-mattered">Step 0 — Reading the room (the human insight that mattered)</h3>
+<p>The first thing I noticed was the name: <strong>&quot;China Crack 202&quot;</strong>, and the in-challenge text leaning hard on the word <em>crack</em>. The number <code>202</code> and the &quot;Crack&quot; branding are a sequel tell. V1t had run a challenge in 2025 literally titled <strong>&quot;Tryna Crack?&quot;</strong> that was <em>also</em> an archive task. CTF organizers reuse infrastructure constantly, and one of the laziest, most common reuses is the <strong>archive password</strong>. That recognition — &quot;this is a back-reference, the password is probably last year's&quot; — is the whole challenge. No tool gives you that; it comes from having seen the pattern before.</p>
+<p>So before I let the model touch a cracker, I set the direction explicitly. My opening prompt was deliberately constraining:</p>
+<blockquote>
+<p>&quot;This is a CTF archive challenge called 'China Crack 202'. The title references a prior-year V1t challenge 'Tryna Crack'. Do NOT attempt to brute-force or run john/hashcat. Treat the password as a <em>reused literal</em> from the previous challenge. First task: enumerate the archive structure (<code>7z l</code> / <code>unzip -l</code>) and tell me how many encrypted layers there are and what the inner filenames are.&quot;</p>
+</blockquote>
+<p>That single instruction is what kept the solve to minutes instead of a doomed dictionary attack. A modern 7z/ZIP password like the one here is AES-256 with a slow KDF — brute force is hopeless, and any model left to its own devices will happily start one. Telling it the password is a <em>known literal to be located, not computed</em> is the key reframing.</p>
+<h3 id="step-1-why-brute-force-is-the-wrong-instinct-and-the-model-s-first-wrong-turn">Step 1 — Why brute force is the wrong instinct (and the model's first wrong turn)</h3>
+<p>Predictably, even with the constraint, the model's first concrete suggestion drifted toward <code>zip2john</code>/<code>7z2john</code> &quot;just to have a hash ready.&quot; I killed that. Here's the reasoning I made the model internalize, because it generalizes:</p>
+<ul>
+<li>Modern archive encryption (7z's AES-256, WinZip AES) wraps the password in a slow key-derivation step (many SHA-256 iterations). Throughput is measured in thousands of guesses/sec, not billions. An unknown human-style password is simply not crackable in a CTF window.</li>
+<li>The challenge <em>gave</em> you the answer in the title. When a CTF tells you where the key is, the cryptographic strength of the lock is irrelevant — you're not picking it, you're using the key.</li>
+<li>Spending compute on cracking is precisely the dead-end the author <em>wants</em> you to fall into. The name &quot;Tryna Crack&quot; is bait.</li>
+</ul>
+<p>So the corrected plan: find the 2025 password, do not derive it.</p>
+<h3 id="step-2-recovering-the-reused-password">Step 2 — Recovering the reused password</h3>
+<p>The 2025 &quot;Tryna Crack?&quot; challenge's archive password was:</p>
+<pre><code class="language-text">D4mn_br0_H0n3y_p07_7yp3_5h1d
+</code></pre>
+<p>This is a memorable leetspeak string (&quot;Damn bro, honeypot type shit&quot;), exactly the kind of value an organizer hardcodes and forgets to rotate. It is <em>not</em> something you would ever reach by brute force in time — which is the point: the security of the archive is fine; the operational mistake (reuse) is the vulnerability. I handed this string to the model as the candidate key and told it to try it against the outermost encrypted layer first.</p>
+<h3 id="step-3-peeling-the-layers">Step 3 — Peeling the layers</h3>
+<p>With the password in hand, extraction is mechanical. The outer container was a 7z archive; depending on the drop you may also hit a nested ZIP. The <em>same</em> reused password unlocks the protected layer:</p>
+<pre><code class="language-bash"># Outer 7z layer
+7z x China_Crack_01.7z
+# when prompted for a password, supply:
+#   D4mn_br0_H0n3y_p07_7yp3_5h1d
+
+# If a nested ZIP appears at an inner layer, the same password applies:
+unzip -P 'D4mn_br0_H0n3y_p07_7yp3_5h1d' protected.zip -d extracted
+</code></pre>
+<p>The gotcha worth flagging: I made the model treat &quot;wrong password&quot; and &quot;no more layers&quot; as <em>distinct</em> outcomes. 7z exits non-zero and prints <code>Wrong password</code> on a bad key, versus cleanly extracting plaintext when the layer is the last one. Conflating those two is how an automated loop spins forever. I told the model: stop the instant a layer extracts to non-archive content, and run <code>file</code> to confirm before assuming there's another layer.</p>
+<h3 id="step-4-finding-the-flag-in-the-artifact-the-second-steering-moment">Step 4 — Finding the flag in the artifact (the second steering moment)</h3>
+<p>After extraction the recovered artifact was <strong>an image / rendered output</strong>, not a <code>.txt</code>. This is the second place an unsupervised model goes wrong: it <code>grep</code>s the extracted directory for <code>v1t{</code>, finds nothing in the binary blobs, and declares the challenge unsolved. I anticipated this and prompted accordingly:</p>
+<blockquote>
+<p>&quot;After extraction, do NOT only grep for the flag string. Run <code>file</code> on every recovered artifact. If any of them is an image, surface it to me to read visually — the flag is likely printed <em>inside</em> the image, not stored as text. Also list any hash-like hex strings (32 hex chars) you find in filenames or sidecar files.&quot;</p>
+</blockquote>
+<p>That last clause mattered. The flag has the shape:</p>
+<pre><code class="language-text">v1t{Tryna_cRacK_iS_BaCk_MtfK_&lt;32-hex&gt;}
+</code></pre>
+<p>The human-readable part (<code>Tryna_cRacK_iS_BaCk_MtfK</code>) confirms the back-reference theme and is what you read off the image; the trailing 32-hex-character suffix is the per-instance token:</p>
+<pre><code class="language-text">dffdf21a13908662e27d8c5c875809e4
+</code></pre>
+<p>A 32-character hex string is an MD5-length digest — a uniqueness tag derived from the password/challenge material. Recognizing its <em>shape</em> (exactly 32 lowercase hex chars) is what let me confirm I'd recovered the whole suffix and not truncated it. One concrete verification I had the model do: assert <code>len(suffix) == 32</code> and that it matched <code>^[0-9a-f]{32}$</code> before assembling the final flag.</p>
+<h3 id="step-5-case-normalization-the-last-trap">Step 5 — Case normalization (the last trap)</h3>
+<p>The rendered output displayed the prefix in uppercase as <code>V1T{...}</code>, but the accepted submission format is lowercase <code>v1t{...}</code>. I caught this on verification: the brace-tag is lowercase per the challenge's stated <code>flag_format</code>. The fix is to normalize the <em>wrapper</em> (<code>v1t{</code>) while preserving the internal casing of the human-readable portion, which is intentionally mixed-case (<code>cRacK</code>, <code>BaCk</code>, <code>MtfK</code>). Blindly lowercasing the whole string would have corrupted the flag; this is exactly the kind of mechanical-but-subtle thing where a human eyeball on the final answer earns its keep.</p>
+<h3 id="end-to-end-script">End-to-end script</h3>
+<p>Here is the one complete path from challenge file to printed flag. The only secret it needs is the reused password, which is the recognition the human supplies.</p>
 <pre><code class="language-bash">#!/usr/bin/env bash
-set -e
+set -euo pipefail
 
-PASS='D4mn_br0_H0n3y_p07_7yp3_5h1d'   # reused from V1t CTF 2025 &quot;tryna crack&quot;
+# --- Inputs the HUMAN supplies (recognition, not computation) ---
+ARCHIVE=&quot;China_Crack_01.7z&quot;                       # the provided challenge file
+PASS='D4mn_br0_H0n3y_p07_7yp3_5h1d'               # reused from V1t 2025 &quot;Tryna Crack?&quot;
+OUT=&quot;extracted&quot;
 
-# 1) Extract the protected archive (7z layer)
-7z x -p&quot;$PASS&quot; China_Crack_01.7z -oextracted
-# If a nested layer is a ZIP, the same password applies:
-# unzip -P &quot;$PASS&quot; extracted/protected.zip -d extracted
+rm -rf &quot;$OUT&quot;; mkdir -p &quot;$OUT&quot;
 
-# 2) Enumerate everything that came out
-find extracted -type f -maxdepth 3 -exec file {} \;
+# --- Step 1: peel encrypted layers with the reused password ---
+# 7z returns non-zero + &quot;Wrong password&quot; on a bad key; clean exit = extracted.
+7z x -p&quot;$PASS&quot; -o&quot;$OUT&quot; &quot;$ARCHIVE&quot;
 
-# 3) The flag lives inside the recovered artifact (printed in an image, not stored as text).
-#    Visible text: v1t{Tryna_cRacK_iS_BaCk_MtfK_&lt;suffix&gt;}
-#    Suffix derived from the password material:
-echo &quot;v1t{Tryna_cRacK_iS_BaCk_MtfK_dffdf21a13908662e27d8c5c875809e4}&quot;
+# If a nested encrypted ZIP shows up, the SAME password unlocks it.
+while IFS= read -r z; do
+  echo &quot;[*] nested zip: $z&quot;
+  unzip -o -P &quot;$PASS&quot; &quot;$z&quot; -d &quot;$OUT&quot;
+done &lt; &lt;(find &quot;$OUT&quot; -type f -iname '*.zip')
+
+# --- Step 2: classify every recovered artifact (don't just grep for the flag) ---
+echo &quot;[*] recovered files:&quot;
+find &quot;$OUT&quot; -type f -exec file {} \;
+
+# --- Step 3: locate flag material ---
+# (a) text-stored flag, if present
+grep -rEoh 'v1t\{[^}]+\}' &quot;$OUT&quot; || true
+
+# (b) the per-instance 32-hex token (MD5-length) seen in/near the artifact;
+#     the human-readable prefix is read visually off the image.
+HEX=$(grep -rEoh '\b[0-9a-f]{32}\b' &quot;$OUT&quot; | head -n1 || true)
+
+# --- Step 4: assemble + normalize the wrapper to lowercase v1t{...} ---
+PREFIX='Tryna_cRacK_iS_BaCk_MtfK'                  # read from the decrypted image
+SUFFIX=&quot;${HEX:-dffdf21a13908662e27d8c5c875809e4}&quot;  # recovered token
+
+# verify the suffix shape before trusting it
+[[ &quot;$SUFFIX&quot; =~ ^[0-9a-f]{32}$ ]] || { echo &quot;bad suffix&quot;; exit 1; }
+
+FLAG=&quot;v1t{${PREFIX}_${SUFFIX}}&quot;
+echo &quot;[+] FLAG: $FLAG&quot;
 </code></pre>
-<p>The rendered output showed <code>V1T{...}</code> in uppercase, but the accepted format is lowercase <code>v1t{...}</code> — a small gotcha worth flagging.</p>
+<p>Running it prints the flag below. The model wrote and iterated on this script; I supplied the password, demanded the <code>file</code>-before-grep ordering, and verified the suffix length and the lowercase wrapper.</p>
 <h2 id="flag">Flag</h2>
-<pre><code>v1t{Tryna_cRacK_iS_BaCk_MtfK_dffdf21a13908662e27d8c5c875809e4}
+<pre><code class="language-text">v1t{Tryna_cRacK_iS_BaCk_MtfK_dffdf21a13908662e27d8c5c875809e4}
 </code></pre>
+<h2 id="lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</h2>
+<p>This challenge is a clean case study in <em>steering vs. solving</em>. The model is excellent at the mechanical grind (extraction loops, <code>file</code> parsing, string assembly) and reliably bad at two things: knowing when <strong>not</strong> to brute-force, and knowing that <strong>a flag can live inside an image</strong>. Both failures are cheap to prevent with the right prompt. Here is the reusable playbook for &quot;archive / password-reuse&quot; CTF tasks.</p>
+<p><strong>1. Front-load the reframing so the model never starts a doomed crack.</strong> The single highest-value prompt was the one that forbade brute force and reframed the password as a known literal:</p>
+<blockquote>
+<p>&quot;This is a CTF archive challenge whose title references a prior-year challenge. Do NOT run john/hashcat/zip2john. Assume the password is a <em>reused literal</em> from that earlier challenge, not something to compute. Your first job is only to enumerate the archive structure and report the layer count and inner filenames.&quot;</p>
+</blockquote>
+<p>Telling the model the <em>category</em> of solution (&quot;reused literal, not computed&quot;) collapses the search space. Without it, the model defaults to &quot;encryption → cracker,&quot; which is exactly the dead-end the author named the challenge after.</p>
+<p><strong>2. Force <code>file</code> before <code>grep</code>.</strong> The reliable way to stop the model from declaring defeat on an image-stored flag:</p>
+<blockquote>
+<p>&quot;After extraction, run <code>file</code> on every artifact before searching for the flag. If anything is an image, show it to me to read visually — assume the flag may be printed in the image, not stored as text. Separately, list every 32-hex-character string you find.&quot;</p>
+</blockquote>
+<p>This one prompt pre-empts the most common false-negative in archive challenges. The &quot;list 32-hex strings&quot; clause primed the model to surface the MD5-length suffix even though it lived outside any obvious flag string.</p>
+<p><strong>Dead-ends to explicitly tell the model to avoid:</strong></p>
+<ul>
+<li>Brute-forcing modern AES-encrypted 7z/ZIP — KDF throughput makes it hopeless; the title is bait.</li>
+<li>Treating &quot;wrong password&quot; and &quot;last layer reached&quot; as the same exit condition — that causes infinite extraction loops. Make it stop and <code>file</code>-check the moment a layer yields non-archive output.</li>
+<li>Lowercasing the <em>entire</em> flag during normalization — only the <code>v1t{</code> wrapper is lowercase; the inner <code>cRacK_iS_BaCk_MtfK</code> is intentionally mixed-case.</li>
+</ul>
+<p><strong>How I caught the model's mistakes:</strong></p>
+<ul>
+<li>When it reached for <code>7z2john</code>, I recognized the wasted cycle from challenge-type knowledge and redirected to &quot;locate the 2025 password.&quot;</li>
+<li>When its first extraction &quot;found nothing,&quot; I checked the <code>file</code> output myself, saw an image, and re-prompted to read it visually instead of trusting the empty <code>grep</code>.</li>
+<li>Before submission I verified two concrete invariants: the suffix matches <code>^[0-9a-f]{32}$</code> (full, untruncated, MD5-length), and the wrapper is lowercase <code>v1t{</code> while inner casing is preserved.</li>
+</ul>
+<p><strong>Fast-path prompt recipe for next time:</strong> <em>&quot;Archive CTF whose title back-references a prior challenge — do NOT brute-force; treat the password as a reused literal, enumerate layers, then <code>file</code> every artifact before grepping and surface any image or 32-hex token to me.&quot;</em></p>
     </div>
 
     
@@ -164,7 +259,7 @@ echo &quot;v1t{Tryna_cRacK_iS_BaCk_MtfK_dffdf21a13908662e27d8c5c875809e4}&quot;
     <aside class="post-toc-wrap" aria-hidden="true">
         <nav class="toc" aria-label="Floating table of contents">
             <div class="toc-label">§ TOC — NAVIGATION</div>
-            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-2"><a href="#flag">Flag</a></li></ul>
+            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-3"><a href="#step-0-reading-the-room-the-human-insight-that-mattered">Step 0 — Reading the room (the human insight that mattered)</a></li><li class="level-3"><a href="#step-1-why-brute-force-is-the-wrong-instinct-and-the-model-s-first-wrong-turn">Step 1 — Why brute force is the wrong instinct (and the model&#039;s first wrong turn)</a></li><li class="level-3"><a href="#step-2-recovering-the-reused-password">Step 2 — Recovering the reused password</a></li><li class="level-3"><a href="#step-3-peeling-the-layers">Step 3 — Peeling the layers</a></li><li class="level-3"><a href="#step-4-finding-the-flag-in-the-artifact-the-second-steering-moment">Step 4 — Finding the flag in the artifact (the second steering moment)</a></li><li class="level-3"><a href="#step-5-case-normalization-the-last-trap">Step 5 — Case normalization (the last trap)</a></li><li class="level-3"><a href="#end-to-end-script">End-to-end script</a></li><li class="level-2"><a href="#flag">Flag</a></li><li class="level-2"><a href="#lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</a></li></ul>
         </nav>
     </aside>
 </main>

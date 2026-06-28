@@ -8,7 +8,7 @@
 
     <title>#web — LazyBlog</title>
     <meta name="description" content="Posts tagged #web on LazyBlog.">
-            <meta name="author" content="XV5HP">
+            <meta name="author" content="tungdlm99">
         <meta name="generator" content="LazyBlog 1.11.0">
     <meta name="robots" content="index, follow, max-image-preview:large">
 
@@ -63,7 +63,7 @@
 
 
 <header>
-            <div class="callsign">XV5HP // MAYLAB // HẢI PHÒNG</div>
+            <div class="callsign">NAB // Hà Nội</div>
                     <p class="site-brand"><a href="/blog/" class="brand-link">LazyBlog</a></p>
                 <div class="subtitle">// A personal blog transmitting thoughts over imperfect radio waves. Expect noise, fading, and low bandwidth—but always authentic signals.</div>
         <div class="header-actions">
@@ -101,7 +101,7 @@
                                 <span class="post-title">
                                     <span class="post-icon">🛍️</span>                                     Anime Shop                                </span>
                             </a>
-                                                            <p class="post-summary">PrestaShop deployed straight from its GitHub source tree left dev mode on, exposing the Symfony profiler for an APP_SECRET leak and a signed /_fragment SSRF that reads the flag off an internal-only service.</p>
+                                                            <p class="post-summary">PrestaShop deployed from its GitHub source tree leaves dev mode ON, chaining an unauth Symfony profiler file-read to an APP_SECRET-signed /_fragment SSRF that reflects an internal-only flag.</p>
                                                                                                                     <div class="post-tags-row post-tags-row--chips">
                                                                             <a class="tag-chip" href="/blog/tags/ctf">#ctf</a>
                                                                             <a class="tag-chip" href="/blog/tags/v1t-ctf-2026">#v1t-ctf-2026</a>
@@ -114,7 +114,7 @@
                                 <span class="post-title">
                                     <span class="post-icon">🦆</span>                                     B1tsy Ducky                                </span>
                             </a>
-                                                            <p class="post-summary">A Bitsy browser game ships a Go WebAssembly module whose hidden duck routine derives an AES-GCM key from three page-sourced inputs; reconstructing the exact password string offline decrypts the flag.</p>
+                                                            <p class="post-summary">A Bitsy game ships a Go-WASM &apos;duck&apos; that derives an AES-GCM key from three page-local inputs; reconstruct the exact password string offline and decrypt the flag.</p>
                                                                                                                     <div class="post-tags-row post-tags-row--chips">
                                                                             <a class="tag-chip" href="/blog/tags/ctf">#ctf</a>
                                                                             <a class="tag-chip" href="/blog/tags/v1t-ctf-2026">#v1t-ctf-2026</a>
@@ -127,7 +127,7 @@
                                 <span class="post-title">
                                     <span class="post-icon">🦆</span>                                     Duck Nettool Revenge                                </span>
                             </a>
-                                                            <p class="post-summary">A ping tool with command injection behind a brutal character-set filter — RCE using only ;, ?, /, i, digits, and space to glob /bin/sh and leak app.py&apos;s source.</p>
+                                                            <p class="post-summary">Command injection through a brutally restrictive character-set filter, solved by globbing binaries with ? wildcards and tricking dash into leaking app.py through its own error messages.</p>
                                                                                                                     <div class="post-tags-row post-tags-row--chips">
                                                                             <a class="tag-chip" href="/blog/tags/ctf">#ctf</a>
                                                                             <a class="tag-chip" href="/blog/tags/v1t-ctf-2026">#v1t-ctf-2026</a>
@@ -140,7 +140,7 @@
                                 <span class="post-title">
                                     <span class="post-icon">🦆</span>                                     Duck Smuzzle                                </span>
                             </a>
-                                                            <p class="post-summary">A Caddy -&gt; nginx -&gt; FastAPI stack where an IP-allowlist WAF is bypassed by spoofing X-Forwarded-For, the JWT secret is leaked via X-Accel-Redirect, and /duck is reached by smuggling raw HTTP/2 streams through an h2c upgrade.</p>
+                                                            <p class="post-summary">Chain an X-Forwarded-For allowlist bypass and an OpenAPI operationId leak into an X-Accel-Redirect file read, forge a JWT, then h2c-smuggle past Caddy to reach the blocked /duck route.</p>
                                                                                                                     <div class="post-tags-row post-tags-row--chips">
                                                                             <a class="tag-chip" href="/blog/tags/ctf">#ctf</a>
                                                                             <a class="tag-chip" href="/blog/tags/v1t-ctf-2026">#v1t-ctf-2026</a>
@@ -153,7 +153,7 @@
                                 <span class="post-title">
                                     <span class="post-icon">🦆</span>                                     Duck Wiki                                </span>
                             </a>
-                                                            <p class="post-summary">Stored XSS in a Wiki.js page via a Vue 2 scoped-slot destructuring-default SSTI primitive, smuggled past DOMPurify&apos;s &lt;tabset&gt; allowlist and a ModSecurity CRS proxy to exfiltrate localStorage.FLAG from the bot.</p>
+                                                            <p class="post-summary">Stored XSS in Wiki.js via a Vue scoped-slot destructuring-default SSTI, chained with an incremental ModSecurity CRS bypass to exfiltrate the bot&apos;s localStorage flag.</p>
                                                                                                                     <div class="post-tags-row post-tags-row--chips">
                                                                             <a class="tag-chip" href="/blog/tags/ctf">#ctf</a>
                                                                             <a class="tag-chip" href="/blog/tags/v1t-ctf-2026">#v1t-ctf-2026</a>
@@ -166,7 +166,7 @@
                                 <span class="post-title">
                                     <span class="post-icon">🦆</span>                                     HVL                                </span>
                             </a>
-                                                            <p class="post-summary">A &apos;troll&apos; GitHub Pages site hides the flag behind two stego layers; the real one is a substitution-cipher font that renders emoji lyrics as flag text.</p>
+                                                            <p class="post-summary">A troll web challenge that hides its real flag in a substitution-cipher font, where emoji codepoints are mapped to flag characters and rendered on screen.</p>
                                                                                                                     <div class="post-tags-row post-tags-row--chips">
                                                                             <a class="tag-chip" href="/blog/tags/ctf">#ctf</a>
                                                                             <a class="tag-chip" href="/blog/tags/v1t-ctf-2026">#v1t-ctf-2026</a>

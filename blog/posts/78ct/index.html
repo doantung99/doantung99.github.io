@@ -7,7 +7,7 @@
     <meta name="color-scheme" content="dark">
 
     <title>78CT — LazyBlog</title>
-    <meta name="description" content="Geolocate an aerial dragon-shaped park in Vietnam, then decode a text-steganography string hidden in lake-themed words to recover the flag.">
+    <meta name="description" content="Geolocate a dragon-shaped park from an aerial photo, find the Google Maps review tagged #v1tnamese, then decode the case-and-digit steganography hidden in its lake-themed words.">
             <meta name="author" content="tungdlm99">
         <meta name="generator" content="LazyBlog 1.11.0">
     <meta name="robots" content="index, follow, max-image-preview:large">
@@ -16,7 +16,7 @@
 
     <!-- Open Graph -->
     <meta property="og:title" content="78CT">
-    <meta property="og:description" content="Geolocate an aerial dragon-shaped park in Vietnam, then decode a text-steganography string hidden in lake-themed words to recover the flag.">
+    <meta property="og:description" content="Geolocate a dragon-shaped park from an aerial photo, find the Google Maps review tagged #v1tnamese, then decode the case-and-digit steganography hidden in its lake-themed words.">
     <meta property="og:url" content="https://doantung99.github.io/blog/posts/78ct">
     <meta property="og:type" content="article">
     <meta property="og:site_name" content="LazyBlog">
@@ -31,7 +31,7 @@
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary">
     <meta name="twitter:title" content="78CT">
-    <meta name="twitter:description" content="Geolocate an aerial dragon-shaped park in Vietnam, then decode a text-steganography string hidden in lake-themed words to recover the flag.">
+    <meta name="twitter:description" content="Geolocate a dragon-shaped park from an aerial photo, find the Google Maps review tagged #v1tnamese, then decode the case-and-digit steganography hidden in its lake-themed words.">
         
     <!-- Alternates: machine-readable / AI / RSS -->
             <link rel="alternate" type="text/markdown" href="https://doantung99.github.io/blog/posts/78ct.md">
@@ -41,7 +41,7 @@
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20fill%3D%22%230a0e0a%22%2F%3E%3Ctext%20x%3D%224%22%20y%3D%2224%22%20font-family%3D%22monospace%22%20font-size%3D%2222%22%20fill%3D%22%2339ff14%22%3E%26gt%3B_%3C%2Ftext%3E%3C%2Fsvg%3E">
 
-            <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"78CT","description":"Geolocate an aerial dragon-shaped park in Vietnam, then decode a text-steganography string hidden in lake-themed words to recover the flag.","datePublished":"2026-06-28","dateModified":"2026-06-28","url":"https://doantung99.github.io/blog/posts/78ct","mainEntityOfPage":"https://doantung99.github.io/blog/posts/78ct","inLanguage":"vi","keywords":"ctf, v1t-ctf-2026, osint, ai-assisted","author":{"@type":"Person","name":"tungdlm99"},"publisher":{"@type":"Organization","name":"LazyBlog","url":"https://doantung99.github.io/blog/"}}</script>
+            <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"78CT","description":"Geolocate a dragon-shaped park from an aerial photo, find the Google Maps review tagged #v1tnamese, then decode the case-and-digit steganography hidden in its lake-themed words.","datePublished":"2026-06-28","dateModified":"2026-06-28","url":"https://doantung99.github.io/blog/posts/78ct","mainEntityOfPage":"https://doantung99.github.io/blog/posts/78ct","inLanguage":"vi","keywords":"ctf, v1t-ctf-2026, osint, ai-assisted","author":{"@type":"Person","name":"tungdlm99"},"publisher":{"@type":"Organization","name":"LazyBlog","url":"https://doantung99.github.io/blog/"}}</script>
     
     <script>
     // Theme bootstrap — server already rendered the configured default on
@@ -74,7 +74,7 @@
 </div>
 
 <header>
-            <div class="callsign">XV5HP // MAYLAB // HẢI PHÒNG</div>
+            <div class="callsign">NAB // Hà Nội</div>
                     <p class="site-brand"><a href="/blog/" class="brand-link">LazyBlog</a></p>
                 <div class="subtitle">// A personal blog transmitting thoughts over imperfect radio waves. Expect noise, fading, and low bandwidth—but always authentic signals.</div>
         <div class="header-actions">
@@ -112,51 +112,159 @@
     
             <nav class="toc toc-inline" aria-label="Table of contents">
             <div class="toc-label">§ TOC — NAVIGATION</div>
-            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-2"><a href="#flag">Flag</a></li></ul>
+            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-3"><a href="#stage-0-read-the-puzzle-shape-before-touching-tools">Stage 0 — read the puzzle shape before touching tools</a></li><li class="level-3"><a href="#stage-1-geolocate-the-dragon">Stage 1 — geolocate the dragon</a></li><li class="level-3"><a href="#stage-2-the-on-platform-pivot-to-the-planted-review-the-step-that-s-easy-to-miss">Stage 2 — the on-platform pivot to the planted review (the step that&#039;s easy to miss)</a></li><li class="level-3"><a href="#stage-3-read-the-steganography">Stage 3 — read the steganography</a></li><li class="level-3"><a href="#stage-4-decode">Stage 4 — decode</a></li><li class="level-3"><a href="#end-to-end-script-review-text-printed-flag">End-to-end script (review text → printed flag)</a></li><li class="level-2"><a href="#flag">Flag</a></li><li class="level-2"><a href="#lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</a></li></ul>
         </nav>
     
     <div class="post-body">
         <h2 id="summary">Summary</h2>
-<p>This OSINT challenge handed over an aerial photo of a dragon-shaped park plus a story about a lake in the author's hometown. The solve was two-stage: geolocate the park to Ho dieu hoa Ho Son (Cong vien Ho Son) in Tuy Hoa, Phu Yen, Vietnam, then crack the text steganography in the lake-side message where abnormal characters spell a Base64 string.</p>
+<p>78CT (the source calls it &quot;Rawr Dragon Lake&quot;) is a three-stage OSINT challenge. An aerial photo of a dragon-shaped park geolocates to Hồ điều hòa Hồ Sơn (Công viên Hồ Sơn) in Tuy Hòa, Phú Yên, Vietnam; on that location's Google Maps page there is a planted <strong>review containing the hashtag <code>#v1tnamese</code></strong>; and the lake-themed word salad in that review hides a Base64 string through abnormal capitalization and digits, which decodes to the flag.</p>
+<p>The honest framing of how I solved it: an LLM did almost all of the grinding — proposing Vietnamese search terms, reasoning about the dragon-and-pearl motif, spotting the steganographic pattern, and writing the extractor. My job was recognition and steering. I clocked it as &quot;geolocation → on-platform pivot → text stego,&quot; pointed the model at each stage, killed two of its wrong guesses, and verified the decode at the end. The model ground; I drove.</p>
 <h2 id="solution">Solution</h2>
-<p>I pegged this as a geolocation-plus-cipher OSINT task the moment I saw an aerial shot with a &quot;left behind&quot; text blob. My job was steering; the model did the legwork.</p>
+<h3 id="stage-0-read-the-puzzle-shape-before-touching-tools">Stage 0 — read the puzzle shape before touching tools</h3>
+<p>The prompt hands you an aerial image of a park whose lake is shaped like a dragon curling next to a round &quot;pearl&quot; island, plus flavor text about a lake &quot;in the heart of my hometown&quot; and something &quot;left behind&quot; at the lake. Two halves jump out immediately:</p>
+<ul>
+<li><strong>A geolocation half.</strong> A distinctive man-made shape from above is the easiest kind of geolocation target, because the shape itself is a near-unique fingerprint you can describe in words and search for.</li>
+<li><strong>A &quot;decode what was left behind&quot; half.</strong> &quot;Left behind at the lake&quot; is challenge-author language for <em>a planted artifact on the location's public page</em> — almost always a Google Maps review, a photo caption, or a Street View detail. The word &quot;decode&quot; tells you the artifact is encoded, not just hidden.</li>
+</ul>
+<p>That reading is the single most important move in the whole solve, and it is a <em>human</em> move. The shape of the challenge (&quot;identify a place, then pivot to user-generated content on that place's map listing, then decode&quot;) is something you recognize from having seen the genre. I wrote it down before prompting so the model had a skeleton to fill instead of wandering.</p>
+<h3 id="stage-1-geolocate-the-dragon">Stage 1 — geolocate the dragon</h3>
+<p>The fingerprint here is not just &quot;a lake&quot; but the <strong>dragon-nhả-ngọc</strong> (&quot;dragon spitting a pearl&quot;) motif: a sinuous water body beside a circular feature. That is a recognizable Vietnamese landscape-design trope, and the flavor text (&quot;hometown,&quot; Vietnamese framing) strongly implies a Vietnamese location, so the right search language is Vietnamese, not English. The model generated and I refined these queries:</p>
+<pre><code class="language-text">công viên hình rồng hồ Việt Nam
+công viên rồng nhả ngọc Phú Yên
+hồ điều hòa hình rồng Tuy Hòa
+</code></pre>
+<p>The second and third queries converge on the same place: <strong>Hồ điều hòa Hồ Sơn / Công viên Hồ Sơn</strong>, in Phường 5, TP Tuy Hòa, Phú Yên, Vietnam. Cross-checking the aerial layout against the satellite view of that park confirms the dragon body and the pearl island line up with the challenge image.</p>
+<pre><code class="language-text">Target location: Hồ điều hòa Hồ Sơn, Tuy Hòa, Phú Yên, Vietnam
+</code></pre>
+<p><strong>Why Vietnamese search terms matter (the key insight of this stage):</strong> an English query like &quot;dragon-shaped lake Vietnam&quot; surfaces tourist listicles and the famous Đà Nẵng Dragon Bridge — neither is this park. The &quot;spitting a pearl&quot; descriptor (<code>nhả ngọc</code>) plus the province guess (<code>Phú Yên</code>) is what collapses the search space. Searching in the local language is the standard unlock for in-country geolocation, and it was the first correction I made to the model's instinct to search in English.</p>
+<p><strong>Dead-end that actually cost time:</strong> the model's first association for &quot;dragon&quot; + &quot;Vietnam&quot; was the Đà Nẵng Dragon Bridge. That is a <em>bridge</em>, not a lake-and-pearl park, and the aerial silhouette doesn't match. I had to explicitly tell it to ignore famous dragon landmarks and treat the satellite <em>silhouette</em> — a curved water body next to a round island — as the only thing that has to match. That re-anchoring on the shape, not the word &quot;dragon,&quot; is what got it to Hồ Sơn.</p>
+<h3 id="stage-2-the-on-platform-pivot-to-the-planted-review-the-step-that-s-easy-to-miss">Stage 2 — the on-platform pivot to the planted review (the step that's easy to miss)</h3>
+<p>Geolocating the park is <em>not</em> the flag. The &quot;left behind&quot; artifact lives on the <strong>Google Maps page for Hồ điều hòa Hồ Sơn</strong>. Open that listing and read the user reviews; one of them is the plant. You identify it instantly because it ends with the CTF-y hashtag:</p>
+<pre><code class="language-text">#v1tnamese
+</code></pre>
+<p>That hashtag is the author's signature — <code>v1t</code> is the flag prefix, so <code>#v1tnamese</code> is a deliberate breadcrumb confirming &quot;this review is the challenge, keep going.&quot; The review body is a run of lake/scenery vocabulary that reads almost-but-not-quite like a real review:</p>
+<pre><code class="language-text">traVelers MAjESTIC reFlections sUrface LAKeSIDE sh1mering ScENERY AMAzING
+eXpanse lak3front glImmering BREEzES suNlit harGor ExPLORERS DREAMsCAPE
+LAKeVIEW riVerside 9 CALMsNESS harMor higHway hazY AMAzINGLY eXplore
+MAzEWORK BROAdWAY HARBoR sunMist tranTquil loVely OFfERS ARcHITECTS
+gleaminG MEADOwS harb0r skYline HAzE suNset 9
+#v1tnamese
+</code></pre>
+<p>This is the stage the short version of the writeup glossed over, and it's the one a solver is most likely to fumble: you can have the right park and still stall because you never opened the reviews. <strong>The pivot rule for this genre: once you've geolocated, immediately read the target's reviews, photos, and Q&amp;A on Google Maps for a planted, CTF-flavored string.</strong> The <code>#v1tnamese</code> tag is exactly the kind of marker that tells you you've found it.</p>
+<h3 id="stage-3-read-the-steganography">Stage 3 — read the steganography</h3>
+<p>The review words are real English words drawn from a &quot;peaceful lakeside&quot; theme, which is camouflage. The signal is in the <em>one character per word that doesn't belong</em>:</p>
+<pre><code class="language-text">traVelers    -&gt; V   (one stray uppercase in a lowercase word)
+MAjESTIC     -&gt; j   (one stray lowercase in an uppercase word)
+reFlections  -&gt; F
+sUrface      -&gt; U
+LAKeSIDE     -&gt; e
+sh1mering    -&gt; 1   (a digit where a letter should be)
+lak3front    -&gt; 3
+harb0r       -&gt; 0
+</code></pre>
+<p>So the extraction rule is a single, consistent idea — <em>take the character that is anomalous for its word</em>:</p>
+<ul>
+<li>a mostly-lowercase word with exactly one uppercase letter → take the uppercase letter;</li>
+<li>a mostly-uppercase word with exactly one lowercase letter → take the lowercase letter;</li>
+<li>a word containing a digit → take the digit.</li>
+</ul>
+<p><strong>Two gotchas that matter for a correct extraction:</strong></p>
 <ol>
-<li>
-<p><strong>Geolocate the dragon.</strong> I described the layout to the model — a dragon-shaped lake next to a circular &quot;pearl&quot; feature — and had it brainstorm Vietnamese search terms rather than English ones, since the story said &quot;hometown.&quot; Queries like <code>công viên rồng nhả ngọc Phú Yên</code> and <code>hồ điều hòa hình rồng Tuy Hòa</code> pinned it to <strong>Ho dieu hoa Ho Son / Cong vien Ho Son, Phuong 5, TP Tuy Hoa, Phu Yen, Vietnam</strong>. I cross-checked the aerial silhouette against the image to confirm.</p>
-</li>
-<li>
-<p><strong>Spot the steganography.</strong> I fed the lake message to the model and asked it to explain why words like <code>traVelers</code>, <code>sh1mering</code>, and <code>lak3front</code> had weird capitalization and digits. It correctly identified the rule: in each token, take the one character that breaks the pattern — the lone uppercase in a lowercase word, the lone lowercase in an uppercase word, or any digit.</p>
-</li>
-<li>
-<p><strong>Extract and decode.</strong> I had the model write a solver, caught that the prefix <code>VjFU</code> decodes to <code>V1T</code> (a strong Base64 signal), and verified the final decode. One clean script from the raw message to the flag:</p>
-</li>
+<li><strong>The lone <code>9</code> tokens are real payload, not noise.</strong> The string contains two standalone <code>9</code> tokens (one mid-stream, one at the end). They are digits, so they get emitted as-is. If you write your extractor to only look at letters, or to skip single-character tokens, you drop two characters and your Base64 length becomes invalid (Base64 must be a multiple of 4). Those two <code>9</code>s are part of the encoded tail; dropping them silently corrupts the end of the flag.</li>
+<li><strong>Order is left-to-right, token by token, no sorting.</strong> The output is a positional stream; the only correct ordering is the order the words appear. (Obvious in hindsight, but it's a place where an over-clever model will try to &quot;clean up&quot; the data.)</li>
 </ol>
+<p>Concatenating the anomalous character of every token, in order, yields:</p>
+<pre><code class="language-text">VjFUe1czX3IzNGxseV9sMHYzXzdoMTVfcGw0YzN9
+</code></pre>
+<p>This is recognizably Base64: only Base64-alphabet characters, length 40 (a multiple of 4), and — the tell that confirms the whole approach — the prefix <code>VjFU</code> is what <code>V1T</code> Base64-encodes to. Seeing the flag prefix appear in the <em>encoded</em> string is the moment you know the extraction rule was exactly right.</p>
+<h3 id="stage-4-decode">Stage 4 — decode</h3>
+<pre><code class="language-bash">echo 'VjFUe1czX3IzNGxseV9sMHYzXzdoMTVfcGw0YzN9' | base64 -d
+# -&gt; V1T{W3_r34lly_l0v3_7h15_pl4c3}
+</code></pre>
+<p>The decoded prefix is uppercase <code>V1T{...}</code>; the challenge format is <code>v1t{...}</code>, so normalize the case of the prefix. The flag is <code>v1t{W3_r34lly_l0v3_7h15_pl4c3}</code> — fittingly, &quot;we really love this place,&quot; a nod to the hometown lake.</p>
+<h3 id="end-to-end-script-review-text-printed-flag">End-to-end script (review text → printed flag)</h3>
+<p>This is the one complete path. Paste the <code>#v1tnamese</code> review body in and it prints the Base64 and the flag.</p>
 <pre><code class="language-python">#!/usr/bin/env python3
+&quot;&quot;&quot;78CT / Rawr Dragon Lake — decode the #v1tnamese Google Maps review.
+
+Pipeline:
+  1. (manual OSINT) aerial dragon park  -&gt; Hồ điều hòa Hồ Sơn, Tuy Hòa, Phú Yên
+  2. (manual OSINT) open its Google Maps page, find the review ending in #v1tnamese
+  3. (this script)  per-word anomaly extraction -&gt; Base64 -&gt; flag
+&quot;&quot;&quot;
 import base64
 import re
 
-text = &quot;&quot;&quot;traVelers MAjESTIC reFlections sUrface LAKeSIDE sh1mering ScENERY AMAzING eXpanse lak3front glImmering BREEzES suNlit harGor ExPLORERS DREAMsCAPE LAKeVIEW riVerside 9 CALMsNESS harMor higHway hazY AMAzINGLY eXplore MAzEWORK BROAdWAY HARBoR sunMist tranTquil loVely OFfERS ARcHITECTS gleaminG MEADOwS harb0r skYline HAzE suNset 9&quot;&quot;&quot;
+# The review body as it appears on the Google Maps listing (drop the #v1tnamese line).
+review = &quot;&quot;&quot;
+traVelers MAjESTIC reFlections sUrface LAKeSIDE sh1mering ScENERY AMAzING
+eXpanse lak3front glImmering BREEzES suNlit harGor ExPLORERS DREAMsCAPE
+LAKeVIEW riVerside 9 CALMsNESS harMor higHway hazY AMAzINGLY eXplore
+MAzEWORK BROAdWAY HARBoR sunMist tranTquil loVely OFfERS ARcHITECTS
+gleaminG MEADOwS harb0r skYline HAzE suNset 9
+&quot;&quot;&quot;
 
-out = []
-for word in re.findall(r&quot;[A-Za-z0-9]+&quot;, text):
+def anomalous_char(word: str):
+    &quot;&quot;&quot;Return the single character that doesn't fit the word's casing, or a digit.&quot;&quot;&quot;
     digits = [c for c in word if c.isdigit()]
     lowers = [c for c in word if c.islower()]
     uppers = [c for c in word if c.isupper()]
-    if digits:
-        out.extend(digits)
-    elif len(uppers) == 1 and len(lowers) &gt; 1:
-        out.append(uppers[0])
-    elif len(lowers) == 1 and len(uppers) &gt; 1:
-        out.append(lowers[0])
+    if digits:                                   # digit beats casing (incl. lone '9')
+        return digits[0]
+    if len(uppers) == 1 and len(lowers) &gt; 1:     # one stray uppercase in a lowercase word
+        return uppers[0]
+    if len(lowers) == 1 and len(uppers) &gt; 1:     # one stray lowercase in an uppercase word
+        return lowers[0]
+    return None                                  # uniform word -&gt; contributes nothing
 
-b64 = ''.join(out)
-print(b64)                                   # VjFUe1czX3IzNGxseV9sMHYzXzdoMTVfcGw0YzN9
-print(base64.b64decode(b64).decode())        # V1T{W3_r34lly_l0v3_7h15_pl4c3}
+chars = []
+for token in re.findall(r&quot;[A-Za-z0-9]+&quot;, review):   # left-to-right, preserve order
+    c = anomalous_char(token)
+    if c is not None:
+        chars.append(c)
+
+b64 = &quot;&quot;.join(chars)
+print(&quot;base64:&quot;, b64)
+
+decoded = base64.b64decode(b64).decode()
+flag = &quot;v1t{&quot; + decoded.split(&quot;{&quot;, 1)[1] if &quot;{&quot; in decoded else decoded
+print(&quot;flag:  &quot;, flag)
 </code></pre>
-<p>The decode yields <code>V1T{...}</code>; normalizing the prefix to the challenge format <code>v1t{...}</code> gives the flag.</p>
+<p>Output:</p>
+<pre><code class="language-text">base64: VjFUe1czX3IzNGxseV9sMHYzXzdoMTVfcGw0YzN9
+flag:   v1t{W3_r34lly_l0v3_7h15_pl4c3}
+</code></pre>
 <h2 id="flag">Flag</h2>
-<pre><code>v1t{W3_r34lly_l0v3_7h15_pl4c3}
+<pre><code class="language-text">v1t{W3_r34lly_l0v3_7h15_pl4c3}
 </code></pre>
+<h2 id="lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</h2>
+<p>This challenge is a perfect study in division of labor: the LLM is excellent at the two parts I'm slow at — generating native-language search variants and spotting/encoding a per-character pattern — but it has no idea where the <em>seams</em> of an OSINT challenge are. My value was naming the three stages up front and refusing to let the model skip the middle one.</p>
+<p><strong>Prompt 1 — set the whole skeleton, force the on-platform pivot.</strong> The single most useful thing I did was tell the model this is a three-stage challenge before it saw the artifact, so it wouldn't declare victory at the geolocation:</p>
+<blockquote>
+<p>&quot;This is a Vietnamese OSINT challenge with THREE stages: (1) geolocate this aerial dragon-shaped park, (2) open that location's Google Maps page and find a planted user review — it will be marked with a CTF-style hashtag, (3) decode the text in that review. Do not stop at stage 1. The park name is not the flag.&quot;</p>
+</blockquote>
+<p>That last sentence matters: left alone, the model wanted to hand me the park name as the answer. Explicitly stating &quot;the place is not the flag, there's a planted review on its Maps page&quot; is what made it look for <code>#v1tnamese</code>.</p>
+<p><strong>Prompt 2 — geolocation, in the right language, anchored on shape not keyword.</strong> I told it to ignore the obvious red herring and search natively:</p>
+<blockquote>
+<p>&quot;Search in Vietnamese, not English. The shape is a dragon body curling next to a round 'pearl' island (rồng nhả ngọc). IGNORE famous dragon landmarks like the Đà Nẵng Dragon Bridge — match the satellite SILHOUETTE (curved water + round island), not the word 'dragon'. Give me 3 Vietnamese queries with a province guess.&quot;</p>
+</blockquote>
+<p>Telling it <em>what to avoid</em> (the Dragon Bridge) was as important as telling it what to find. The model's first instinct was the famous bridge; re-anchoring it on the silhouette produced <code>rồng nhả ngọc Phú Yên</code>, which is the query that hits Hồ Sơn.</p>
+<p><strong>Prompt 3 — name the stego class, don't ask &quot;what is this?&quot;</strong> Once I had the review text, I didn't ask the model to guess the scheme open-endedly (that invites ROT13 / Vigenère rabbit holes). I described the pattern I'd already half-seen and asked it to formalize and code it:</p>
+<blockquote>
+<p>&quot;Each lake-themed word has exactly one anomalous character — a stray uppercase in a lowercase word, a stray lowercase in an uppercase word, or a digit. Extract that one character per word in order, INCLUDING the standalone '9' tokens, concatenate, and Base64-decode. Write the extractor and print both the Base64 and the decode.&quot;</p>
+</blockquote>
+<p><strong>What to tell the model to focus on / avoid for this challenge class:</strong></p>
+<ul>
+<li><em>Focus:</em> native-language search; matching a satellite <em>silhouette</em>; the post-geolocation pivot to reviews/photos/Q&amp;A; per-character anomaly extraction preserving token order.</li>
+<li><em>Avoid:</em> English-only geolocation searches; famous-landmark pattern-matching on the word &quot;dragon&quot;; treating standalone digits as noise; reordering/sorting the extracted characters; jumping to classical ciphers (ROT/Vigenère/XOR) before testing Base64 — the Base64 alphabet + length-multiple-of-4 + a recognizable encoded prefix should be ruled in or out first.</li>
+</ul>
+<p><strong>How I caught the model's mistakes (verification, not trust):</strong></p>
+<ul>
+<li><em>Geolocation:</em> I refused the answer until the model matched the aerial silhouette against the satellite view of the named park, not just a name that &quot;sounds dragon-y.&quot;</li>
+<li><em>Extraction:</em> the model's first extractor dropped the lone <code>9</code> tokens, producing a Base64 string whose length wasn't a multiple of 4 and that decoded with a mangled tail. The length-not-divisible-by-4 error was the smoking gun; I made it re-include single-digit tokens.</li>
+<li><em>Decode:</em> the definitive check was that the <em>encoded</em> string starts with <code>VjFU</code>, which is exactly <code>Base64(&quot;V1T&quot;)</code>. If the extraction had been even one character off, that prefix would not have appeared — so seeing it meant the whole chain was correct before I even ran <code>base64 -d</code>.</li>
+</ul>
+<p><strong>Fast-path prompt recipe for next time:</strong> <em>&quot;Vietnamese-flavored OSINT: tell the model it's a 3-stage solve (native-language silhouette geolocation → pivot to the location's Google Maps reviews/photos for a hashtag-marked plant → decode), have it search natively and avoid famous-landmark guesses, then describe any casing/digit anomaly yourself and make it write a Base64-first extractor — verify by confirming the encoded prefix matches <code>Base64(flag_prefix)</code> and that the Base64 length is a multiple of 4.&quot;</em></p>
     </div>
 
     
@@ -178,7 +286,7 @@ print(base64.b64decode(b64).decode())        # V1T{W3_r34lly_l0v3_7h15_pl4c3}
     <aside class="post-toc-wrap" aria-hidden="true">
         <nav class="toc" aria-label="Floating table of contents">
             <div class="toc-label">§ TOC — NAVIGATION</div>
-            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-2"><a href="#flag">Flag</a></li></ul>
+            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-3"><a href="#stage-0-read-the-puzzle-shape-before-touching-tools">Stage 0 — read the puzzle shape before touching tools</a></li><li class="level-3"><a href="#stage-1-geolocate-the-dragon">Stage 1 — geolocate the dragon</a></li><li class="level-3"><a href="#stage-2-the-on-platform-pivot-to-the-planted-review-the-step-that-s-easy-to-miss">Stage 2 — the on-platform pivot to the planted review (the step that&#039;s easy to miss)</a></li><li class="level-3"><a href="#stage-3-read-the-steganography">Stage 3 — read the steganography</a></li><li class="level-3"><a href="#stage-4-decode">Stage 4 — decode</a></li><li class="level-3"><a href="#end-to-end-script-review-text-printed-flag">End-to-end script (review text → printed flag)</a></li><li class="level-2"><a href="#flag">Flag</a></li><li class="level-2"><a href="#lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</a></li></ul>
         </nav>
     </aside>
 </main>

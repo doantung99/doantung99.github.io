@@ -7,7 +7,7 @@
     <meta name="color-scheme" content="dark">
 
     <title>Slop Anti or Anti Slop — LazyBlog</title>
-    <meta name="description" content="A deliberately misleading crypto challenge where the real target is an AES-GCM ciphertext whose key is reconstructed from a Decimal-polynomial leak, Lagrange interpolation, and 70M rounds of modular squaring.">
+    <meta name="description" content="A deliberately noisy crypto challenge where the printed values are decoys; the real AES-GCM key is rebuilt from a Decimal polynomial, a modular affine map plus Lagrange interpolation, and a 70-million-round repeated-squaring chain.">
             <meta name="author" content="tungdlm99">
         <meta name="generator" content="LazyBlog 1.11.0">
     <meta name="robots" content="index, follow, max-image-preview:large">
@@ -16,7 +16,7 @@
 
     <!-- Open Graph -->
     <meta property="og:title" content="Slop Anti or Anti Slop">
-    <meta property="og:description" content="A deliberately misleading crypto challenge where the real target is an AES-GCM ciphertext whose key is reconstructed from a Decimal-polynomial leak, Lagrange interpolation, and 70M rounds of modular squaring.">
+    <meta property="og:description" content="A deliberately noisy crypto challenge where the printed values are decoys; the real AES-GCM key is rebuilt from a Decimal polynomial, a modular affine map plus Lagrange interpolation, and a 70-million-round repeated-squaring chain.">
     <meta property="og:url" content="https://doantung99.github.io/blog/posts/slop-anti-or-anti-slop">
     <meta property="og:type" content="article">
     <meta property="og:site_name" content="LazyBlog">
@@ -31,7 +31,7 @@
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary">
     <meta name="twitter:title" content="Slop Anti or Anti Slop">
-    <meta name="twitter:description" content="A deliberately misleading crypto challenge where the real target is an AES-GCM ciphertext whose key is reconstructed from a Decimal-polynomial leak, Lagrange interpolation, and 70M rounds of modular squaring.">
+    <meta name="twitter:description" content="A deliberately noisy crypto challenge where the printed values are decoys; the real AES-GCM key is rebuilt from a Decimal polynomial, a modular affine map plus Lagrange interpolation, and a 70-million-round repeated-squaring chain.">
         
     <!-- Alternates: machine-readable / AI / RSS -->
             <link rel="alternate" type="text/markdown" href="https://doantung99.github.io/blog/posts/slop-anti-or-anti-slop.md">
@@ -41,7 +41,7 @@
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20fill%3D%22%230a0e0a%22%2F%3E%3Ctext%20x%3D%224%22%20y%3D%2224%22%20font-family%3D%22monospace%22%20font-size%3D%2222%22%20fill%3D%22%2339ff14%22%3E%26gt%3B_%3C%2Ftext%3E%3C%2Fsvg%3E">
 
-            <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Slop Anti or Anti Slop","description":"A deliberately misleading crypto challenge where the real target is an AES-GCM ciphertext whose key is reconstructed from a Decimal-polynomial leak, Lagrange interpolation, and 70M rounds of modular squaring.","datePublished":"2026-06-28","dateModified":"2026-06-28","url":"https://doantung99.github.io/blog/posts/slop-anti-or-anti-slop","mainEntityOfPage":"https://doantung99.github.io/blog/posts/slop-anti-or-anti-slop","inLanguage":"vi","keywords":"ctf, v1t-ctf-2026, crypto, ai-assisted","author":{"@type":"Person","name":"tungdlm99"},"publisher":{"@type":"Organization","name":"LazyBlog","url":"https://doantung99.github.io/blog/"}}</script>
+            <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Slop Anti or Anti Slop","description":"A deliberately noisy crypto challenge where the printed values are decoys; the real AES-GCM key is rebuilt from a Decimal polynomial, a modular affine map plus Lagrange interpolation, and a 70-million-round repeated-squaring chain.","datePublished":"2026-06-28","dateModified":"2026-06-28","url":"https://doantung99.github.io/blog/posts/slop-anti-or-anti-slop","mainEntityOfPage":"https://doantung99.github.io/blog/posts/slop-anti-or-anti-slop","inLanguage":"vi","keywords":"ctf, v1t-ctf-2026, crypto, ai-assisted","author":{"@type":"Person","name":"tungdlm99"},"publisher":{"@type":"Organization","name":"LazyBlog","url":"https://doantung99.github.io/blog/"}}</script>
     
     <script>
     // Theme bootstrap — server already rendered the configured default on
@@ -74,7 +74,7 @@
 </div>
 
 <header>
-            <div class="callsign">XV5HP // MAYLAB // HẢI PHÒNG</div>
+            <div class="callsign">NAB // Hà Nội</div>
                     <p class="site-brand"><a href="/blog/" class="brand-link">LazyBlog</a></p>
                 <div class="subtitle">// A personal blog transmitting thoughts over imperfect radio waves. Expect noise, fading, and low bandwidth—but always authentic signals.</div>
         <div class="header-actions">
@@ -106,27 +106,125 @@
         <div class="section-tag">
         § TRANSMISSION — 2026-06-28 — tungdlm99    </div>
     <h1 class="post-page-title">
-                    <span class="post-icon">☕</span>
+                    <span class="post-icon">🍵</span>
                 Slop Anti or Anti Slop    </h1>
 
     
             <nav class="toc toc-inline" aria-label="Table of contents">
             <div class="toc-label">§ TOC — NAVIGATION</div>
-            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-2"><a href="#flag">Flag</a></li></ul>
+            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-3"><a href="#step-0-separating-signal-from-slop">Step 0: separating signal from slop</a></li><li class="level-3"><a href="#step-1-recovering-coffee-from-decimal-leaks">Step 1: recovering coffee from Decimal leaks</a></li><li class="level-3"><a href="#step-2-recovering-cream-via-the-affine-map-lagrange">Step 2: recovering cream via the affine map + Lagrange</a></li><li class="level-3"><a href="#step-3-recovering-sugar-via-70-million-modular-squarings">Step 3: recovering sugar via 70 million modular squarings</a></li><li class="level-3"><a href="#step-4-assemble-the-key-and-decrypt">Step 4: assemble the key and decrypt</a></li><li class="level-2"><a href="#flag">Flag</a></li><li class="level-2"><a href="#lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</a></li></ul>
         </nav>
     
     <div class="post-body">
         <h2 id="summary">Summary</h2>
-<p>The challenge ships <code>challenge.py</code> + <code>output.txt</code> stuffed with RSA/PoW/OTP-flavored decoys, but the only thing that matters is one AES-GCM ciphertext <code>c</code>. Its key derives from three secrets — <code>coffee</code> (a degree-8 integer polynomial recovered from high-precision Decimal leaks), <code>cream</code> (Lagrange interpolation over five points), and <code>sugar</code> (<code>r</code> put through 70M rounds of modular squaring).</p>
+<p><code>challenge.py</code> is a wall of crypto-flavored noise — RSA, &quot;NoHash&quot;, PoW and OTP all name-dropped in the associated data — but the flag is just an AES-GCM ciphertext <code>c</code> sitting in <code>output.txt</code>. The whole game is reconstructing the three secret ingredients the key is derived from: <code>coffee</code> (a degree-8 integer polynomial leaked through five high-precision <code>Decimal</code> evaluations), <code>cream</code> (recovered via a modular affine map plus Lagrange interpolation over a small prime field), and <code>sugar</code> (the result of 70,000,000 modular squarings of <code>r</code>). Get all three and the key falls out of one SHA-256.</p>
+<p>I solved this as a steering exercise: I recognized the obfuscation pattern, told an LLM exactly which functions were real and which were slop, and let it grind the polynomial recovery and the squaring loop while I checked its math at each junction.</p>
 <h2 id="solution">Solution</h2>
-<p>I went in assuming the title was the hint: &quot;slop&quot; meant the file was padded with intentionally misleading crypto vocabulary. So my first move was to steer the model away from the noise — I had it triage <code>challenge.py</code> and asked it to ignore the RSA/NoHash/PoW/OTP strings and the <code>main()</code> printout (<code>coffee = 11:27:...</code>, <code>sugar = a6c4...</code>), and instead trace what actually encrypts the flag. It landed on <code>E()</code>, confirming the ciphertext is <code>base64(nonce || AESGCM(K).encrypt(nonce, flag, A))</code> with <code>A = b&quot;v1t::RSA_NoHashInHere_PoW_OTP::r1muru&quot;</code>. That fixed the goal: recover <code>coffee</code>, <code>cream</code>, <code>sugar</code>, build the key, decrypt.</p>
-<p>The model wanted to interpolate <code>coffee</code> directly from the five leaked points, which I caught — five points can't pin a degree-8 polynomial in plain algebra. I redirected it: the Decimal leaks carry huge precision and the coefficients are bounded integers, so this is an LLL / hidden-number style approximate reconstruction. With that framing it ground out the nine coefficients. For <code>cream</code>, I had it combine the two direct points from <code>v</code> with the three extra points produced by <code>M(coffee, v, m)</code> (now that <code>coffee</code> was known) and feed all five into the provided <code>I()</code> Lagrange routine. For <code>sugar</code> I made it resist the obvious trap of using <code>r</code> as-is — the source defines <code>R(sugar, z, n)</code>, plain repeated squaring, so <code>sugar = R(r, 70_000_000, n)</code>. I verified by running the final decrypt end to end.</p>
+<h3 id="step-0-separating-signal-from-slop">Step 0: separating signal from slop</h3>
+<p>The title — &quot;Slop Anti or Anti Slop&quot; — is the hint, and it's honest. <code>challenge.py</code> is written to waste your time. Running it prints two lines:</p>
+<pre><code class="language-text">coffee = 11:27:5:113:89
+sugar = a6c474d9e2014567397094be60a5ea64
+</code></pre>
+<p>Both are decoys. The printed <code>coffee</code> is a colon-joined list of small ints; the printed <code>sugar</code> is a hex digest. Neither feeds the AES key. They exist purely so that a solver who pattern-matches on <code>print()</code> statements wastes an afternoon on the wrong values.</p>
+<p>The first real job is to ignore <code>main()</code> entirely and read the encryption routine bottom-up. The function that actually touches the flag is <code>E()</code>:</p>
+<pre><code class="language-python">def K(coffee, cream, sugar):
+    x = &quot;,&quot;.join(map(str, coffee)).encode()
+    return hashlib.sha256(
+        b&quot;coffee&quot; + H(x)
+        + b&quot;cream&quot; + H(str(cream).encode())
+        + b&quot;sugar&quot; + H(str(sugar).encode())
+    ).digest()
+
+def E(f, coffee, cream, sugar):
+    x = &quot;,&quot;.join(map(str, coffee)).encode()
+    y = hashlib.sha256(b&quot;drip&quot; + H(x) + b&quot;cream&quot; + H(str(cream).encode())).digest()[:12]
+    return base64.b64encode(y + AESGCM(K(coffee, cream, sugar)).encrypt(y, f, A)).decode()
+</code></pre>
+<p>This tells you the exact shape of the target. The base64 blob <code>c</code> decodes to:</p>
+<pre><code class="language-text">c = base64( nonce(12) || AESGCM_ciphertext_with_tag )
+</code></pre>
+<p>and both the <strong>key</strong> and the <strong>nonce</strong> are pure functions of <code>coffee</code>, <code>cream</code>, <code>sugar</code>:</p>
+<pre><code class="language-text">key   = SHA256( &quot;coffee&quot; || H(coffee_csv) || &quot;cream&quot; || H(str(cream)) || &quot;sugar&quot; || H(str(sugar)) )
+nonce = SHA256( &quot;drip&quot;   || H(coffee_csv) || &quot;cream&quot; || H(str(cream)) )[:12]
+ad    = b&quot;v1t::RSA_NoHashInHere_PoW_OTP::r1muru&quot;
+</code></pre>
+<p>The crucial realization, and what makes the whole thing tractable, is that <strong>the nonce is prepended to the ciphertext</strong>. So we don't have to recompute the nonce from <code>coffee</code>/<code>cream</code> to decrypt — we just slice the first 12 bytes off the decoded blob. That removes one entire dependency from the critical path; we only strictly need the <em>key</em>, which means we only need the <em>exact string forms</em> of <code>coffee</code>, <code>cream</code>, and <code>sugar</code> (they go into SHA-256 as text), nothing more.</p>
+<p>Why does the string form matter so much? Because <code>H(&quot;,&quot;.join(map(str, coffee)))</code> hashes the <strong>decimal representation</strong> of each coefficient, including the leading minus sign. A coefficient that's off by one, or recovered with the wrong sign, produces a totally different SHA-256 and AES-GCM fails its tag check loudly. There is zero tolerance: the polynomial recovery has to be bit-exact. That property is also a gift — GCM's authentication tag is a free oracle telling you the instant any of the three ingredients is wrong.</p>
+<p>So the three sub-problems are independent reconstructions, and AES-GCM's tag is the single pass/fail at the end.</p>
+<h3 id="step-1-recovering-coffee-from-decimal-leaks">Step 1: recovering <code>coffee</code> from Decimal leaks</h3>
+<p><code>coffee</code> is the coefficient list of a polynomial evaluated by <code>P()</code>:</p>
+<pre><code class="language-python">def P(x, coffee):
+    s = Decimal(0)
+    t = Decimal(1)
+    for v in coffee:
+        s += Decimal(v) * t
+        t *= x
+    return s
+</code></pre>
+<p><code>output.txt</code> gives <code>d = 8</code> (degree) and <code>l = 5</code> (number of leaked points), plus five <code>(x, y)</code> pairs <code>o0..o4</code> printed at very high <code>Decimal</code> precision. Degree 8 means <strong>9</strong> unknown integer coefficients.</p>
+<p>Here is the trap, and the dead-end I explicitly steered the model away from: five points cannot interpolate a degree-8 polynomial. In ordinary algebra you'd need 9 points and the system is hopelessly underdetermined. A naive solver (human or LLM) reaches for Lagrange, finds it impossible, and gives up or guesses.</p>
+<p>The insight is that the leaks are not exact algebraic samples — they're <strong>high-precision Decimal values</strong>, and the coefficients are <strong>bounded integers</strong>. That converts an underdetermined algebra problem into a <em>lattice</em> problem: you're looking for small integer coefficients consistent with the truncated decimal evaluations, exactly the hidden-number / <code>Decimal</code>-polynomial pattern that LLL handles well. Each leaked <code>(x, y)</code> gives a linear relation <code>sum(coeff_i * x^i) ≈ y</code> where the approximation error is bounded by the truncation, so you build a lattice whose short vectors encode the true integer coefficients and reduce it. With enough fractional precision per point, five relations over nine unknowns is plenty because the integers are small relative to the precision.</p>
+<p>The reconstructed coefficients (this is the load-bearing artifact — the exact integers and signs are what get hashed):</p>
+<pre><code class="language-python">coffee = [
+    -794776879491038202558712248,
+     231978547017104987636113337,
+    -1236111155741405863929313341,
+    -703614985251603931111397881,
+     -914058253825396366167362727,
+     1012081845277004387528301932,
+       28127542803535647396748015,
+      338456460421344523263806475,
+    -1220995114101159313257217147,
+]
+</code></pre>
+<p>The full proof that this is right doesn't come until the end (the GCM tag), but there's a cheap intermediate check: plug these integers back into <code>P(x, coffee)</code> for each leaked <code>x</code> and confirm the result rounds to the leaked <code>y</code> at full precision. I had the model do exactly that before trusting the vector — see Lessons.</p>
+<h3 id="step-2-recovering-cream-via-the-affine-map-lagrange">Step 2: recovering <code>cream</code> via the affine map + Lagrange</h3>
+<p><code>cream</code> is hidden behind two layers. First, the <code>v</code> array from <code>output.txt</code>:</p>
+<pre><code class="language-text">v = 11,196063417363387642597346826,27,120384749444008048520026890,44,58,73,6,1,7,
+    482948303402462271535984297,6508987245398838175194216,
+    96179654543215792434642574,271196288682360083095841201
+</code></pre>
+<p>The first four entries are two ready-made points on the <code>cream</code> polynomial: <code>(v[0], v[1])</code> and <code>(v[2], v[3])</code>. Two points aren't enough on their own — we need more, and that's what <code>M()</code> produces:</p>
+<pre><code class="language-python">def M(coffee, v, m):
+    a   = v[10]
+    xs  = v[4:7]
+    ids = v[7:10]
+    bs  = v[11:14]
+    return [(x, (a * coffee[i] + y) % m) for x, i, y in zip(xs, ids, bs)]
+</code></pre>
+<p>This is the elegant bit: <code>M()</code> doesn't hand you points directly, it hands you points <strong>scrambled through the already-recovered <code>coffee</code></strong>. Each new <code>y</code>-value is <code>(a * coffee[ids[k]] + bs[k]) mod m</code>, an affine function of a specific <code>coffee</code> coefficient selected by <code>ids</code>. That's why Step 1 must finish first — <code>M()</code> is literally a consumer of the polynomial you just reconstructed. The dependency runs <code>coffee -&gt; cream</code>, not the other way around.</p>
+<p>The chosen indices <code>ids = [6, 1, 7]</code> pull <code>coffee[6]</code>, <code>coffee[1]</code>, <code>coffee[7]</code>, multiply each by <code>a = v[10]</code>, add the corresponding <code>bs</code> value, reduce mod <code>m</code> (the small prime in <code>output.txt</code>), and emit three fresh points at abscissae <code>xs = [44, 58, 73]</code>. Combine those three with the two direct points and you have five points on the <code>cream</code> polynomial over GF(m), which is exactly enough for the provided Lagrange routine <code>I()</code>:</p>
+<pre><code class="language-python">points = [(v[0], v[1]), (v[2], v[3])] + M(coffee, v, m)
+cream  = I(points, m)
+</code></pre>
+<p>Recovered:</p>
+<pre><code class="language-python">cream = 384647880619861103603355431
+</code></pre>
+<p>The gotcha here is index discipline. It is very easy to mis-slice <code>v</code> — an off-by-one on <code>xs</code>, <code>ids</code>, or <code>bs</code>, or feeding the wrong <code>coffee</code> index — and Lagrange will happily return <em>a</em> number that is simply wrong. There's no local check on <code>cream</code> either; it also only proves out at the final GCM tag. So the safe move is to transcribe <code>M()</code> verbatim from the source rather than paraphrasing the slices — precisely the kind of mechanical fidelity an LLM is good at, if you tell it not to &quot;clean up&quot; the indexing. Note the deliberate word-collision with Step 1: the same word &quot;Lagrange&quot; is <em>wrong</em> there and <em>right</em> here.</p>
+<h3 id="step-3-recovering-sugar-via-70-million-modular-squarings">Step 3: recovering <code>sugar</code> via 70 million modular squarings</h3>
+<p><code>sugar</code> is the last decoy trap. The instinct is to read <code>r</code> from <code>output.txt</code> and use it directly. Wrong. The source defines:</p>
+<pre><code class="language-python">def R(sugar, z, n):
+    for _ in range(z):
+        sugar = (sugar * sugar) % n
+    return sugar
+</code></pre>
+<p>and <code>output.txt</code> supplies the real inputs:</p>
+<pre><code class="language-text">r = 3448266514036296117494138663621749045542248311040284894137711815584606161278...
+z = 70000000
+n = 30846394261521820240880213655817161620137997327411663830906890383159321837336...
+</code></pre>
+<p>So <code>sugar = R(r, z, n)</code> — seventy million sequential modular squarings of a ~512-bit number mod a ~3072-bit <code>n</code>. This is a <em>time-lock-puzzle</em>-style construction (repeated squaring with no known factorization shortcut). Each step depends on the previous one, so it cannot be parallelized; you genuinely have to crank the loop.</p>
+<p>There is no clever shortcut here unless you know <code>phi(n)</code> — which we don't, because <code>n</code> isn't factored. If you knew the factorization you could reduce the exponent <code>2^z mod phi(n)</code> and do a single <code>pow</code>. We don't, so we square 70M times. In pure CPython that's a few minutes; the integers are big but each squaring is a single Python-level multiply-and-mod, and 70M of them is bounded. The thing to NOT do is try to be clever (it's the time-lock; there's no fast path), and the thing to watch is letting the loop actually finish — a partial run gives a wrong <code>sugar</code> and, again, the GCM tag will reject it.</p>
+<p>This is the part where the human's only job is patience and the model's only job is writing a tight loop. I told it to keep the loop trivial — <code>sugar = sugar * sugar % n</code>, no per-iteration allocations, no logging inside the loop — and just let it run.</p>
+<h3 id="step-4-assemble-the-key-and-decrypt">Step 4: assemble the key and decrypt</h3>
+<p>With all three ingredients in their exact forms, the key is one SHA-256, the nonce is sliced from the blob, and AES-GCM verifies-and-decrypts in one call. The complete, runnable end-to-end script (challenge data to printed flag):</p>
 <pre><code class="language-python">#!/usr/bin/env python3
 import base64
 import hashlib
 import re
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
+# Associated data is fixed in challenge.py (and is itself part of the slop theme).
 A = b&quot;v1t::RSA_NoHashInHere_PoW_OTP::r1muru&quot;
 
 
@@ -135,6 +233,7 @@ def H(x):
 
 
 def K(coffee, cream, sugar):
+    # Key = SHA256 over the *string* forms of the three ingredients.
     x = &quot;,&quot;.join(map(str, coffee)).encode()
     return hashlib.sha256(
         b&quot;coffee&quot; + H(x) +
@@ -144,43 +243,71 @@ def K(coffee, cream, sugar):
 
 
 def R(sugar, z, n):
+    # Time-lock: z sequential modular squarings. No shortcut without phi(n).
     for _ in range(z):
         sugar = (sugar * sugar) % n
     return sugar
 
 
-# Recovered offline: degree-8 polynomial from the Decimal leaks
+# --- Step 1 output: degree-8 integer polynomial recovered from Decimal leaks (LLL).
 coffee = [
     -794776879491038202558712248,
      231978547017104987636113337,
     -1236111155741405863929313341,
     -703614985251603931111397881,
-    -914058253825396366167362727,
+     -914058253825396366167362727,
      1012081845277004387528301932,
-      28127542803535647396748015,
-     338456460421344523263806475,
+       28127542803535647396748015,
+      338456460421344523263806475,
     -1220995114101159313257217147,
 ]
-# Recovered via Lagrange interpolation I() over 5 points
+
+# --- Step 2 output: recovered from M() affine points + Lagrange interpolation.
 cream = 384647880619861103603355431
 
+# --- Read everything else straight out of output.txt.
 z = open(&quot;output.txt&quot;, encoding=&quot;utf-8&quot;).read()
 q = lambda k: re.search(rf&quot;^{k} = (.+)$&quot;, z, re.M).group(1).strip()
 
-ct = base64.b64decode(q(&quot;c&quot;))
-nonce, payload = ct[:12], ct[12:]
+blob = base64.b64decode(q(&quot;c&quot;))
+nonce, payload = blob[:12], blob[12:]   # nonce is prepended -&gt; no need to recompute it
 
 r = int(q(&quot;r&quot;))
-rounds = int(q(&quot;z&quot;))   # 70000000
+rounds = int(q(&quot;z&quot;))   # 70_000_000
 n = int(q(&quot;n&quot;))
 
-sugar = R(r, rounds, n)  # repeated modular squaring
+# --- Step 3: grind the time-lock.
+sugar = R(r, rounds, n)
+
+# --- Step 4: derive key, then GCM verify+decrypt (tag check is our correctness oracle).
 flag = AESGCM(K(coffee, cream, sugar)).decrypt(nonce, payload, A)
 print(flag.decode())
 </code></pre>
+<p>The moment this prints without throwing <code>InvalidTag</code>, every one of the three reconstructions is simultaneously confirmed correct — the polynomial, the interpolation, and all 70M squarings.</p>
 <h2 id="flag">Flag</h2>
-<pre><code>v1t{1_w0nd3r1ng_w1th0ut_41_c4n_y0u_st1ll_s0lv3_1t_4nyw4y_h0p3_y0u_h4v3_fun_w1th_th4t}
+<pre><code class="language-text">v1t{1_w0nd3r1ng_w1th0ut_41_c4n_y0u_st1ll_s0lv3_1t_4nyw4y_h0p3_y0u_h4v3_fun_w1th_th4t}
 </code></pre>
+<p>The flag is its own punchline: &quot;I wondering without AI can you still solve it anyway, hope you have fun with that.&quot; Cute, given how I solved it.</p>
+<h2 id="lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</h2>
+<p>This challenge is the archetype of &quot;obfuscated-source crypto with decoys&quot;: one short Python file, several genuine-looking subroutines, and only a few that matter. An LLM is enormously good at this <em>if</em> you keep it from chasing the slop. My value-add was triage and verification, not arithmetic.</p>
+<p><strong>1. Make the model classify functions before it solves anything.</strong> The first move is not &quot;solve it,&quot; it's &quot;map the file.&quot; I prompted:</p>
+<blockquote>
+<p>&quot;Here is challenge.py and output.txt. Do NOT solve yet. List every function, and for each one say whether its output reaches the AES key/nonce in E(). Trace backwards from E(). Flag any value that is only printed in main() as a likely decoy.&quot;</p>
+</blockquote>
+<p>That single classification pass is what surfaced that <code>main()</code>'s printed <code>coffee</code>/<code>sugar</code> are decoys and that <code>E()</code>/<code>K()</code> are the only real targets. Without it the model anchors on the <code>print</code> statements and the RSA/PoW/OTP vocabulary.</p>
+<p><strong>2. Name the technique for each sub-problem so it doesn't pick the wrong tool.</strong> The polynomial step is the one the model gets wrong by default — it tries exact Lagrange on 5 points for a degree-8 poly and declares it impossible. I corrected course explicitly:</p>
+<blockquote>
+<p>&quot;Five Decimal points for a degree-8 integer polynomial is NOT exact interpolation — the coefficients are small bounded integers and the leaks are high-precision decimals. Treat it as a lattice/LLL hidden-number reconstruction, not Lagrange. Then verify your coefficients by re-evaluating P(x, coffee) at each leaked x and checking it rounds to the leaked y.&quot;</p>
+</blockquote>
+<p>That reframing (lattice, not Lagrange) is the whole ballgame for Step 1. Note Lagrange IS correct for Step 2 — same word, opposite advice — so I had to tell it <em>which step gets which tool</em>, not just name the tool once.</p>
+<p><strong>3. Tell it which dead-ends to avoid, by name.</strong> Three traps cost real time if you don't pre-empt them, so I listed them in the prompt:</p>
+<blockquote>
+<p>&quot;Do not use the printed coffee/sugar — they're decoys from main(). Do not use r raw as sugar; run R(r, z, n). Do not try to factor n or reduce the exponent 2^z mod phi(n) — n is unfactored, it's a time-lock, just run the loop.&quot;</p>
+</blockquote>
+<p>Those three (printed decoys, raw <code>r</code>, and &quot;be clever about the squaring&quot;) are exactly where an unsupervised model burns an hour.</p>
+<p><strong>4. Insist on transcribing <code>M()</code> verbatim.</strong> For the <code>cream</code> step, the failure mode is the model &quot;tidying up&quot; the slice indices (<code>v[4:7]</code>, <code>v[7:10]</code>, <code>v[11:14]</code>) and silently breaking them. My prompt: &quot;Copy M() exactly, keep the original slices, build points = the two direct points (v[0],v[1]),(v[2],v[3]) plus M(...), then call the challenge's own I() for Lagrange over m.&quot; Reuse the challenge's own helpers rather than reimplementing — there's no upside to paraphrasing index arithmetic.</p>
+<p><strong>5. How I caught mistakes: lean on the GCM tag and the cheap intermediate check.</strong> The beauty of this challenge is that AES-GCM authenticates, so the final <code>decrypt()</code> is a binary correctness oracle for all three ingredients at once — if it throws <code>InvalidTag</code>, something upstream is wrong, and I made the model re-derive rather than guess which part. Before paying for the 70M-squaring run, I always had it validate <code>coffee</code> locally (re-evaluate <code>P</code> at the leaked <code>x</code>s) and sanity-check <code>cream</code> is in range <code>[0, m)</code>. That ordering — verify the cheap things, then spend the expensive time-lock once — is what made the solve a single clean run instead of a guess-and-recompute slog.</p>
+<p><strong>Fast-path prompt recipe for next time:</strong> <em>&quot;Obfuscated crypto source — first trace backwards from the encrypt call and label every function real-vs-decoy; ignore anything only printed in main(); for each secret tell me the right tool (LLL for under-determined Decimal-polynomial leaks, Lagrange for full point sets, run-as-written for time-lock squaring); copy the challenge's own helpers verbatim; verify each reconstruction cheaply, then let the AES-GCM tag be the final yes/no.&quot;</em></p>
     </div>
 
     
@@ -202,7 +329,7 @@ print(flag.decode())
     <aside class="post-toc-wrap" aria-hidden="true">
         <nav class="toc" aria-label="Floating table of contents">
             <div class="toc-label">§ TOC — NAVIGATION</div>
-            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-2"><a href="#flag">Flag</a></li></ul>
+            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-3"><a href="#step-0-separating-signal-from-slop">Step 0: separating signal from slop</a></li><li class="level-3"><a href="#step-1-recovering-coffee-from-decimal-leaks">Step 1: recovering coffee from Decimal leaks</a></li><li class="level-3"><a href="#step-2-recovering-cream-via-the-affine-map-lagrange">Step 2: recovering cream via the affine map + Lagrange</a></li><li class="level-3"><a href="#step-3-recovering-sugar-via-70-million-modular-squarings">Step 3: recovering sugar via 70 million modular squarings</a></li><li class="level-3"><a href="#step-4-assemble-the-key-and-decrypt">Step 4: assemble the key and decrypt</a></li><li class="level-2"><a href="#flag">Flag</a></li><li class="level-2"><a href="#lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</a></li></ul>
         </nav>
     </aside>
 </main>

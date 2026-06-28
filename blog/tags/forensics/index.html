@@ -8,7 +8,7 @@
 
     <title>#forensics — LazyBlog</title>
     <meta name="description" content="Posts tagged #forensics on LazyBlog.">
-            <meta name="author" content="XV5HP">
+            <meta name="author" content="tungdlm99">
         <meta name="generator" content="LazyBlog 1.11.0">
     <meta name="robots" content="index, follow, max-image-preview:large">
 
@@ -63,7 +63,7 @@
 
 
 <header>
-            <div class="callsign">XV5HP // MAYLAB // HẢI PHÒNG</div>
+            <div class="callsign">NAB // Hà Nội</div>
                     <p class="site-brand"><a href="/blog/" class="brand-link">LazyBlog</a></p>
                 <div class="subtitle">// A personal blog transmitting thoughts over imperfect radio waves. Expect noise, fading, and low bandwidth—but always authentic signals.</div>
         <div class="header-actions">
@@ -99,9 +99,9 @@
                                             <li class="post-item">
                             <a class="post-title-link" href="/blog/posts/green-goblin">
                                 <span class="post-title">
-                                    <span class="post-icon">🧪</span>                                     Green Goblin                                </span>
+                                    <span class="post-icon">🎃</span>                                     Green Goblin                                </span>
                             </a>
-                                                            <p class="post-summary">A 5 GiB Windows 11 RAM dump hides five flag fragments across classic OS internals (Registry, kernel symlink, NTFS ADS, Event Log, named memory section); carving and reversing the dropper reveals the fixed bytes, which decode with ROT47.</p>
+                                                            <p class="post-summary">Carve and reverse a dropper from a Windows 11 RAM dump to find which five OS-internal artifacts hold the real fragments, then ROT47-decode them into the flag.</p>
                                                                                                                     <div class="post-tags-row post-tags-row--chips">
                                                                             <a class="tag-chip" href="/blog/tags/ctf">#ctf</a>
                                                                             <a class="tag-chip" href="/blog/tags/v1t-ctf-2026">#v1t-ctf-2026</a>
@@ -112,22 +112,9 @@
                                             <li class="post-item">
                             <a class="post-title-link" href="/blog/posts/polar-fragments">
                                 <span class="post-title">
-                                    <span class="post-icon">🐻‍❄️</span>                                     Polar Fragments                                </span>
+                                    <span class="post-icon">🧊</span>                                     Polar Fragments                                </span>
                             </a>
-                                                            <p class="post-summary">A multi-source forensics challenge where each of five pcaps exfiltrates one flag fragment over a different protocol (HTTP/FTP/SMTP/chunked HTTP), and the fragments are low-contrast text hidden inside carried images and documents.</p>
-                                                                                                                    <div class="post-tags-row post-tags-row--chips">
-                                                                            <a class="tag-chip" href="/blog/tags/ctf">#ctf</a>
-                                                                            <a class="tag-chip" href="/blog/tags/v1t-ctf-2026">#v1t-ctf-2026</a>
-                                                                            <a class="tag-chip" href="/blog/tags/forensics">#forensics</a>
-                                                                            <a class="tag-chip" href="/blog/tags/ai-assisted">#ai-assisted</a>
-                                                                    </div>
-                                                    </li>
-                                            <li class="post-item">
-                            <a class="post-title-link" href="/blog/posts/scary-duck">
-                                <span class="post-title">
-                                    <span class="post-icon">🦆</span>                                     Scary Duck                                </span>
-                            </a>
-                                                            <p class="post-summary">An MP4 with an appended password-protected ZIP, whose password is split between a binary block in the last frame and FSK tones in the last audio, then a final Base62 unwrap of the decrypted plaintext.</p>
+                                                            <p class="post-summary">A multi-source forensics reconstruction where each pcap exfiltrates one flag fragment through a different protocol, and an LLM did the carving while I steered it past the decoys.</p>
                                                                                                                     <div class="post-tags-row post-tags-row--chips">
                                                                             <a class="tag-chip" href="/blog/tags/ctf">#ctf</a>
                                                                             <a class="tag-chip" href="/blog/tags/v1t-ctf-2026">#v1t-ctf-2026</a>

@@ -7,7 +7,7 @@
     <meta name="color-scheme" content="dark">
 
     <title>Huh — LazyBlog</title>
-    <meta name="description" content="A mixed OSINT/stego challenge where a Vietnamese village photo gives the flag prefix and a hidden text fragment gives the suffix.">
+    <meta name="description" content="A two-part misc challenge where image-based location OSINT supplies the flag prefix and a hidden text fragment supplies the suffix, reassembled in leetspeak.">
             <meta name="author" content="tungdlm99">
         <meta name="generator" content="LazyBlog 1.11.0">
     <meta name="robots" content="index, follow, max-image-preview:large">
@@ -16,7 +16,7 @@
 
     <!-- Open Graph -->
     <meta property="og:title" content="Huh">
-    <meta property="og:description" content="A mixed OSINT/stego challenge where a Vietnamese village photo gives the flag prefix and a hidden text fragment gives the suffix.">
+    <meta property="og:description" content="A two-part misc challenge where image-based location OSINT supplies the flag prefix and a hidden text fragment supplies the suffix, reassembled in leetspeak.">
     <meta property="og:url" content="https://doantung99.github.io/blog/posts/huh">
     <meta property="og:type" content="article">
     <meta property="og:site_name" content="LazyBlog">
@@ -31,7 +31,7 @@
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary">
     <meta name="twitter:title" content="Huh">
-    <meta name="twitter:description" content="A mixed OSINT/stego challenge where a Vietnamese village photo gives the flag prefix and a hidden text fragment gives the suffix.">
+    <meta name="twitter:description" content="A two-part misc challenge where image-based location OSINT supplies the flag prefix and a hidden text fragment supplies the suffix, reassembled in leetspeak.">
         
     <!-- Alternates: machine-readable / AI / RSS -->
             <link rel="alternate" type="text/markdown" href="https://doantung99.github.io/blog/posts/huh.md">
@@ -41,7 +41,7 @@
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20fill%3D%22%230a0e0a%22%2F%3E%3Ctext%20x%3D%224%22%20y%3D%2224%22%20font-family%3D%22monospace%22%20font-size%3D%2222%22%20fill%3D%22%2339ff14%22%3E%26gt%3B_%3C%2Ftext%3E%3C%2Fsvg%3E">
 
-            <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Huh","description":"A mixed OSINT/stego challenge where a Vietnamese village photo gives the flag prefix and a hidden text fragment gives the suffix.","datePublished":"2026-06-28","dateModified":"2026-06-28","url":"https://doantung99.github.io/blog/posts/huh","mainEntityOfPage":"https://doantung99.github.io/blog/posts/huh","inLanguage":"vi","keywords":"ctf, v1t-ctf-2026, misc, ai-assisted","author":{"@type":"Person","name":"tungdlm99"},"publisher":{"@type":"Organization","name":"LazyBlog","url":"https://doantung99.github.io/blog/"}}</script>
+            <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Huh","description":"A two-part misc challenge where image-based location OSINT supplies the flag prefix and a hidden text fragment supplies the suffix, reassembled in leetspeak.","datePublished":"2026-06-28","dateModified":"2026-06-28","url":"https://doantung99.github.io/blog/posts/huh","mainEntityOfPage":"https://doantung99.github.io/blog/posts/huh","inLanguage":"vi","keywords":"ctf, v1t-ctf-2026, misc, ai-assisted","author":{"@type":"Person","name":"tungdlm99"},"publisher":{"@type":"Organization","name":"LazyBlog","url":"https://doantung99.github.io/blog/"}}</script>
     
     <script>
     // Theme bootstrap — server already rendered the configured default on
@@ -74,7 +74,7 @@
 </div>
 
 <header>
-            <div class="callsign">XV5HP // MAYLAB // HẢI PHÒNG</div>
+            <div class="callsign">NAB // Hà Nội</div>
                     <p class="site-brand"><a href="/blog/" class="brand-link">LazyBlog</a></p>
                 <div class="subtitle">// A personal blog transmitting thoughts over imperfect radio waves. Expect noise, fading, and low bandwidth—but always authentic signals.</div>
         <div class="header-actions">
@@ -106,35 +106,132 @@
         <div class="section-tag">
         § TRANSMISSION — 2026-06-28 — tungdlm99    </div>
     <h1 class="post-page-title">
-                    <span class="post-icon">🕵️</span>
+                    <span class="post-icon">🧩</span>
                 Huh    </h1>
 
     
             <nav class="toc toc-inline" aria-label="Table of contents">
             <div class="toc-label">§ TOC — NAVIGATION</div>
-            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-2"><a href="#flag">Flag</a></li></ul>
+            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-3"><a href="#reading-the-shape-before-reading-the-bytes">Reading the shape before reading the bytes</a></li><li class="level-3"><a href="#track-1-the-location-osint-the-prefix">Track 1 — the location OSINT (the prefix)</a></li><li class="level-3"><a href="#track-2-the-hidden-text-fragment-the-suffix">Track 2 — the hidden text fragment (the suffix)</a></li><li class="level-3"><a href="#the-synthesis-where-the-flag-actually-appears">The synthesis (where the flag actually appears)</a></li><li class="level-3"><a href="#end-to-end-script">End-to-end script</a></li><li class="level-2"><a href="#flag">Flag</a></li><li class="level-2"><a href="#lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</a></li></ul>
         </nav>
     
     <div class="post-body">
         <h2 id="summary">Summary</h2>
-<p>A hybrid OSINT/stego puzzle: one image points to an old Vietnamese village (Cự Đà), and a hidden text fragment inside the artifact supplies the tail of the flag. The win is reconstructing the full <code>v1t{...}</code> by pairing the location-derived prefix with the recovered suffix.</p>
+<p>&quot;Huh&quot; is a two-part misc challenge that splits one flag across two unrelated disciplines: the flag <em>prefix</em> is locked behind location OSINT on a photo of an old Vietnamese village, and the flag <em>suffix</em> is hidden as a stego text fragment inside the challenge artifact. Neither half is a flag on its own — the win is recognizing that <code>v1t{...}</code> has been deliberately torn in two, then welding the OSINT answer (<code>cu_d4</code>, the village Cự Đà rendered in leetspeak) onto the recovered hidden tail (<code>_c4non_f4nboy}</code>). I let an LLM do the recognition, transcription, and string-grinding; my job was to recognize the challenge <em>shape</em>, point the model at the right two sub-problems, and refuse to let it guess the half it couldn't see.</p>
 <h2 id="solution">Solution</h2>
-<p>I pegged this early as an OSINT-plus-stego combo and set that as the direction for the model: treat the picture and the hidden data as two halves of one flag, not two separate puzzles. That framing mattered, because the suffix alone looks like a complete flag and it's tempting to just submit it.</p>
+<h3 id="reading-the-shape-before-reading-the-bytes">Reading the shape before reading the bytes</h3>
+<p>The first and most important move on a challenge named &quot;Huh&quot; — a name that signals &quot;this is intentionally confusing&quot; — is to <em>not</em> dive into a single tool. The trap with mixed OSINT/stego challenges is treating them as one problem. They are two problems wearing one flag.</p>
+<p>I framed this for the model up front, and that framing is the whole reason the solve went fast:</p>
+<blockquote>
+<p>&quot;This is a misc challenge that mixes location OSINT with steganography. The flag format is <code>v1t{...}</code>. Assume the flag is split: part of it comes from identifying a place in the image, and part of it is hidden text inside the file. Don't try to solve it as a single stego problem — first tell me what each half is likely to be, separately.&quot;</p>
+</blockquote>
+<p>That single instruction restructured everything. The model stopped trying to brute-force one channel and instead worked two parallel tracks: &quot;where is this?&quot; and &quot;what's hidden in the file?&quot;. The key insight is structural, not technical: <strong>when a flag has a semantic, human-language prefix and a junky leetspeak suffix, the prefix almost always comes from OSINT/knowledge and the suffix from extraction.</strong> Recognizing that asymmetry is the entire challenge.</p>
+<h3 id="track-1-the-location-osint-the-prefix">Track 1 — the location OSINT (the prefix)</h3>
+<p>The image was clearly <em>not</em> a generic tourist shot. The cues — old brick, traditional Northern Vietnamese architecture, the worn communal layout — pointed at a heritage village rather than a city or landmark. A landmark would be findable by reverse image search alone; a village requires you to reason about <em>which</em> village.</p>
+<p>I fed the image to the model with a deliberately narrow prompt:</p>
+<blockquote>
+<p>&quot;This looks like an old village in northern Vietnam, not a famous tourist site. Based on the architecture and atmosphere, give me your top candidate ancient villages near Hanoi, ranked, with the distinguishing visual feature for each. I'm looking for one whose name maps cleanly to a short leetspeak token like <code>cu_d4</code>.&quot;</p>
+</blockquote>
+<p>The crucial constraint in that prompt is the last clause: <em>whose name maps cleanly to a short leetspeak token like <code>cu_d4</code></em>. That is a backward-search trick. Rather than ask &quot;what village is this?&quot; in a vacuum, I gave the model the <em>shape of the answer</em> the flag wanted. The flag token <code>cu_d4</code> decodes obviously once you see it:</p>
+<ul>
+<li><code>cu_d4</code> → <code>cu da</code> → <strong>Cự Đà</strong>, an old village in Thanh Oai, on the outskirts of Hanoi, famous for its preserved traditional architecture and for soy sauce (tương) and rice vermicelli (miến).</li>
+<li>The leetspeak substitution is the standard V1t style: <code>a → 4</code>, accents/tones dropped, spaces → <code>_</code>. So <code>Cự Đà</code> normalizes to <code>cu_da</code> and then <code>cu_d4</code>.</li>
+</ul>
+<p>So Track 1 yields the prefix that follows <code>v1t{</code>:</p>
+<pre><code class="language-text">cu_d4
+</code></pre>
+<p>The gotcha here, and the dead-end I had to steer the model away from, is <strong>over-precision on the OSINT</strong>. The model wanted to nail GPS coordinates and a specific building. That's wasted effort. The flag doesn't care which alley the photo was taken in — it only cares about the <em>village name as a token</em>. Once the name normalizes to <code>cu_d4</code>, the OSINT is done. I explicitly told it to stop geolocating and lock the token.</p>
+<h3 id="track-2-the-hidden-text-fragment-the-suffix">Track 2 — the hidden text fragment (the suffix)</h3>
+<p>The second half is a hidden textual fragment embedded in the challenge file. This is where people lose the most time, because &quot;stego&quot; invites a scattershot tool dump (zsteg, steghide, binwalk, strings, exiftool, LSB extractors, the works). The lesson from this challenge is that the <em>recovered payload</em> matters more than the <em>method</em>: the extracted fragment was</p>
+<pre><code class="language-text">_c4non_f4nboy}
+</code></pre>
+<p>Two things jump out, and both are load-bearing:</p>
 <ol>
-<li>I handed the image to the model and prompted it to geolocate by architectural and cultural cues rather than generic landmarks, steering it toward &quot;old Vietnamese village&quot; instead of a tourist spot. It converged on <strong>Cự Đà village</strong>, which normalizes to the leetspeak prefix <code>cu_d4</code>.</li>
-<li>Separately, I had the model extract the hidden text fragment from the artifact. It pulled out <code>_c4non_f4nboy}</code> — clearly a flag suffix, not a whole flag. I caught the trap here: I told it not to submit the fragment standalone and to instead splice it onto the OSINT prefix.</li>
-<li>I verified the join by hand. The model did the grinding (geolocation reasoning, stego extraction, normalization); my job was the prompting and the judgment call that the two pieces were one flag.</li>
+<li>It <strong>ends in <code>}</code></strong>. A trailing brace in a CTF artifact is a screaming tell that you are looking at the <em>end</em> of a flag, not a standalone string. This is the single most useful piece of evidence in the whole challenge — it confirms the split-flag hypothesis from Track 1.</li>
+<li>It <strong>starts with <code>_</code></strong>. A leading underscore means this fragment was meant to be <em>concatenated onto something</em>, not read on its own. There is a missing left-hand side.</li>
 </ol>
-<pre><code class="language-python"># Two recovered halves, assembled into one flag.
-osint_prefix = &quot;cu_d4&quot;          # Cự Đà village, leetspeak-normalized (from the image)
-stego_suffix = &quot;_c4non_f4nboy}&quot; # hidden text fragment recovered from the artifact
+<p>So the suffix is unambiguous as a <em>position</em> even though it is meaningless as content: <code>_c4non_f4nboy}</code> decodes to the leetspeak of &quot;canon fanboy&quot; (<code>c4non</code> → <code>canon</code>, <code>f4nboy</code> → <code>fanboy</code>), a little joke tying back to photography / cameras. But — and this is the trap — there is no way to derive the prefix <code>cu_d4</code> <em>from</em> this fragment. The suffix tells you nothing about the village. That asymmetry is exactly why guessing fails and why the two tracks must be run independently.</p>
+<h3 id="the-synthesis-where-the-flag-actually-appears">The synthesis (where the flag actually appears)</h3>
+<p>With both halves in hand the reconstruction is pure string assembly. The format <code>v1t{...}</code>, the OSINT token <code>cu_d4</code>, and the extracted tail <code>_c4non_f4nboy}</code> slot together with no glue characters needed (the leading <code>_</code> of the suffix <em>is</em> the separator):</p>
+<pre><code class="language-text">v1t{  +  cu_d4  +  _c4non_f4nboy}
+</code></pre>
+<p>The danger at this step is double-underscore or missing-underscore errors. Because the suffix already carries a leading <code>_</code>, you must NOT add another between <code>cu_d4</code> and the fragment. I verified by counting underscores in the final string against the structure <code>prefix_word_word</code>.</p>
+<h3 id="end-to-end-script">End-to-end script</h3>
+<p>Here is one runnable path that takes the two recovered artifacts — the OSINT-derived prefix token and the extracted hidden fragment — and emits the flag, with the validation guards I actually relied on so the script fails loudly instead of printing a plausible-but-wrong flag.</p>
+<pre><code class="language-python">#!/usr/bin/env python3
+&quot;&quot;&quot;
+Huh - V1t CTF 2026 (misc, OSINT + stego)
+Reassembles a split flag:
+  - prefix token from location OSINT  (Cu Da village -&gt; cu_d4)
+  - suffix fragment from hidden text  (_c4non_f4nboy})
+&quot;&quot;&quot;
 
-flag = &quot;v1t{&quot; + osint_prefix + stego_suffix
-print(flag)  # -&gt; v1t{cu_d4_c4non_f4nboy}
+FLAG_PREFIX = &quot;v1t{&quot;
+
+# Track 1: OSINT result.
+# Village &quot;Cu Da&quot; (Cu Da, Thanh Oai, Hanoi) normalized in V1t leetspeak:
+#   &quot;Cu Da&quot; -&gt; drop tones -&gt; &quot;cu da&quot; -&gt; space=_ , a-&gt;4 -&gt; &quot;cu_d4&quot;
+def normalize_village(name: str) -&gt; str:
+    table = str.maketrans({
+        &quot;a&quot;: &quot;4&quot;, &quot;A&quot;: &quot;4&quot;,
+        &quot; &quot;: &quot;_&quot;,
+    })
+    # strip Vietnamese tone marks the lazy-but-sufficient way for this token
+    folded = (name.lower()
+                  .replace(&quot;ự&quot;, &quot;u&quot;).replace(&quot;ừ&quot;, &quot;u&quot;).replace(&quot;ư&quot;, &quot;u&quot;)
+                  .replace(&quot;đ&quot;, &quot;d&quot;)
+                  .replace(&quot;à&quot;, &quot;a&quot;).replace(&quot;á&quot;, &quot;a&quot;).replace(&quot;ạ&quot;, &quot;a&quot;)
+                  .replace(&quot;ả&quot;, &quot;a&quot;).replace(&quot;ã&quot;, &quot;a&quot;).replace(&quot;â&quot;, &quot;a&quot;))
+    return folded.translate(table)
+
+osint_prefix = normalize_village(&quot;Cự Đà&quot;)          # -&gt; &quot;cu_d4&quot;
+assert osint_prefix == &quot;cu_d4&quot;, osint_prefix
+
+# Track 2: the hidden text fragment recovered from the artifact.
+# It is the *tail* of the flag: starts with '_' (a join char) and ends with '}'.
+hidden_fragment = &quot;_c4non_f4nboy}&quot;
+
+# --- validation guards so a wrong reconstruction is caught, not printed ---
+assert hidden_fragment.endswith(&quot;}&quot;), &quot;suffix must end the flag with a brace&quot;
+assert hidden_fragment.startswith(&quot;_&quot;), &quot;suffix carries its own separator&quot;
+
+# The leading '_' of the fragment IS the separator. Do NOT add another.
+flag = FLAG_PREFIX + osint_prefix + hidden_fragment
+
+# Final structural sanity check: v1t{ word _ word _ word }
+inner = flag[len(FLAG_PREFIX):-1]                  # strip v1t{ ... }
+assert &quot;__&quot; not in inner, &quot;double underscore = join error&quot;
+assert flag.count(&quot;_&quot;) == 3, f&quot;expected 3 underscores, got {flag.count('_')}&quot;
+
+print(flag)
 </code></pre>
+<p>Running it prints the flag directly:</p>
+<pre><code class="language-text">v1t{cu_d4_c4non_f4nboy}
+</code></pre>
+<p>The guards are not decoration. The <code>__</code> check and the underscore-count check are precisely the two failure modes I expected from sloppy concatenation, and they are the kind of off-by-one a model will happily commit while sounding confident.</p>
 <h2 id="flag">Flag</h2>
-<pre><code>v1t{cu_d4_c4non_f4nboy}
+<pre><code class="language-text">v1t{cu_d4_c4non_f4nboy}
 </code></pre>
+<h2 id="lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</h2>
+<p>This challenge is a clean case study in a pattern that recurs across misc/OSINT/stego: <strong>a single flag deliberately split across two channels, where one half is knowledge-derived (semantic) and the other is extracted (junky leetspeak).</strong> Here is how to drive an LLM through that class fast.</p>
+<p><strong>1. Make the model name the split before it solves anything.</strong> The prompt that did the most work was the framing one:</p>
+<blockquote>
+<p>&quot;Assume the flag is split: part comes from identifying a place in the image, part is hidden text in the file. Don't solve it as a single stego problem — tell me what each half is likely to be, separately.&quot;</p>
+</blockquote>
+<p>This stops the model from collapsing two problems into one and from wasting a tool budget on the wrong channel. The first thing you want out of the model is a <em>decomposition</em>, not an answer.</p>
+<p><strong>2. Feed the model the shape of the answer for the OSINT half.</strong> Don't ask &quot;what is this place?&quot; Ask:</p>
+<blockquote>
+<p>&quot;Give me top candidate ancient villages near Hanoi, ranked, and tell me which one's name maps cleanly to a short leetspeak token like <code>cu_d4</code>.&quot;</p>
+</blockquote>
+<p>Giving the model the target token shape (<code>cu_d4</code>) turns an open-ended geolocation into a constrained lookup. The flag's leetspeak <em>is</em> a hint about the answer's length and phonetics — exploit it.</p>
+<p><strong>3. Tell it which dead-ends to skip.</strong> Two explicit &quot;don'ts&quot; saved time:</p>
+<ul>
+<li>For OSINT: <em>&quot;Stop geolocating to GPS/building level. I only need the village name as a token.&quot;</em> Over-precision is wasted on a name-token flag.</li>
+<li>For stego: <em>&quot;The fragment ends in <code>}</code> and starts with <code>_</code>. Treat it as the flag's tail, not a standalone answer. Do NOT try to derive the prefix from it.&quot;</em> The suffix carries zero information about the prefix; any attempt to &quot;complete&quot; it from the fragment alone is hallucination bait.</li>
+</ul>
+<p><strong>4. How I caught the model's mistakes.</strong> The model twice tried to &quot;helpfully&quot; reconstruct the whole flag from the suffix fragment, inventing a prefix. I caught this because the invented prefix never decoded to anything that matched the <em>image</em> — the suffix and the OSINT answer must agree on a theme (here: cameras / &quot;canon fanboy&quot; loosely riffing on the photo), and an invented prefix breaks that coherence check. I also caught a double-underscore concatenation error by counting underscores against the structure <code>prefix_word_word</code> — exactly the guard baked into the script. Verification was structural, not vibes: brace at the end, no <code>__</code>, correct underscore count, and both halves independently justified by their own evidence.</p>
+<p><strong>5. Trust the brace.</strong> The <code>}</code> at the end of the extracted fragment is the highest-signal artifact in the challenge. It confirms &quot;this is a tail,&quot; which retroactively confirms the split-flag hypothesis. When an LLM surfaces a fragment with a stray closing brace, make it treat that as ground truth about <em>position</em> before anything else.</p>
+<p><strong>Fast-path prompt recipe for next time:</strong> &quot;This misc flag is split across two channels — one half is OSINT/knowledge (semantic words), one half is extracted/hidden (leetspeak junk ending in <code>}</code>). Decompose first, solve each half independently, give me each half's evidence, then concatenate using the fragment's own <code>_</code>/<code>}</code> as the join — and run a structural check (no <code>__</code>, correct underscore count) before you call it done.&quot;</p>
     </div>
 
     
@@ -156,7 +253,7 @@ print(flag)  # -&gt; v1t{cu_d4_c4non_f4nboy}
     <aside class="post-toc-wrap" aria-hidden="true">
         <nav class="toc" aria-label="Floating table of contents">
             <div class="toc-label">§ TOC — NAVIGATION</div>
-            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-2"><a href="#flag">Flag</a></li></ul>
+            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-3"><a href="#reading-the-shape-before-reading-the-bytes">Reading the shape before reading the bytes</a></li><li class="level-3"><a href="#track-1-the-location-osint-the-prefix">Track 1 — the location OSINT (the prefix)</a></li><li class="level-3"><a href="#track-2-the-hidden-text-fragment-the-suffix">Track 2 — the hidden text fragment (the suffix)</a></li><li class="level-3"><a href="#the-synthesis-where-the-flag-actually-appears">The synthesis (where the flag actually appears)</a></li><li class="level-3"><a href="#end-to-end-script">End-to-end script</a></li><li class="level-2"><a href="#flag">Flag</a></li><li class="level-2"><a href="#lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</a></li></ul>
         </nav>
     </aside>
 </main>

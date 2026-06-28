@@ -8,7 +8,7 @@
 
     <title>Search // Transmission Index — LazyBlog</title>
     <meta name="description" content="A personal blog transmitting thoughts over imperfect radio waves. Expect noise, fading, and low bandwidth—but always authentic signals.">
-            <meta name="author" content="XV5HP">
+            <meta name="author" content="tungdlm99">
         <meta name="generator" content="LazyBlog 1.11.0">
     <meta name="robots" content="index, follow, max-image-preview:large">
 
@@ -64,7 +64,7 @@
 
 
 <header>
-            <div class="callsign">XV5HP // MAYLAB // HẢI PHÒNG</div>
+            <div class="callsign">NAB // Hà Nội</div>
                     <p class="site-brand"><a href="/blog/" class="brand-link">LazyBlog</a></p>
                 <div class="subtitle">// A personal blog transmitting thoughts over imperfect radio waves. Expect noise, fading, and low bandwidth—but always authentic signals.</div>
         <div class="header-actions">
@@ -129,5 +129,35 @@
 
 <script defer src="/blog/assets/site.js?v=1782400888"></script>
 
+<script>
+(function(){
+  function fold(s){return (s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/đ/g,'d');}
+  function qp(){var m=location.search.match(/[?&]q=([^&]*)/);return m?decodeURIComponent(m[1].replace(/\+/g,' ')):'';}
+  function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+  var form=document.querySelector('.search-form'),input=document.querySelector('.search-input'),page=document.querySelector('.search-page');
+  if(!form||!page)return;
+  var idx=null;
+  function results(){var r=page.querySelector('#js-results');if(!r){r=document.createElement('div');r.id='js-results';page.appendChild(r);}return r;}
+  function snippet(text,terms){var f=fold(text),pos=-1;for(var i=0;i<terms.length;i++){var p=f.indexOf(terms[i]);if(p>=0&&(pos<0||p<pos))pos=p;}if(pos<0)pos=0;var s=Math.max(0,pos-60);return (s>0?'… ':'')+text.slice(s,s+200).trim()+' …';}
+  function render(q){
+    page.querySelectorAll('.search-hint,.search-empty,.search-meta,.search-results').forEach(function(e){e.remove();});
+    var out=results();
+    var terms=fold(q).split(/\s+/).filter(function(t){return t.length>=2;});
+    if(!terms.length){out.innerHTML='<p class="search-hint">// Type a query to scan all transmissions. Vietnamese diacritics optional.</p>';return;}
+    var hits=idx.filter(function(p){var h=fold(p.title+' '+(p.tags||[]).join(' ')+' '+p.text);return terms.every(function(t){return h.indexOf(t)>=0;});});
+    if(!hits.length){out.innerHTML='<p class="search-empty">// NO SIGNAL ON FREQUENCY "'+esc(q)+'"</p>';return;}
+    var h='<p class="search-meta">'+hits.length+' result'+(hits.length===1?'':'s')+' for "'+esc(q)+'"</p><ul class="search-results">';
+    hits.forEach(function(p){
+      h+='<li class="search-item"><div class="search-result-meta"><span class="search-date">'+esc((p.date||'').slice(0,10))+'</span>';
+      (p.tags||[]).forEach(function(t){h+='<a class="tag-chip" href="/blog/tags/'+esc(t)+'">#'+esc(t)+'</a>';});
+      h+='</div><a class="search-title-link" href="/blog/posts/'+esc(p.slug)+'/"><span class="search-title">'+(p.icon?'<span class="search-icon">'+esc(p.icon)+'</span> ':'')+esc(p.title)+'</span></a><p class="search-snippet">'+esc(snippet(p.text,terms))+'</p></li>';
+    });
+    h+='</ul>';out.innerHTML=h;
+  }
+  function run(q){if(input)input.value=q;if(idx){render(q);}else{fetch('/blog/search-index.json').then(function(r){return r.json();}).then(function(d){idx=d;render(q);}).catch(function(){results().innerHTML='<p class="search-empty">// search index unavailable</p>';});}}
+  form.addEventListener('submit',function(e){e.preventDefault();var q=input?input.value:'';history.replaceState(null,'','/blog/search/'+(q?('?q='+encodeURIComponent(q)):''));run(q);});
+  run(qp());
+})();
+</script>
 </body>
 </html>

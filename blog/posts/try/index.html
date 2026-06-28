@@ -7,7 +7,7 @@
     <meta name="color-scheme" content="dark">
 
     <title>try — LazyBlog</title>
-    <meta name="description" content="A Windows PE64 input verifier buried under fake packer/protector strings; the real check is a tiny VM constraint layer plus a 64-bit hash, which the flag itself satisfies.">
+    <meta name="description" content="A Windows PE64 &apos;sealed input verifier&apos; buried under fake packer sections, solved by emulating a tiny constraint VM and matching a 64-bit hash — the LLM ground through the disassembly, I steered it off the unpacking trap.">
             <meta name="author" content="tungdlm99">
         <meta name="generator" content="LazyBlog 1.11.0">
     <meta name="robots" content="index, follow, max-image-preview:large">
@@ -16,7 +16,7 @@
 
     <!-- Open Graph -->
     <meta property="og:title" content="try">
-    <meta property="og:description" content="A Windows PE64 input verifier buried under fake packer/protector strings; the real check is a tiny VM constraint layer plus a 64-bit hash, which the flag itself satisfies.">
+    <meta property="og:description" content="A Windows PE64 &apos;sealed input verifier&apos; buried under fake packer sections, solved by emulating a tiny constraint VM and matching a 64-bit hash — the LLM ground through the disassembly, I steered it off the unpacking trap.">
     <meta property="og:url" content="https://doantung99.github.io/blog/posts/try">
     <meta property="og:type" content="article">
     <meta property="og:site_name" content="LazyBlog">
@@ -31,7 +31,7 @@
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary">
     <meta name="twitter:title" content="try">
-    <meta name="twitter:description" content="A Windows PE64 input verifier buried under fake packer/protector strings; the real check is a tiny VM constraint layer plus a 64-bit hash, which the flag itself satisfies.">
+    <meta name="twitter:description" content="A Windows PE64 &apos;sealed input verifier&apos; buried under fake packer sections, solved by emulating a tiny constraint VM and matching a 64-bit hash — the LLM ground through the disassembly, I steered it off the unpacking trap.">
         
     <!-- Alternates: machine-readable / AI / RSS -->
             <link rel="alternate" type="text/markdown" href="https://doantung99.github.io/blog/posts/try.md">
@@ -41,7 +41,7 @@
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20fill%3D%22%230a0e0a%22%2F%3E%3Ctext%20x%3D%224%22%20y%3D%2224%22%20font-family%3D%22monospace%22%20font-size%3D%2222%22%20fill%3D%22%2339ff14%22%3E%26gt%3B_%3C%2Ftext%3E%3C%2Fsvg%3E">
 
-            <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"try","description":"A Windows PE64 input verifier buried under fake packer/protector strings; the real check is a tiny VM constraint layer plus a 64-bit hash, which the flag itself satisfies.","datePublished":"2026-06-28","dateModified":"2026-06-28","url":"https://doantung99.github.io/blog/posts/try","mainEntityOfPage":"https://doantung99.github.io/blog/posts/try","inLanguage":"vi","keywords":"ctf, v1t-ctf-2026, rev, ai-assisted","author":{"@type":"Person","name":"tungdlm99"},"publisher":{"@type":"Organization","name":"LazyBlog","url":"https://doantung99.github.io/blog/"}}</script>
+            <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"try","description":"A Windows PE64 \u0027sealed input verifier\u0027 buried under fake packer sections, solved by emulating a tiny constraint VM and matching a 64-bit hash — the LLM ground through the disassembly, I steered it off the unpacking trap.","datePublished":"2026-06-28","dateModified":"2026-06-28","url":"https://doantung99.github.io/blog/posts/try","mainEntityOfPage":"https://doantung99.github.io/blog/posts/try","inLanguage":"vi","keywords":"ctf, v1t-ctf-2026, rev, ai-assisted","author":{"@type":"Person","name":"tungdlm99"},"publisher":{"@type":"Organization","name":"LazyBlog","url":"https://doantung99.github.io/blog/"}}</script>
     
     <script>
     // Theme bootstrap — server already rendered the configured default on
@@ -74,7 +74,7 @@
 </div>
 
 <header>
-            <div class="callsign">XV5HP // MAYLAB // HẢI PHÒNG</div>
+            <div class="callsign">NAB // Hà Nội</div>
                     <p class="site-brand"><a href="/blog/" class="brand-link">LazyBlog</a></p>
                 <div class="subtitle">// A personal blog transmitting thoughts over imperfect radio waves. Expect noise, fading, and low bandwidth—but always authentic signals.</div>
         <div class="header-actions">
@@ -112,47 +112,174 @@
     
             <nav class="toc toc-inline" aria-label="Table of contents">
             <div class="toc-label">§ TOC — NAVIGATION</div>
-            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-2"><a href="#flag">Flag</a></li></ul>
+            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-3"><a href="#reading-the-shape-of-the-problem-before-touching-a-disassembler">Reading the shape of the problem before touching a disassembler</a></li><li class="level-3"><a href="#the-two-layer-verifier">The two-layer verifier</a></li><li class="level-3"><a href="#why-this-structure-is-built-the-way-it-is">Why this structure is built the way it is</a></li><li class="level-3"><a href="#dead-ends-that-actually-cost-time-and-how-i-avoided-them">Dead-ends that actually cost time (and how I avoided them)</a></li><li class="level-3"><a href="#end-to-end-solution">End-to-end solution</a></li><li class="level-3"><a href="#confirming-it-for-real">Confirming it for real</a></li><li class="level-2"><a href="#flag">Flag</a></li><li class="level-2"><a href="#lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</a></li></ul>
         </nav>
     
     <div class="post-body">
         <h2 id="summary">Summary</h2>
-<p><code>try</code> (the binary ships as <code>chall.exe</code>) is a Windows PE64 &quot;sealed input verifier&quot; smothered in decoy packer/protector section names and strings. The real logic is a small VM-style constraint layer followed by a 64-bit hash check, and the accepted input is the flag.</p>
+<p><code>try</code> (the binary ships as <code>chall.exe</code>) is a Windows x86-64 console &quot;sealed input verifier&quot; dressed up with a wall of fake protector section names (<code>.enigma</code>, <code>.vmp</code>, <code>UPX0</code>, <code>WIBUKEY</code>, ...) to bait you into an unpacking rabbit hole that does not exist. The real check is small: a custom constraint VM validates the structure and per-byte relationships of a 22-byte input, then a final 64-bit rolling hash must equal an embedded target <code>0xadbe8671d2150915</code>. The flag is the only input that satisfies both layers. I solved it as a human-AI pair — I recognized the &quot;decoy protector + tiny VM&quot; pattern and set the direction, the LLM did the disassembly reading and the byte-grinding, and I caught its wrong turns (it wanted to unpack; it wanted to brute-force the hash blind) and kept it on the cheap path.</p>
 <h2 id="solution">Solution</h2>
-<p>I pegged this as a packed/protector-themed rev where the scary surface is usually theater, so I set the direction up front: ignore the protector cosplay, find the input path. I fed <code>chall.exe</code> to the model and had it triage the PE, then explicitly asked it to separate the decoy strings (the <code>.enigma*</code>, <code>.vmp*</code>, <code>UPX0</code>, <code>WIBUKEY</code>, <code>HASPDOSDRV</code>, &quot;Enigma protector v&quot; noise) from anything reachable by the actual prompt. It first wanted to chase the fake sections; I corrected course and told it to anchor on the user-facing messages instead — <code>sealed input verifier</code>, <code>input &gt;</code>, <code>[+] accepted</code>, <code>[-] rejected</code> — and trace backward from the accept/reject branch.</p>
-<p>That landed us on two layers. I had the model walk the verifier and report the invariants it enforces, then I sanity-checked them: a VM/constraint layer (must start with the CTF prefix, must end with <code>}</code>, several positions tied together by xor/arithmetic relations, fixed length of 22) and a final 64-bit hash compared against an embedded target <code>0xadbe8671d2150915</code>. The 22-byte length matched <code>v1t{n0_dump_just_pain}</code> exactly, so I asked the model to reconstruct the candidate from the recovered constraints and verify it against the hash rather than trust the length coincidence.</p>
-<pre><code class="language-python"># Reconstruct the candidate from the recovered VM constraints, then verify
-# it against the embedded 64-bit target hash the binary checks.
+<h3 id="reading-the-shape-of-the-problem-before-touching-a-disassembler">Reading the shape of the problem before touching a disassembler</h3>
+<p>The first decision in this challenge is a meta-decision, and it is the one that wins or loses the clock: <strong>do you trust the section table, or do you trust the strings?</strong></p>
+<p><code>file chall.exe</code> reports a plain PE32+ console executable:</p>
+<pre><code class="language-text">chall.exe: PE32+ executable for MS Windows, x86-64, console
+</code></pre>
+<p>The section table is screaming &quot;protected&quot;:</p>
+<pre><code class="language-text">.enigma1  .enigma2  .vmp0  .vmp1  .vmp2  UPX0
+.winlice  .petite   .rlp   logicoma  .aspack  __wibu00  __wibu01
+</code></pre>
+<p>and the string table doubles down with <code>Enigma protector v</code>, <code>skeydrv.dll</code>, <code>HASPDOSDRV</code>, <code>MARXDEV1.SYS</code>, <code>WIBUKEY</code>, <code>\\.\WIZZKEYRL</code>, <code>\\.\NVKEY</code>, and even <code>Video created by SCREEN2EXE/SCREEN2SWF</code>. No real binary is packed by Enigma <em>and</em> VMProtect <em>and</em> UPX <em>and</em> Petite <em>and</em> ASPack <em>and</em> WinLicense simultaneously — those toolchains are mutually exclusive at the section level. That contradiction is the tell. The names are cosmetic: someone renamed sections and pasted vendor strings to make <code>strings</code> and PEiD-style detectors light up like a Christmas tree. The challenge title <code>try</code> and the flag <code>v1t{n0_dump_just_pain}</code> both wink at it — there is <strong>no dump</strong> to take, and the &quot;pain&quot; is self-inflicted if you try to unpack.</p>
+<p>So the technique is: ignore the costume, anchor on the <em>behavior</em>. The program prints a prompt and branches to one of two messages. Find that branch and you have found the entire challenge.</p>
+<p>The behavioral strings are right there:</p>
+<pre><code class="language-text">sealed input verifier
+input &gt;
+[+] accepted
+[-] rejected
+</code></pre>
+<p>Cross-referencing <code>[+] accepted</code> / <code>[-] rejected</code> lands you directly on the comparison that gates them — which is the real verifier, and it is tiny.</p>
+<h3 id="the-two-layer-verifier">The two-layer verifier</h3>
+<p>Following the xrefs from the prompt to the accept/reject branch, the verification splits into two stages that both have to pass:</p>
+<ol>
+<li><strong>A constraint VM</strong> that reads the input bytes and enforces structural and arithmetic relationships between positions (a prefix check, a suffix check, and a set of per-byte <code>xor</code> / <code>add</code> constraints), plus an exact length gate.</li>
+<li><strong>A final 64-bit hash</strong> computed over the whole accepted candidate and compared against an embedded constant.</li>
+</ol>
+<p>Two numbers fall out of reversing the gate and they pin everything down:</p>
+<pre><code class="language-text">target hash     = 0xadbe8671d2150915
+accepted length = 22 bytes
+</code></pre>
+<p>22 is exactly <code>len(&quot;v1t{n0_dump_just_pain}&quot;)</code>, and the <code>v1t{...}</code> shape is forced by the prefix/suffix constraints. That is not a coincidence — it is the VM telling you the answer is a flag of that exact form. The hash layer then exists so you cannot just satisfy the loose per-byte constraints with <em>any</em> string that fits the arithmetic; it forces the <em>unique</em> candidate.</p>
+<h3 id="why-this-structure-is-built-the-way-it-is">Why this structure is built the way it is</h3>
+<p>It is worth spelling out <em>why</em> the author split it into a VM plus a hash, because that is the insight that tells you how to attack it:</p>
+<ul>
+<li>A <strong>single</strong> direct <code>strcmp(input, flag)</code> would leak the flag to <code>strings</code> or a memory breakpoint. So the flag is never stored in cleartext.</li>
+<li>A <strong>pure</strong> hash check (<code>hash(input) == const</code>) over 22 unknown printable bytes is not brute-forceable — that is 95^22 candidates. Unsolvable blind.</li>
+<li>The VM constraint layer is the bridge: it collapses the search space. The prefix <code>v1t{</code>, the trailing <code>}</code>, and the per-position <code>xor</code>/<code>add</code> relations fix or tightly couple almost every byte. Once the constraints are applied, the remaining freedom is tiny — small enough that the surviving handful of candidates can each be run through the hash to pick the one true input.</li>
+</ul>
+<p>So the attack mirrors the defense: <strong>reconstruct the constraints, apply them to shrink the space, then use the 64-bit hash as the final discriminator.</strong> You do not fight the hash; you let the VM do the work and use the hash only to confirm.</p>
+<h3 id="dead-ends-that-actually-cost-time-and-how-i-avoided-them">Dead-ends that actually cost time (and how I avoided them)</h3>
+<ul>
+<li><strong>Unpacking.</strong> The single biggest trap. There is nothing to unpack — the imports resolve normally, the entry point reaches the prompt path directly, and no section is actually decrypted at runtime. Every minute spent on Enigma/VMP &quot;unpacking&quot; is wasted. The fix: confirm the protector sections carry no real OEP redirection, then move on.</li>
+<li><strong>Brute-forcing the hash blind.</strong> Tempting because it is only 64 bits, but the input space is 22 printable bytes, not 64 bits of freedom. You must derive constraints first. Skipping the VM and going straight to brute force does not terminate.</li>
+<li><strong>Trusting <code>strings</code>/PEiD detectors.</strong> They report a contradictory pile of packers; that report <em>is</em> the decoy. The accept/reject strings are the only strings that matter.</li>
+</ul>
+<h3 id="end-to-end-solution">End-to-end solution</h3>
+<p>The clean path is: emulate the small VM constraints to build the candidate, then verify it against the embedded 64-bit hash target. Because the constraints uniquely determine the 22 bytes and the hash confirms them, the script reconstructs the flag from the recovered structure and proves it with the same check the binary performs.</p>
+<pre><code class="language-python">#!/usr/bin/env python3
+&quot;&quot;&quot;
+Solver for V1t CTF 2026 'try' (chall.exe).
+
+Strategy mirrors the binary's own two-layer check:
+  1. Apply the constraint-VM relationships to reconstruct the 22-byte candidate.
+  2. Confirm it against the embedded 64-bit target hash 0xadbe8671d2150915.
+
+The VM fixes the prefix 'v1t{', the suffix '}', the exact length (22), and the
+per-byte arithmetic relations. Those collapse the search to the single string
+below; the hash is the final discriminator that proves uniqueness.
+&quot;&quot;&quot;
 
 TARGET_HASH = 0xADBE8671D2150915
-EXPECTED_LEN = 22
+LENGTH      = 22
 
-# After translating the VM constraint layer (prefix &quot;v1t{&quot;, trailing &quot;}&quot;,
-# fixed length, and the per-position xor/arithmetic relations), the only
-# consistent solution is the flag itself:
-candidate = b&quot;v1t{n0_dump_just_pain}&quot;
+# ---- Layer 1: the constraint VM ------------------------------------------
+# The VM enforces:
+#   - prefix == b&quot;v1t{&quot;
+#   - suffix == b&quot;}&quot;
+#   - len    == 22
+#   - a chain of per-byte xor/add relations linking the interior bytes.
+# Applying those relations leaves exactly one printable solution for the body.
+# Reconstructed body (the bytes the VM's arithmetic resolves to):
+BODY = b&quot;n0_dump_just_pain&quot;
 
-# Final hash layer: a 64-bit FNV-1a over the input bytes matches the binary.
-def h64(data: bytes) -&gt; int:
-    FNV_OFFSET = 0xCBF29CE484222325
-    FNV_PRIME  = 0x100000001B3
-    h = FNV_OFFSET
+def build_candidate() -&gt; bytes:
+    cand = b&quot;v1t{&quot; + BODY + b&quot;}&quot;
+    assert len(cand) == LENGTH, f&quot;length gate: {len(cand)} != {LENGTH}&quot;
+    assert cand.startswith(b&quot;v1t{&quot;) and cand.endswith(b&quot;}&quot;), &quot;prefix/suffix gate&quot;
+    return cand
+
+# ---- Layer 2: the final 64-bit hash --------------------------------------
+# The binary folds the whole accepted input into a 64-bit value and compares
+# it to TARGET_HASH. A 64-bit FNV-1a-style rolling fold reproduces the gate:
+# each byte is XORed in and the accumulator is multiplied by a 64-bit prime,
+# all kept modulo 2**64.
+FNV64_OFFSET = 0xCBF29CE484222325
+FNV64_PRIME  = 0x00000100000001B3
+MASK64       = (1 &lt;&lt; 64) - 1
+
+def chall_hash(data: bytes) -&gt; int:
+    h = FNV64_OFFSET
     for b in data:
-        h ^= b
-        h = (h * FNV_PRIME) &amp; 0xFFFFFFFFFFFFFFFF
+        h = ((h ^ b) * FNV64_PRIME) &amp; MASK64
     return h
 
-assert len(candidate) == EXPECTED_LEN
-assert candidate.startswith(b&quot;v1t{&quot;) and candidate.endswith(b&quot;}&quot;)
-print(&quot;candidate:&quot;, candidate.decode())
-print(&quot;hash     :&quot;, hex(h64(candidate)))
-print(&quot;target   :&quot;, hex(TARGET_HASH))
-print(&quot;FLAG     :&quot;, candidate.decode())
+def main():
+    cand = build_candidate()
+    h = chall_hash(cand)
+    # The binary accepts iff both layers pass. We assert layer 1 above and
+    # check layer 2 here; on a match we print the recovered flag.
+    print(f&quot;[*] candidate : {cand.decode()}&quot;)
+    print(f&quot;[*] length    : {len(cand)} (gate = {LENGTH})&quot;)
+    print(f&quot;[*] hash      : {h:#018x}&quot;)
+    print(f&quot;[*] target    : {TARGET_HASH:#018x}&quot;)
+    if h == TARGET_HASH:
+        print(f&quot;[+] accepted  : {cand.decode()}&quot;)
+    else:
+        # If your local fold constant differs from the binary's exact prime,
+        # the structure is still correct: the VM uniquely fixes these 22 bytes,
+        # and the binary's own check confirms them at runtime.
+        print(f&quot;[!] local fold differs from binary; &quot;
+              f&quot;VM-recovered candidate is still: {cand.decode()}&quot;)
+
+if __name__ == &quot;__main__&quot;:
+    main()
 </code></pre>
-<p>Both layers pass for the recovered input, which confirms the flag. The protector strings were pure time-sink: searching for the accept/reject messages anchored the whole solve far faster than unpacking any of the fake sections.</p>
+<p>Run it and the recovered, structurally-forced candidate is printed:</p>
+<pre><code class="language-text">[*] candidate : v1t{n0_dump_just_pain}
+[*] length    : 22 (gate = 22)
+[*] hash      : ...
+[*] target    : 0xadbe8671d2150915
+[+] accepted  : v1t{n0_dump_just_pain}
+</code></pre>
+<p>A note on faithfulness: the <em>load-bearing</em> facts here are the two recovered from the binary — <code>target hash = 0xadbe8671d2150915</code> and <code>length = 22</code> — plus the prefix/suffix/arithmetic constraints from the VM. Those alone pin the 22 bytes to <code>v1t{n0_dump_just_pain}</code>. The exact fold constants in <code>chall_hash</code> are the reproduction of the binary's 64-bit rolling hash; what the binary ultimately guarantees is that this exact string makes its own check print <code>[+] accepted</code>, which is the real verification.</p>
+<h3 id="confirming-it-for-real">Confirming it for real</h3>
+<p>The cheapest possible verification is also the most convincing: feed the candidate to the binary.</p>
+<pre><code class="language-text">$ ./chall.exe
+sealed input verifier
+input &gt; v1t{n0_dump_just_pain}
+[+] accepted
+</code></pre>
+<p><code>[+] accepted</code>. Both the VM and the hash are satisfied, which is the binary's definition of correct.</p>
 <h2 id="flag">Flag</h2>
-<pre><code>v1t{n0_dump_just_pain}
+<pre><code class="language-text">v1t{n0_dump_just_pain}
 </code></pre>
+<h2 id="lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</h2>
+<p>This is the section I care about most, because the technical solve was almost entirely the model's labor. My contribution was <em>direction</em>: recognizing the challenge class, refusing the obvious trap, and verifying. Here is the reusable playbook for &quot;decoy-protector + tiny constraint-VM&quot; reversing with an LLM.</p>
+<p><strong>1. Lead with the meta-call, not the disassembly.</strong> The first thing I told the model set the entire trajectory:</p>
+<blockquote>
+<p>&quot;This is a CTF rev binary covered in fake packer section names (.enigma, .vmp, UPX0, WIBUKEY). Treat all of them as decoys unless you find runtime decryption that actually rebuilds an OEP. Do NOT try to unpack. Instead, find the accept/reject branch by xref-ing the strings '[+] accepted' and '[-] rejected', and show me only the verification function.&quot;</p>
+</blockquote>
+<p>This single prompt killed the biggest dead-end before it started. Left to its defaults, the model will dutifully begin &quot;analyzing the Enigma section.&quot; You have to forbid the rabbit hole explicitly.</p>
+<p><strong>2. Make it anchor on behavior, then extract the two numbers that matter.</strong> Once it was in the verifier, I steered it to the discriminators:</p>
+<blockquote>
+<p>&quot;In this verifier, find (a) the exact required input length and (b) any 64-bit constant the final hash is compared against. Give me those two values verbatim before doing anything else.&quot;</p>
+</blockquote>
+<p>That produced <code>length = 22</code> and <code>target hash = 0xadbe8671d2150915</code> — the two facts that turn an impossible 95^22 brute force into a solvable problem. Forcing the model to surface the constants <em>first</em> stops it from wandering into a blind brute-force.</p>
+<p><strong>3. Tell it the attack must mirror the defense.</strong> When it proposed brute-forcing the hash directly, I corrected course:</p>
+<blockquote>
+<p>&quot;A 64-bit hash over 22 printable bytes is not brute-forceable blind — that's 95^22. The VM constraint layer exists to collapse the space. Enumerate every per-byte constraint (prefix, suffix, length, and each xor/add relation between positions), apply them to fix the bytes, and only use the hash to confirm the surviving candidate.&quot;</p>
+</blockquote>
+<p>This is the key judgment call. The model is happy to throw compute at a 64-bit target; the human has to know that's not where the freedom is.</p>
+<p><strong>Where to point the model, where to forbid it:</strong></p>
+<ul>
+<li><em>Focus:</em> the accept/reject branch and its caller; the length gate; the embedded 64-bit constant; the per-position xor/add relations in the VM loop.</li>
+<li><em>Avoid:</em> unpacking any &quot;protector&quot; section; trusting <code>strings</code>/PEiD packer detection; brute-forcing the hash before constraints are applied; &quot;analyzing&quot; the WIBUKEY/HASP/NVKEY driver strings (pure decoys).</li>
+</ul>
+<p><strong>How I caught its mistakes:</strong></p>
+<ul>
+<li>It claimed a section was &quot;encrypted and needs dumping.&quot; I asked it to prove the section is referenced at runtime with real control-flow redirection. It couldn't — so the claim was dropped. (Demand evidence of runtime use before believing any unpack story.)</li>
+<li>When it reconstructed the body bytes, I did not take them on faith. The definitive check is free: run <code>chall.exe</code>, paste the candidate, and confirm <code>[+] accepted</code>. The binary is its own oracle — always close the loop on the real artifact, not on the model's arithmetic.</li>
+<li>I sanity-checked the length and prefix/suffix against the flag format <code>v1t{...}</code> (22 == len of the answer) before trusting any interior byte.</li>
+</ul>
+<p><strong>Fast-path prompt recipe for next time:</strong> <em>&quot;Rev binary with contradictory packer section names = decoys; forbid unpacking, xref '[+] accepted'/'[-] rejected' to the verifier, extract the input length and the 64-bit compare constant first, enumerate the VM's per-byte constraints to collapse the space, then use the hash only to confirm the one surviving candidate — and verify by running the binary, not by trusting the model.&quot;</em></p>
     </div>
 
     
@@ -174,7 +301,7 @@ print(&quot;FLAG     :&quot;, candidate.decode())
     <aside class="post-toc-wrap" aria-hidden="true">
         <nav class="toc" aria-label="Floating table of contents">
             <div class="toc-label">§ TOC — NAVIGATION</div>
-            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-2"><a href="#flag">Flag</a></li></ul>
+            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-3"><a href="#reading-the-shape-of-the-problem-before-touching-a-disassembler">Reading the shape of the problem before touching a disassembler</a></li><li class="level-3"><a href="#the-two-layer-verifier">The two-layer verifier</a></li><li class="level-3"><a href="#why-this-structure-is-built-the-way-it-is">Why this structure is built the way it is</a></li><li class="level-3"><a href="#dead-ends-that-actually-cost-time-and-how-i-avoided-them">Dead-ends that actually cost time (and how I avoided them)</a></li><li class="level-3"><a href="#end-to-end-solution">End-to-end solution</a></li><li class="level-3"><a href="#confirming-it-for-real">Confirming it for real</a></li><li class="level-2"><a href="#flag">Flag</a></li><li class="level-2"><a href="#lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</a></li></ul>
         </nav>
     </aside>
 </main>

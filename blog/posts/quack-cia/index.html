@@ -7,7 +7,7 @@
     <meta name="color-scheme" content="dark">
 
     <title>Quack CIA — LazyBlog</title>
-    <meta name="description" content="An OSINT trail from a video to a GitHub repo, then recovering the flag from a deleted Vim undo file (flag.txt.un_) committed to the repo&apos;s history.">
+    <meta name="description" content="An OSINT trail from a video to a GitHub repo, ending in a Vim undo file whose Base64-encoded flag survived being deleted from the working copy.">
             <meta name="author" content="tungdlm99">
         <meta name="generator" content="LazyBlog 1.11.0">
     <meta name="robots" content="index, follow, max-image-preview:large">
@@ -16,7 +16,7 @@
 
     <!-- Open Graph -->
     <meta property="og:title" content="Quack CIA">
-    <meta property="og:description" content="An OSINT trail from a video to a GitHub repo, then recovering the flag from a deleted Vim undo file (flag.txt.un_) committed to the repo&apos;s history.">
+    <meta property="og:description" content="An OSINT trail from a video to a GitHub repo, ending in a Vim undo file whose Base64-encoded flag survived being deleted from the working copy.">
     <meta property="og:url" content="https://doantung99.github.io/blog/posts/quack-cia">
     <meta property="og:type" content="article">
     <meta property="og:site_name" content="LazyBlog">
@@ -31,7 +31,7 @@
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary">
     <meta name="twitter:title" content="Quack CIA">
-    <meta name="twitter:description" content="An OSINT trail from a video to a GitHub repo, then recovering the flag from a deleted Vim undo file (flag.txt.un_) committed to the repo&apos;s history.">
+    <meta name="twitter:description" content="An OSINT trail from a video to a GitHub repo, ending in a Vim undo file whose Base64-encoded flag survived being deleted from the working copy.">
         
     <!-- Alternates: machine-readable / AI / RSS -->
             <link rel="alternate" type="text/markdown" href="https://doantung99.github.io/blog/posts/quack-cia.md">
@@ -41,7 +41,7 @@
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20fill%3D%22%230a0e0a%22%2F%3E%3Ctext%20x%3D%224%22%20y%3D%2224%22%20font-family%3D%22monospace%22%20font-size%3D%2222%22%20fill%3D%22%2339ff14%22%3E%26gt%3B_%3C%2Ftext%3E%3C%2Fsvg%3E">
 
-            <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Quack CIA","description":"An OSINT trail from a video to a GitHub repo, then recovering the flag from a deleted Vim undo file (flag.txt.un_) committed to the repo\u0027s history.","datePublished":"2026-06-28","dateModified":"2026-06-28","url":"https://doantung99.github.io/blog/posts/quack-cia","mainEntityOfPage":"https://doantung99.github.io/blog/posts/quack-cia","inLanguage":"vi","keywords":"ctf, v1t-ctf-2026, osint, ai-assisted","author":{"@type":"Person","name":"tungdlm99"},"publisher":{"@type":"Organization","name":"LazyBlog","url":"https://doantung99.github.io/blog/"}}</script>
+            <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Quack CIA","description":"An OSINT trail from a video to a GitHub repo, ending in a Vim undo file whose Base64-encoded flag survived being deleted from the working copy.","datePublished":"2026-06-28","dateModified":"2026-06-28","url":"https://doantung99.github.io/blog/posts/quack-cia","mainEntityOfPage":"https://doantung99.github.io/blog/posts/quack-cia","inLanguage":"vi","keywords":"ctf, v1t-ctf-2026, osint, ai-assisted","author":{"@type":"Person","name":"tungdlm99"},"publisher":{"@type":"Organization","name":"LazyBlog","url":"https://doantung99.github.io/blog/"}}</script>
     
     <script>
     // Theme bootstrap — server already rendered the configured default on
@@ -74,7 +74,7 @@
 </div>
 
 <header>
-            <div class="callsign">XV5HP // MAYLAB // HẢI PHÒNG</div>
+            <div class="callsign">NAB // Hà Nội</div>
                     <p class="site-brand"><a href="/blog/" class="brand-link">LazyBlog</a></p>
                 <div class="subtitle">// A personal blog transmitting thoughts over imperfect radio waves. Expect noise, fading, and low bandwidth—but always authentic signals.</div>
         <div class="header-actions">
@@ -106,51 +106,142 @@
         <div class="section-tag">
         § TRANSMISSION — 2026-06-28 — tungdlm99    </div>
     <h1 class="post-page-title">
-                    <span class="post-icon">🕵️</span>
+                    <span class="post-icon">🦆</span>
                 Quack CIA    </h1>
 
     
             <nav class="toc toc-inline" aria-label="Table of contents">
             <div class="toc-label">§ TOC — NAVIGATION</div>
-            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-2"><a href="#flag">Flag</a></li></ul>
+            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-3"><a href="#hop-1-the-video-to-a-handle">Hop 1 — the video to a handle</a></li><li class="level-3"><a href="#hop-2-the-commit-history-not-the-file-tree">Hop 2 — the commit history, not the file tree</a></li><li class="level-3"><a href="#hop-3-reading-the-vim-undo-file">Hop 3 — reading the Vim undo file</a></li><li class="level-3"><a href="#end-to-end-script">End-to-end script</a></li><li class="level-2"><a href="#flag">Flag</a></li><li class="level-2"><a href="#lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</a></li></ul>
         </nav>
     
     <div class="post-body">
         <h2 id="summary">Summary</h2>
-<p>A multi-step OSINT chase: a clue in a video leads to a GitHub account, a specific commit drops a <code>flag.txt.un_</code> file, and that file turns out to be a Vim persistent-undo blob hiding a Base64-encoded flag. My job was steering the AI through the pivot points; the model did the grinding once I pointed it at each artifact.</p>
+<p>Quack CIA is an OSINT chain: a video points to a GitHub account, the commit history of the repo <code>tommypony326532/cia</code> hides a file that was added and then effectively scrubbed, and the real prize is a stray Vim persistent-undo file (<code>flag.txt.un_</code>). That undo file is a binary blob with the <code>Vim\x9fUnDo\xe5</code> magic header, and it still carries an old buffer state containing the flag Base64-encoded — recover it and you win. My role was steering: I recognized the artifact type at each hop, told the model exactly what to look for, and verified the chain. The model did the grinding (parsing commits, carving strings, decoding candidates).</p>
 <h2 id="solution">Solution</h2>
-<p>I treated this as a pure OSINT pivot exercise and kept the model on a tight leash, one lead at a time.</p>
-<ol>
-<li>
-<p><strong>Video to identity.</strong> I watched the provided video and pulled the on-screen text by hand, then handed those strings to the model and asked it to enumerate likely usernames and search GitHub for matches. It surfaced the account <code>tommypony326532</code> and its repo at <code>https://github.com/tommypony326532/cia</code>. I confirmed the repo actually matched the video's theme before moving on.</p>
-</li>
-<li>
-<p><strong>Commits to artifact.</strong> I asked the model to triage the repo's commit history rather than just the current tree, since CTF flags love to hide in deleted files. It flagged commit <code>178b58ed916506407b5221c81beb3f81a3264964</code>, which <em>added</em> a file named <code>flag.txt.un_</code>. The model's first instinct was to <code>cat</code> it as text and report garbage; I caught that and redirected it to treat the file as binary and identify the format instead.</p>
-</li>
-<li>
-<p><strong>Format recognition.</strong> Once it dumped the header, the first bytes (<code>56 69 6d 9f 55 6e 44 6f e5</code>, i.e. <code>Vim\x9fUnDo\xe5</code>) gave it away as a Vim persistent-undo file. I recognized this immediately and prompted the model to scrape printable strings out of the binary, since undo blobs retain old text the editor user thought they'd deleted. Among the strings was a Base64-looking chunk starting <code>djF0</code> — which decodes to <code>v1t</code>, the flag prefix. I had it decode that candidate and verified the result.</p>
-</li>
-</ol>
-<p>Here is the one clean path from the downloaded file to the flag:</p>
-<pre><code class="language-bash"># 1. Grab the file the OSINT trail pointed us to
+<p>This challenge is two problems stitched together: a <em>navigation</em> problem (find the file) and a <em>forensics</em> problem (read the file). I'll treat them in that order, because the second one is where the interesting structure lives.</p>
+<h3 id="hop-1-the-video-to-a-handle">Hop 1 — the video to a handle</h3>
+<p>The entry point is a video. Watching it, there's on-screen text that surfaces a GitHub identity. The trick of this stage is not technical at all — it's resisting the urge to overthink. OSINT intro challenges almost always hand you the pivot directly; the failure mode is treating the video like a steganography puzzle when the answer is plainly written on a frame. The text resolves to the account <code>tommypony326532</code> and the repository:</p>
+<pre><code>https://github.com/tommypony326532/cia
+</code></pre>
+<p>The flag itself (<code>v1t{t0mmy_scr1pt_k1dd13_1n1t}</code>) is a wink at this: &quot;tommy&quot;, &quot;script kiddie&quot;, &quot;init&quot; — the author is role-playing a careless operator, and carelessness is exactly what we are going to exploit.</p>
+<h3 id="hop-2-the-commit-history-not-the-file-tree">Hop 2 — the commit history, not the file tree</h3>
+<p>If you only look at the <em>current</em> state of the repo (the file tree on the default branch), you find nothing useful. That is the whole point. The interesting artifact was added in a specific commit and is not what you would notice browsing normally:</p>
+<pre><code>commit 178b58ed916506407b5221c81beb3f81a3264964
+</code></pre>
+<p>The file added in that commit is named <code>flag.txt.un_</code>. The key insight at this hop is that <strong>Git remembers everything</strong>, including files that look uninteresting or are later overwritten. You can reach the exact blob without trusting the working tree by fetching it from the commit. Two reliable ways:</p>
+<pre><code class="language-bash"># Option A: clone, then extract the file as it existed at that commit
 git clone https://github.com/tommypony326532/cia
 cd cia
-git checkout 178b58ed916506407b5221c81beb3f81a3264964 -- flag.txt.un_
+git show 178b58ed916506407b5221c81beb3f81a3264964:flag.txt.un_ &gt; flag.txt.un_
 
-# 2. Confirm it's a Vim undo file (magic: &quot;Vim\x9fUnDo\xe5&quot;)
+# Option B: raw download straight from GitHub at that commit SHA
+curl -L -o flag.txt.un_ \
+  https://raw.githubusercontent.com/tommypony326532/cia/178b58ed916506407b5221c81beb3f81a3264964/flag.txt.un_
+</code></pre>
+<p>The naming convention is the giveaway for the forensics stage. A file called <code>flag.txt.un_</code> is not a flag — it is the <em>undo history</em> for a file called <code>flag.txt</code>. Vim, with persistent undo enabled, writes undo files alongside the buffer; depending on platform and <code>&amp;undodir</code>, the path is mangled into a flat filename ending in <code>.un~</code> / <code>.un_</code>. The committer edited <code>flag.txt</code>, deleted the visible flag, and left the persistent undo file lying around — and that file still contains the deleted text.</p>
+<h3 id="hop-3-reading-the-vim-undo-file">Hop 3 — reading the Vim undo file</h3>
+<p>This is the part worth slowing down on, because &quot;just run <code>strings</code>&quot; undersells <em>why</em> it works.</p>
+<p>First, confirm what we are holding. The file is binary and the first bytes are diagnostic:</p>
+<pre><code class="language-bash">file flag.txt.un_
 od -An -tx1 -N16 flag.txt.un_
+</code></pre>
+<pre><code>56 69 6d 9f 55 6e 44 6f e5
+</code></pre>
+<p>Interpreting the printable bytes: <code>Vim\x9fUnDo\xe5</code>. That is the magic header of a Vim persistent-undo file. The format is Vim's own binary serialization of the <em>undo tree</em> — not a flat diff, but a tree of buffer states. Each node (&quot;uhp&quot; — undo header) records the lines that changed between states, and crucially <strong>the format stores the actual text of changed lines as length-prefixed byte runs.</strong> That is why deleted text is still physically present: undo has to be able to <em>restore</em> it, so it keeps a verbatim copy of the line you removed.</p>
+<p>You do not need to write a full parser for the undo-tree format to win. The flag text was a line in the buffer at some point, so it exists as a contiguous run of printable bytes somewhere in the blob. Carving strings is enough:</p>
+<pre><code class="language-bash">strings -a flag.txt.un_
+</code></pre>
+<p>Among the noise, one run stands out:</p>
+<pre><code>(djF0e3QwbW15X3NjcjFwdF9rMWRkMTNfMW4xdH0=5
+</code></pre>
+<p>Here is the gotcha that actually mattered, and the dead-end I had to steer the model away from: <strong>the surrounding bytes are not part of the payload.</strong> The leading <code>(</code> and the trailing <code>5</code> are structural bytes from the undo format (length/marker bytes that happen to render as printable ASCII), <em>not</em> part of the encoded data. If you feed the whole run into a Base64 decoder it will either error on alignment or produce garbage. You have to isolate the clean token:</p>
+<pre><code>djF0e3QwbW15X3NjcjFwdF9rMWRkMTNfMW4xdH0=
+</code></pre>
+<p>Two signals confirm this is the real payload and not a coincidence:</p>
+<ol>
+<li>It begins with <code>djF0</code>. Base64 encodes 3 input bytes into 4 output characters, and the first three bytes <code>v</code> <code>1</code> <code>t</code> (<code>0x76 0x31 0x74</code>) encode to exactly <code>djF0</code>. So any Base64 string starting with <code>djF0</code> decodes to text starting with <code>v1t</code> — precisely our flag prefix.</li>
+<li>It ends with a single <code>=</code>, meaning the decoded length is <code>≡ 2 (mod 3)</code>. The flag <code>v1t{t0mmy_scr1pt_k1dd13_1n1t}</code> is 29 bytes, and <code>29 mod 3 == 2</code>, so exactly one <code>=</code> of padding is expected. The arithmetic checks out.</li>
+</ol>
+<p>Decode it:</p>
+<pre><code class="language-bash">echo 'djF0e3QwbW15X3NjcjFwdF9rMWRkMTNfMW4xdH0=' | base64 -d
+</code></pre>
+<pre><code>v1t{t0mmy_scr1pt_k1dd13_1n1t}
+</code></pre>
+<h3 id="end-to-end-script">End-to-end script</h3>
+<p>The robust, hands-off version doesn't eyeball strings or hand-trim framing bytes. It carves <em>every</em> Base64-looking token out of the raw binary, tries to decode each one, and keeps only candidates that actually match the flag format. This is what defeats the framing-byte trap automatically — the Base64 token regex (<code>[A-Za-z0-9+/]+={0,2}</code>) naturally stops at <code>(</code> and at any non-Base64 byte, and the <code>validate=True</code> plus format check throws out everything that is not the flag.</p>
+<pre><code class="language-python">#!/usr/bin/env python3
+&quot;&quot;&quot;
+Quack CIA -- recover the flag from a Vim persistent-undo file.
 
-# 3. Pull the Base64 fragment out of the binary and decode it
-strings -a flag.txt.un_ | grep -oE '[A-Za-z0-9+/]{12,}={0,2}' | while read c; do
-  echo &quot;$c&quot; | base64 -d 2&gt;/dev/null | grep -a 'v1t{' &amp;&amp; break
-done
+Usage:
+    python solve.py            # expects flag.txt.un_ in cwd
+    python solve.py path/to/flag.txt.un_
+
+If the file isn't present locally, fetch it first:
+    curl -L -o flag.txt.un_ \
+      https://raw.githubusercontent.com/tommypony326532/cia/178b58ed916506407b5221c81beb3f81a3264964/flag.txt.un_
+&quot;&quot;&quot;
+import base64
+import re
+import sys
+
+path = sys.argv[1] if len(sys.argv) &gt; 1 else &quot;flag.txt.un_&quot;
+
+with open(path, &quot;rb&quot;) as f:
+    data = f.read()
+
+# Sanity check: is this actually a Vim undo file?
+if not data.startswith(b&quot;Vim\x9fUnDo&quot;):
+    print(f&quot;[!] {path} is not a Vim undo file (header={data[:9]!r}); continuing anyway&quot;)
+
+# Carve every Base64-looking token directly out of the raw bytes.
+# This stops at framing bytes like '(' and trailing non-b64 bytes on its own,
+# so we never have to hand-trim the run that 'strings' shows.
+candidates = re.findall(rb&quot;[A-Za-z0-9+/]{12,}={0,2}&quot;, data)
+
+seen = set()
+for token in candidates:
+    if token in seen:
+        continue
+    seen.add(token)
+    try:
+        decoded = base64.b64decode(token, validate=True)
+    except Exception:
+        continue
+    if re.search(rb&quot;v1t\{[^}]*\}&quot;, decoded, re.IGNORECASE):
+        print(decoded.decode(errors=&quot;replace&quot;))
+        break
 </code></pre>
-<p>Output:</p>
-<pre><code class="language-text">v1t{t0mmy_scr1pt_k1dd13_1n1t}
+<p>Running it prints the flag:</p>
+<pre><code>v1t{t0mmy_scr1pt_k1dd13_1n1t}
 </code></pre>
+<p>Why this is the right approach rather than just <code>strings | grep</code>: by operating on the raw bytes and validating decodes, it is immune to the two things that bit me when going manual — (a) the structural framing bytes glued to the token, and (b) any other printable runs in the undo tree that look Base64-ish but are not. Let the format check (<code>v1t{...}</code>) be the filter, not your eyes.</p>
 <h2 id="flag">Flag</h2>
 <pre><code>v1t{t0mmy_scr1pt_k1dd13_1n1t}
 </code></pre>
+<h2 id="lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</h2>
+<p>This is the section I actually care about, because Quack CIA is a clean case study in <em>division of labor</em>: the LLM is excellent at the mechanical carving-and-decoding, but it will happily walk off a cliff at the two ambiguous joints — the navigation pivot and the framing-byte trap. My job was to recognize the artifact types and keep it on the rails.</p>
+<p><strong>1. Name the artifact type up front so the model stops guessing.</strong> The single highest-leverage prompt was telling it <em>what the file is</em> the moment I saw the header, instead of letting it free-associate about &quot;suspicious binary.&quot; When the hex started with <code>Vim\x9fUnDo</code>:</p>
+<blockquote>
+<p>&quot;This is a Vim persistent-undo file (<code>.un_</code> / <code>.un~</code>), the undo history for <code>flag.txt</code>. Vim stores the verbatim text of deleted lines so it can restore them, so the deleted flag is still physically in this blob as a contiguous run of printable bytes. Do NOT write a full undo-tree parser — just carve printable strings and Base64 tokens out of the raw bytes.&quot;</p>
+</blockquote>
+<p>That one instruction collapsed the whole forensics stage. Left to itself the model wanted to reverse-engineer the undo-tree node format, which is real but completely unnecessary here.</p>
+<p><strong>2. Pre-empt the framing-byte dead-end explicitly.</strong> The model's first decode attempt failed because it grabbed the whole <code>strings</code> run, including the leading <code>(</code> and trailing <code>5</code>. The correcting prompt:</p>
+<blockquote>
+<p>&quot;The <code>(</code> before and the <code>5</code> after are undo-file framing bytes, not data. Don't trim by hand — change the approach: regex the raw bytes for <code>[A-Za-z0-9+/]{12,}={0,2}</code>, decode each candidate with <code>validate=True</code>, and only keep ones matching <code>v1t\{...\}</code>. Make the format check the filter, not visual inspection.&quot;</p>
+</blockquote>
+<p>Telling it the <em>failure mode</em> and the <em>fix</em> in one breath is far faster than letting it retry blindly.</p>
+<p><strong>3. For the OSINT navigation, tell it the answer is plain, not hidden.</strong> Models over-engineer intro OSINT. I steered with: &quot;The video text directly names a GitHub handle — read it literally, don't run stego on the frames. Then: don't browse the file tree, walk the <em>commit history</em>; the file was added in one commit and is meant to be missed.&quot; Giving it the meta-strategy (&quot;Git remembers deleted things&quot;) is what made it look at commit <code>178b58e...</code> instead of the default branch.</p>
+<p><strong>How I caught the mistakes / verified:</strong> I didn't trust the decode on sight — I sanity-checked the math. <code>djF0</code> <em>must</em> decode to a <code>v1t</code>-prefixed string (bytes <code>v</code> <code>1</code> <code>t</code> → <code>djF0</code>), and the single <code>=</code> implies <code>len ≡ 2 (mod 3)</code>, which matches the 29-byte flag. Both checks passing before I even ran the decoder told me we had the real token and not a lookalike. I also re-confirmed the source by its header (<code>startswith(b&quot;Vim\x9fUnDo&quot;)</code>) so I knew I'd pulled the right blob from the right commit.</p>
+<p><strong>Dead-ends to tell the model to AVOID for this challenge class:</strong></p>
+<ul>
+<li>Don't parse the Vim undo-tree format node-by-node — string carving is enough.</li>
+<li>Don't decode the whole <code>strings</code> run; structural bytes will be glued to the token.</li>
+<li>Don't treat the video as stego; read the on-screen text literally.</li>
+<li>Don't inspect only the current file tree on a GitHub OSINT challenge — the payload lives in history.</li>
+</ul>
+<p><strong>Fast-path prompt recipe for next time:</strong> <em>&quot;This is a [Vim undo / Git-history / encoded] artifact. Carve raw printable + Base64 tokens from the bytes, decode each with strict validation, and filter by the flag regex <code>v1t\{...\}</code> — make the format check the filter, not my eyes; and on a GitHub OSINT trail, search commit history, not the working tree.&quot;</em></p>
     </div>
 
     
@@ -172,7 +263,7 @@ done
     <aside class="post-toc-wrap" aria-hidden="true">
         <nav class="toc" aria-label="Floating table of contents">
             <div class="toc-label">§ TOC — NAVIGATION</div>
-            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-2"><a href="#flag">Flag</a></li></ul>
+            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-3"><a href="#hop-1-the-video-to-a-handle">Hop 1 — the video to a handle</a></li><li class="level-3"><a href="#hop-2-the-commit-history-not-the-file-tree">Hop 2 — the commit history, not the file tree</a></li><li class="level-3"><a href="#hop-3-reading-the-vim-undo-file">Hop 3 — reading the Vim undo file</a></li><li class="level-3"><a href="#end-to-end-script">End-to-end script</a></li><li class="level-2"><a href="#flag">Flag</a></li><li class="level-2"><a href="#lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</a></li></ul>
         </nav>
     </aside>
 </main>

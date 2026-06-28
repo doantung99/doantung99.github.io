@@ -8,7 +8,7 @@
 
     <title>#rev — LazyBlog</title>
     <meta name="description" content="Posts tagged #rev on LazyBlog.">
-            <meta name="author" content="XV5HP">
+            <meta name="author" content="tungdlm99">
         <meta name="generator" content="LazyBlog 1.11.0">
     <meta name="robots" content="index, follow, max-image-preview:large">
 
@@ -63,7 +63,7 @@
 
 
 <header>
-            <div class="callsign">XV5HP // MAYLAB // HẢI PHÒNG</div>
+            <div class="callsign">NAB // Hà Nội</div>
                     <p class="site-brand"><a href="/blog/" class="brand-link">LazyBlog</a></p>
                 <div class="subtitle">// A personal blog transmitting thoughts over imperfect radio waves. Expect noise, fading, and low bandwidth—but always authentic signals.</div>
         <div class="header-actions">
@@ -101,33 +101,7 @@
                                 <span class="post-title">
                                     <span class="post-icon">💾</span>                                     BootRoot Root of No Return                                </span>
                             </a>
-                                                            <p class="post-summary">A Windows 2000 &apos;bootkit&apos; challenge where the real payload lives inside a recovered EXE that writes a 16-bit MBR; the flag is hidden in 19 bytes the boot code decodes with SUB 0x0D but never prints.</p>
-                                                                                                                    <div class="post-tags-row post-tags-row--chips">
-                                                                            <a class="tag-chip" href="/blog/tags/ctf">#ctf</a>
-                                                                            <a class="tag-chip" href="/blog/tags/v1t-ctf-2026">#v1t-ctf-2026</a>
-                                                                            <a class="tag-chip" href="/blog/tags/rev">#rev</a>
-                                                                            <a class="tag-chip" href="/blog/tags/ai-assisted">#ai-assisted</a>
-                                                                    </div>
-                                                    </li>
-                                            <li class="post-item">
-                            <a class="post-title-link" href="/blog/posts/classless">
-                                <span class="post-title">
-                                    <span class="post-icon">🧬</span>                                     Classless                                </span>
-                            </a>
-                                                            <p class="post-summary">A stripped x86-64 &apos;object VM&apos; runs base64(zlib(JSON)) programs through a triple type-confusion vault; the flag is XOR-0x37-decoded straight out of .rodata.</p>
-                                                                                                                    <div class="post-tags-row post-tags-row--chips">
-                                                                            <a class="tag-chip" href="/blog/tags/ctf">#ctf</a>
-                                                                            <a class="tag-chip" href="/blog/tags/v1t-ctf-2026">#v1t-ctf-2026</a>
-                                                                            <a class="tag-chip" href="/blog/tags/rev">#rev</a>
-                                                                            <a class="tag-chip" href="/blog/tags/ai-assisted">#ai-assisted</a>
-                                                                    </div>
-                                                    </li>
-                                            <li class="post-item">
-                            <a class="post-title-link" href="/blog/posts/diddy-license-checker">
-                                <span class="post-title">
-                                    <span class="post-icon">🦆</span>                                     Diddy License Checker                                </span>
-                            </a>
-                                                            <p class="post-summary">A Linux ELF crackme that derives an AES-CBC key/IV from &apos;innocent&apos; inputs (a Fibonacci-mod-9 lucky number and a license file), then masks the ciphertext with a repeating-XOR over the license name; reverse the pipeline to recover the flag offline.</p>
+                                                            <p class="post-summary">Carve a recovered bootkit installer out of a Windows 2000 disk image, disassemble the 512-byte MBR it writes, and reverse a tiny in-memory SUB-0x0D loop to recover a flag the boot code never prints.</p>
                                                                                                                     <div class="post-tags-row post-tags-row--chips">
                                                                             <a class="tag-chip" href="/blog/tags/ctf">#ctf</a>
                                                                             <a class="tag-chip" href="/blog/tags/v1t-ctf-2026">#v1t-ctf-2026</a>
@@ -140,7 +114,7 @@
                                 <span class="post-title">
                                     <span class="post-icon">🦆</span>                                     Ducks Ping-Pong                                </span>
                             </a>
-                                                            <p class="post-summary">A user-mode EXE that ping-pongs IOCTLs with a kernel driver; recover the driver&apos;s response buffer and apply the user-mode final transform offline to print the flag.</p>
+                                                            <p class="post-summary">A user-mode EXE ping-pongs a buffer through a Windows kernel driver, then mixes it locally; emulate both halves offline to recover the flag.</p>
                                                                                                                     <div class="post-tags-row post-tags-row--chips">
                                                                             <a class="tag-chip" href="/blog/tags/ctf">#ctf</a>
                                                                             <a class="tag-chip" href="/blog/tags/v1t-ctf-2026">#v1t-ctf-2026</a>
@@ -153,7 +127,7 @@
                                 <span class="post-title">
                                     <span class="post-icon">🦆</span>                                     Ducks Ping-Pong Revenge                                </span>
                             </a>
-                                                            <p class="post-summary">A user-mode EXE and a kernel driver play a multi-stage IOCTL ping-pong; recover the driver-validated stage state offline, then run the final transform to decrypt the flag.</p>
+                                                            <p class="post-summary">A user-mode/kernel ping-pong where the flag only decrypts after five driver-validated stage commitments rebuild the final key state.</p>
                                                                                                                     <div class="post-tags-row post-tags-row--chips">
                                                                             <a class="tag-chip" href="/blog/tags/ctf">#ctf</a>
                                                                             <a class="tag-chip" href="/blog/tags/v1t-ctf-2026">#v1t-ctf-2026</a>
@@ -164,9 +138,9 @@
                                             <li class="post-item">
                             <a class="post-title-link" href="/blog/posts/shahinrev">
                                 <span class="post-title">
-                                    <span class="post-icon">🛠️</span>                                     ShahInRev                                </span>
+                                    <span class="post-icon">🔐</span>                                     ShahInRev                                </span>
                             </a>
-                                                            <p class="post-summary">A stripped Linux ELF with anti-debug and decoy strings hid a VM-style checker over an 8-byte value; recover the inner hex that drives the accumulator to a hardcoded constant.</p>
+                                                            <p class="post-summary">Reversing a stripped, anti-debugged ELF keygen-style checker by reconstructing its byte-VM in Python and recovering the 8-byte flag body that drives a hardcoded accumulator.</p>
                                                                                                                     <div class="post-tags-row post-tags-row--chips">
                                                                             <a class="tag-chip" href="/blog/tags/ctf">#ctf</a>
                                                                             <a class="tag-chip" href="/blog/tags/v1t-ctf-2026">#v1t-ctf-2026</a>
@@ -179,7 +153,7 @@
                                 <span class="post-title">
                                     <span class="post-icon">🧩</span>                                     try                                </span>
                             </a>
-                                                            <p class="post-summary">A Windows PE64 input verifier buried under fake packer/protector strings; the real check is a tiny VM constraint layer plus a 64-bit hash, which the flag itself satisfies.</p>
+                                                            <p class="post-summary">A Windows PE64 &apos;sealed input verifier&apos; buried under fake packer sections, solved by emulating a tiny constraint VM and matching a 64-bit hash — the LLM ground through the disassembly, I steered it off the unpacking trap.</p>
                                                                                                                     <div class="post-tags-row post-tags-row--chips">
                                                                             <a class="tag-chip" href="/blog/tags/ctf">#ctf</a>
                                                                             <a class="tag-chip" href="/blog/tags/v1t-ctf-2026">#v1t-ctf-2026</a>

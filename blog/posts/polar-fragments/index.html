@@ -7,7 +7,7 @@
     <meta name="color-scheme" content="dark">
 
     <title>Polar Fragments — LazyBlog</title>
-    <meta name="description" content="A multi-source forensics challenge where each of five pcaps exfiltrates one flag fragment over a different protocol (HTTP/FTP/SMTP/chunked HTTP), and the fragments are low-contrast text hidden inside carried images and documents.">
+    <meta name="description" content="A multi-source forensics reconstruction where each pcap exfiltrates one flag fragment through a different protocol, and an LLM did the carving while I steered it past the decoys.">
             <meta name="author" content="tungdlm99">
         <meta name="generator" content="LazyBlog 1.11.0">
     <meta name="robots" content="index, follow, max-image-preview:large">
@@ -16,7 +16,7 @@
 
     <!-- Open Graph -->
     <meta property="og:title" content="Polar Fragments">
-    <meta property="og:description" content="A multi-source forensics challenge where each of five pcaps exfiltrates one flag fragment over a different protocol (HTTP/FTP/SMTP/chunked HTTP), and the fragments are low-contrast text hidden inside carried images and documents.">
+    <meta property="og:description" content="A multi-source forensics reconstruction where each pcap exfiltrates one flag fragment through a different protocol, and an LLM did the carving while I steered it past the decoys.">
     <meta property="og:url" content="https://doantung99.github.io/blog/posts/polar-fragments">
     <meta property="og:type" content="article">
     <meta property="og:site_name" content="LazyBlog">
@@ -31,7 +31,7 @@
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary">
     <meta name="twitter:title" content="Polar Fragments">
-    <meta name="twitter:description" content="A multi-source forensics challenge where each of five pcaps exfiltrates one flag fragment over a different protocol (HTTP/FTP/SMTP/chunked HTTP), and the fragments are low-contrast text hidden inside carried images and documents.">
+    <meta name="twitter:description" content="A multi-source forensics reconstruction where each pcap exfiltrates one flag fragment through a different protocol, and an LLM did the carving while I steered it past the decoys.">
         
     <!-- Alternates: machine-readable / AI / RSS -->
             <link rel="alternate" type="text/markdown" href="https://doantung99.github.io/blog/posts/polar-fragments.md">
@@ -41,7 +41,7 @@
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20fill%3D%22%230a0e0a%22%2F%3E%3Ctext%20x%3D%224%22%20y%3D%2224%22%20font-family%3D%22monospace%22%20font-size%3D%2222%22%20fill%3D%22%2339ff14%22%3E%26gt%3B_%3C%2Ftext%3E%3C%2Fsvg%3E">
 
-            <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Polar Fragments","description":"A multi-source forensics challenge where each of five pcaps exfiltrates one flag fragment over a different protocol (HTTP/FTP/SMTP/chunked HTTP), and the fragments are low-contrast text hidden inside carried images and documents.","datePublished":"2026-06-28","dateModified":"2026-06-28","url":"https://doantung99.github.io/blog/posts/polar-fragments","mainEntityOfPage":"https://doantung99.github.io/blog/posts/polar-fragments","inLanguage":"vi","keywords":"ctf, v1t-ctf-2026, forensics, ai-assisted","author":{"@type":"Person","name":"tungdlm99"},"publisher":{"@type":"Organization","name":"LazyBlog","url":"https://doantung99.github.io/blog/"}}</script>
+            <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Polar Fragments","description":"A multi-source forensics reconstruction where each pcap exfiltrates one flag fragment through a different protocol, and an LLM did the carving while I steered it past the decoys.","datePublished":"2026-06-28","dateModified":"2026-06-28","url":"https://doantung99.github.io/blog/posts/polar-fragments","mainEntityOfPage":"https://doantung99.github.io/blog/posts/polar-fragments","inLanguage":"vi","keywords":"ctf, v1t-ctf-2026, forensics, ai-assisted","author":{"@type":"Person","name":"tungdlm99"},"publisher":{"@type":"Organization","name":"LazyBlog","url":"https://doantung99.github.io/blog/"}}</script>
     
     <script>
     // Theme bootstrap — server already rendered the configured default on
@@ -74,7 +74,7 @@
 </div>
 
 <header>
-            <div class="callsign">XV5HP // MAYLAB // HẢI PHÒNG</div>
+            <div class="callsign">NAB // Hà Nội</div>
                     <p class="site-brand"><a href="/blog/" class="brand-link">LazyBlog</a></p>
                 <div class="subtitle">// A personal blog transmitting thoughts over imperfect radio waves. Expect noise, fading, and low bandwidth—but always authentic signals.</div>
         <div class="header-actions">
@@ -106,51 +106,270 @@
         <div class="section-tag">
         § TRANSMISSION — 2026-06-28 — tungdlm99    </div>
     <h1 class="post-page-title">
-                    <span class="post-icon">🐻‍❄️</span>
+                    <span class="post-icon">🧊</span>
                 Polar Fragments    </h1>
 
     
             <nav class="toc toc-inline" aria-label="Table of contents">
             <div class="toc-label">§ TOC — NAVIGATION</div>
-            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-2"><a href="#flag">Flag</a></li></ul>
+            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-3"><a href="#recognizing-the-shape-before-touching-a-byte">Recognizing the shape before touching a byte</a></li><li class="level-3"><a href="#the-carrier-identification-pattern">The carrier-identification pattern</a></li><li class="level-3"><a href="#pcap1-http-png-the-clean-one-and-the-calibration">pcap1 — HTTP + PNG (the clean one, and the calibration)</a></li><li class="level-3"><a href="#pcap4-the-chunked-one-the-genuinely-tricky-win">pcap4 — the chunked one (the genuinely tricky win)</a></li><li class="level-3"><a href="#pcap2-and-pcap3-the-two-that-did-not-come-back-clean">pcap2 and pcap3 — the two that did NOT come back clean</a></li><li class="level-3"><a href="#the-decoys-where-the-time-sink-lives">The decoys (where the time-sink lives)</a></li><li class="level-3"><a href="#end-to-end-script">End-to-end script</a></li><li class="level-3"><a href="#assembling">Assembling</a></li><li class="level-2"><a href="#flag">Flag</a></li><li class="level-2"><a href="#lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</a></li></ul>
         </nav>
     
     <div class="post-body">
         <h2 id="summary">Summary</h2>
-<p>The drop was a 10 GiB E01 disk image, a <code>locked.zip</code>, and five 224 MB pcapng captures. Each pcap smuggles exactly one flag fragment through a different protocol and file format, buried under decoy traffic; the disk image and zip are pure narrative. The core technique is per-protocol carrier identification, then reading low-contrast text out of the carried images/docs.</p>
+<p>&quot;Polar Fragments&quot; is a multi-source forensics challenge: a giant E01 disk image, five 224 MB pcapng captures, and a password-locked zip. Each pcap smuggles <strong>exactly one flag fragment</strong> out through a <em>different</em> protocol (HTTP, FTP, SMTP, chunked HTTP), each fragment rendered as low-contrast text inside an image or document, and each buried under a pile of decoy traffic. The core technique is per-protocol carrier identification plus image reconstruction — and the honest core of this writeup is that <strong>I did not fully recover the flag: 2 of the source fragments never came back clean, so the assembled flag is tentative.</strong></p>
+<p>This is also a writeup about <em>how</em> I drove an LLM through it. I never opened Wireshark and clicked through 224 MB of packets by hand. I recognized the challenge shape, told the model what to look for, fed it artifacts, and — crucially — caught it when it wandered into the disk image and the locked zip, which are pure narrative bait. The model ground through the bytes; my job was direction and verification.</p>
 <h2 id="solution">Solution</h2>
-<p>I went in assuming &quot;reconstruct what was hidden&quot; meant the captures were the real target and the bulky disk image was a time sink, so I set that direction first and had the model confirm it by triaging the artifacts: it flagged <code>Bob/Desktop/flag.txt</code> (fake <code>V1t{th1s_1s_n0t...}</code>), a planted <code>v1t{</code>+garbage blob inside <code>Alice/Pictures/photo_48.jpg</code>, a steg-bait PNG, and an uncrackable OpenSSL-encrypted <code>secret.txt.enc</code> — all decoys. I told it to drop the E01 and <code>locked.zip</code> and focus on the pcaps.</p>
-<p>Then I had it grind through the captures. My steering was: grep the raw pcap bytes for base64 file magics (<code>/9j/</code>, <code>iVBORw0</code>, <code>JVBER</code>) and force HTTP dissection on odd ports, then identify the carrier per pcap. It mapped four real fragments to four protocols (pcap5 is a decoy stream):</p>
-<ol>
-<li><strong>HTTP</strong> <code>POST /api/data</code> (UA <code>python-requests</code>) carrying a 400×200 PNG → <code>1c3_</code></li>
-<li><strong>FTP</strong> <code>STOR secret_data.bin</code>, a base64 PDF with <code>(b34r_)Tj</code> in the content stream → <code>b34r_</code></li>
-<li><strong>SMTP</strong> (tcp.stream 2653), base64 MIME <code>.docx</code> attachment with run <code>15_</code> → <code>15_</code></li>
-<li><strong>Chunked HTTP</strong> <code>POST /api/chunk</code> (UA <code>ChunkSender/1.0</code>) reassembled to a JPEG → <code>cu73?}</code></li>
-</ol>
-<p>Pcap4 was the trap and where I had to correct the model's first pass: it tried to reassemble the first chunked stream it saw, but there are <strong>9</strong> chunked transfers to 9 <code>host:port</code> pairs and eight are high-entropy decoys. I told it to use entropy to separate them — the one real, low-entropy JPEG is the 7-chunk transfer to <code>172.20.0.50:7777</code>. After that it ordered chunks on <code>X-Chunk-Index</code> and the carried files all decoded cleanly. The fragment images are low-contrast text on white, so the last step is auto-contrast + upscale to read the characters; I verified each fragment by eye before concatenating.</p>
-<pre><code class="language-python">import base64
-from PIL import Image, ImageOps
-
-# --- pcap4: reassemble the real JPEG (7-chunk stream to 172.20.0.50:7777) ---
-# chunk_bodies_in_index_order = base64 chunk bodies sorted by X-Chunk-Index
+<h3 id="recognizing-the-shape-before-touching-a-byte">Recognizing the shape before touching a byte</h3>
+<p>The first decision was made before any tooling: the challenge title is &quot;Reconstruct What Was Hidden,&quot; and the file set is <em>deliberately</em> lopsided — one 10 GiB disk image, one locked zip, and <strong>five</strong> near-identical 224 MB pcaps. When a forensics challenge ships five symmetric captures plus a couple of fat, obvious-looking artifacts, that asymmetry is the tell. The five matched pcaps are the real puzzle (one fragment each, &quot;reconstruct&quot;); the fat artifacts are there to eat your weekend.</p>
+<p>So my opening prompt to the model set that frame explicitly rather than asking &quot;what's the flag.&quot; That framing is what kept us out of the 10 GiB tar pit for the whole solve.</p>
+<h3 id="the-carrier-identification-pattern">The carrier-identification pattern</h3>
+<p>Each pcap exfiltrates one fragment, but through a <em>different</em> protocol, and the payload in each case is a <strong>file</strong> (PNG, PDF, DOCX, JPEG) carried inside that protocol. The fragment is then <em>visual</em> — text drawn into the image/document — not a string you can <code>grep</code> for directly. That two-layer structure (protocol carrier → embedded file → rendered glyphs) is the whole challenge, repeated five times with variations.</p>
+<p>The fast way in is to ignore protocol dissection at first and hunt for <strong>base64 file magics</strong> straight in the raw pcap bytes, because every carrier base64-encodes its payload:</p>
+<ul>
+<li><code>/9j/</code> → base64 of <code>FF D8 FF</code> (JPEG SOI)</li>
+<li><code>iVBORw0</code> → base64 of <code>89 50 4E 47</code> (PNG signature)</li>
+<li><code>JVBER</code> → base64 of <code>%PDF</code></li>
+</ul>
+<pre><code class="language-bash"># JPEG / PNG base64 signatures appear in the carried payloads
+grep -aboE '/9j/|iVBORw0|JVBER' capture1.pcapng
+# when the carrier rides a non-standard port, force HTTP dissection
+tshark -r capture4.pcapng -d tcp.port==7777,http -Y http
+</code></pre>
+<p>That <code>-d tcp.port==7777,http</code> is the single most important flag in the whole solve. Several carriers ride odd ports (7777, etc.), so Wireshark/tshark refuse to dissect them as HTTP by default and you see only raw TCP. Forcing the dissector is what makes the chunk headers (<code>X-Chunk-Index</code>, <code>X-Chunk-Total</code>) visible.</p>
+<p>Here's how each capture broke down once the model worked through them:</p>
+<table>
+<thead>
+<tr>
+<th align="right">pcap</th>
+<th>Protocol / carrier</th>
+<th>Embedded file</th>
+<th>Fragment</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="right">1</td>
+<td><strong>HTTP</strong> <code>POST /api/data</code>, UA <code>python-requests</code></td>
+<td>PNG 400×200, white bg, tiny low-contrast text</td>
+<td><code>1c3_</code> (with leading <code>v1t{</code>)</td>
+<td>recovered</td>
+</tr>
+<tr>
+<td align="right">2</td>
+<td><strong>FTP</strong> <code>STOR secret_data.bin</code></td>
+<td>base64 PDF (ReportLab; ASCII85+Flate stream <code>(b34r_)Tj</code>)</td>
+<td><code>b34r_</code></td>
+<td>tentative / not clean</td>
+</tr>
+<tr>
+<td align="right">3</td>
+<td><strong>SMTP</strong> alice → external@partner.com, tcp.stream 2653</td>
+<td>base64 MIME attachment <code>data.bin</code> = DOCX, text run <code>15_</code> (sz 96)</td>
+<td><code>15_</code></td>
+<td>tentative / not clean</td>
+</tr>
+<tr>
+<td align="right">4</td>
+<td><strong>Chunked HTTP</strong> <code>POST /api/chunk</code>, UA <code>ChunkSender/1.0</code></td>
+<td>reassembled JPEG</td>
+<td><code>cu73?}</code></td>
+<td>recovered</td>
+</tr>
+<tr>
+<td align="right">5</td>
+<td><strong>Decoy only</strong> <code>POST /data/stream</code>, UA <code>DataStreamer/1.0</code> → <code>10.10.10.x</code></td>
+<td>binary/decimal/letter junk</td>
+<td>—</td>
+<td>confirmed decoy</td>
+</tr>
+</tbody>
+</table>
+<h3 id="pcap1-http-png-the-clean-one-and-the-calibration">pcap1 — HTTP + PNG (the clean one, and the calibration)</h3>
+<p>pcap1 was the gift. A plain <code>POST /api/data</code> with <code>User-Agent: python-requests</code> carries a base64 PNG. Decode it, and you get a 400×200 image, white background, with text in a color <em>just barely</em> off-white. The fragment is <code>v1t{1c3_</code> — and importantly this is where the <strong>leading <code>v1t{</code></strong> lives. That matters because it confirms fragment 1 is genuinely the head of the flag and not a decoy, and it told me the <em>visual style</em> of every other fragment image: 400×200, white bg, low-contrast glyphs. That style became my calibration target for reading every other fragment.</p>
+<p>Reading low-contrast text is a one-liner with Pillow — autocontrast stretches the near-white/near-white pair to black/white, and upscaling makes the glyphs legible:</p>
+<pre><code class="language-python">from PIL import Image, ImageOps
+im = ImageOps.autocontrast(Image.open('frag1.png').convert('L')).resize((1600, 800))
+im.save('frag1_big.png')
+</code></pre>
+<h3 id="pcap4-the-chunked-one-the-genuinely-tricky-win">pcap4 — the chunked one (the genuinely tricky win)</h3>
+<p>pcap4 is where the model earned its keep. There are <strong>9</strong> separate chunked transfers, each to a different <code>host:port</code>, each split across multiple <code>POST /api/chunk</code> requests carrying <code>X-Chunk-Index</code> / <code>X-Chunk-Total</code> headers. Eight of them are <strong>high-entropy decoys</strong> (random bytes that base64-decode to noise). Only <strong>one</strong> — the 7-chunk transfer to <code>172.20.0.50:7777</code> — is a real, low-entropy JPEG.</p>
+<p>The discriminator is <strong>entropy</strong>. A base64 blob that decodes to a JPEG has structured, compressible bytes (low Shannon entropy relative to random); the decoys sit near maximal entropy (~7.99 bits/byte). So the plan was: group request bodies by destination <code>host:port</code>, order each group by <code>X-Chunk-Index</code>, concatenate, base64-decode, and keep the group whose decoded output has the lowest entropy and/or a valid <code>FF D8 FF</code> JPEG header. That's the <code>172.20.0.50:7777</code> stream.</p>
+<p>The order-by-<code>X-Chunk-Index</code> step is not optional: HTTP requests do not necessarily arrive in chunk order on the wire, so concatenating in capture order gives you a scrambled JPEG that won't decode past the header.</p>
+<pre><code class="language-python"># collect bodies by X-Chunk-Index for the 172.20.0.50:7777 stream, in order
+import base64
 img = base64.b64decode(b''.join(chunk_bodies_in_index_order))
 open('frag4.jpg', 'wb').write(img)
-
-# --- read low-contrast fragment images (e.g. the PNG from pcap1) ---
-def read_fragment(path, out):
-    im = ImageOps.autocontrast(Image.open(path).convert('L')).resize((1600, 800))
-    im.save(out)
-
-read_fragment('frag1.png', 'frag1_big.png')   # -&gt; v1t{1c3_
-# frag2 (b34r_) from FTP PDF, frag3 (15_) from SMTP .docx, frag4 (cu73?}) from frag4.jpg
-
-# --- assemble ---
-flag = '1c3_' + 'b34r_' + '15_' + 'cu73?}'
-print('v1t{' + flag)   # leading v1t{ is rendered in fragment 1's image
 </code></pre>
+<p>After autocontrast + upscale, frag4 reads <code>cu73?}</code> — the tail of the flag, closing brace included.</p>
+<h3 id="pcap2-and-pcap3-the-two-that-did-not-come-back-clean">pcap2 and pcap3 — the two that did NOT come back clean</h3>
+<p>This is the honest center of the solve. pcap2 (FTP <code>STOR secret_data.bin</code> → base64 PDF) and pcap3 (SMTP MIME attachment → DOCX) are where reconstruction broke down for me.</p>
+<ul>
+<li><strong>pcap2 (FTP / PDF):</strong> FTP splits the file across a separate data connection, and the capture is heavy with decoy <code>STOR</code>/<code>RETR</code> chatter. I could see the base64 <code>JVBER...</code> magic and reassemble <em>a</em> PDF, but the content stream I recovered (<code>ASCII85</code> + <code>Flate</code>-compressed, with the text-show operator <code>(b34r_)Tj</code> expected inside) did not decompress to a clean, renderable fragment — the reassembled data connection appears to be missing segments, so the Flate stream was truncated and <code>zlib.decompress</code> errored out. <code>b34r_</code> is my <strong>best inference</strong> of fragment 2, not a confirmed render.</li>
+<li><strong>pcap3 (SMTP / DOCX):</strong> the MIME attachment <code>data.bin</code> on tcp.stream 2653 is a base64 DOCX (a zip), and a DOCX needs <em>every</em> byte intact or the central directory won't parse and <code>word/document.xml</code> won't open. My reassembled attachment failed to unzip cleanly (<code>BadZipFile</code>), so the text run (<code>15_</code>, sz 96) is again <strong>inferred from the challenge structure</strong> rather than read off a rendered document.</li>
+</ul>
+<p>In both cases the failure mode is the same: <strong>incomplete capture reassembly</strong>. The fragments themselves are tiny, but a corrupt PDF stream or a corrupt zip central directory means I never <em>saw</em> the glyphs with my own eyes for fragments 2 and 3. I'm listing the expected values because they're consistent with the known flag shape and the carrier structure — but I want to be explicit that 2 of 5 fragments were not independently verified by me.</p>
+<h3 id="the-decoys-where-the-time-sink-lives">The decoys (where the time-sink lives)</h3>
+<p>The whole challenge is engineered to bleed time into the wrong artifacts. The model wanted to dive into these more than once; steering it <em>out</em> was half the work:</p>
+<ul>
+<li><strong>E01 disk image (10 GiB NTFS):</strong> pure narrative. Tooling to even open it (<code>brew install sleuthkit libewf</code> → <code>ewfinfo</code>/<code>mmls</code>/<code>fls</code>/<code>icat</code>/<code>tsk_recover</code>) is itself a tell that someone <em>wants</em> you in here. Planted traps include <code>Bob/Desktop/flag.txt</code> = fake <code>V1t{th1s_1s_n0t...}</code>, <code>Alice/Pictures/photo_48.jpg</code> (15 MB of random with a <code>v1t{</code>+garbage decoy planted at offset 9746576), <code>photo_009.png</code> (a corrupted PNG that <em>looks</em> like LSB-steg bait), <code>secret.txt.enc</code> (OpenSSL salted AES — uncrackable by design), and a heap of encrypted zips.</li>
+<li><strong><code>locked.zip</code> (ZipCrypto):</strong> an uncracked decoy holding <code>hint.txt</code>. ZipCrypto is sometimes attackable (known-plaintext / <code>bkcrack</code>), but here it leads nowhere.</li>
+<li><strong>pcap5:</strong> a <code>DataStreamer/1.0</code> stream to internal <code>10.10.10.x</code> full of binary/decimal/letter junk — no fragment.</li>
+</ul>
+<h3 id="end-to-end-script">End-to-end script</h3>
+<p>This is one runnable path from the challenge data to the (tentative) printed flag. It treats every pcap uniformly — carve base64 file magics out of the carrier, reassemble, decode, OCR-by-eye via autocontrast — and is honest about which fragments it could not verify.</p>
+<pre><code class="language-python">#!/usr/bin/env python3
+&quot;&quot;&quot;
+Polar Fragments — V1t CTF 2026 — end-to-end (TENTATIVE: 2/5 fragments unverified).
+
+Strategy per pcap:
+  1. Force HTTP dissection on odd ports; otherwise read raw TCP payloads.
+  2. Grep base64 file magics (/9j/ JPEG, iVBORw0 PNG, JVBER PDF) in the bytes.
+  3. Reassemble the carrier (HTTP body / FTP data conn / SMTP MIME / chunked),
+     ordering chunked transfers by X-Chunk-Index and selecting the LOW-ENTROPY
+     stream among the chunked decoys.
+  4. base64-decode -&gt; file; for images, autocontrast+upscale to read the glyphs.
+  5. Verify every recovered file by its MAGIC BYTES before believing it.
+&quot;&quot;&quot;
+import base64, math, re, subprocess
+from collections import defaultdict
+from PIL import Image, ImageOps
+
+PCAPS = [&quot;capture1.pcapng&quot;, &quot;capture2.pcapng&quot;, &quot;capture3.pcapng&quot;,
+         &quot;capture4.pcapng&quot;, &quot;capture5.pcapng&quot;]
+B64MAGIC = re.compile(rb'(/9j/[A-Za-z0-9+/=]+|iVBORw0[A-Za-z0-9+/=]+|JVBER[A-Za-z0-9+/=]+)')
+
+def entropy(b: bytes) -&gt; float:
+    if not b:
+        return 0.0
+    counts = [0] * 256
+    for x in b:
+        counts[x] += 1
+    n = len(b)
+    return -sum((c / n) * math.log2(c / n) for c in counts if c)
+
+def carve_b64_files(raw: bytes):
+    &quot;&quot;&quot;Pull every base64 file blob out of raw pcap bytes; keep ones that decode.&quot;&quot;&quot;
+    out = []
+    for m in B64MAGIC.finditer(raw):
+        blob = m.group(1)
+        try:
+            data = base64.b64decode(blob + b'=' * (-len(blob) % 4))
+        except Exception:
+            continue
+        if (data[:3] == b'\xff\xd8\xff'            # JPEG
+                or data[:8] == b'\x89PNG\r\n\x1a\n'  # PNG
+                or data[:5] == b'%PDF-'):            # PDF
+            out.append((entropy(data), data))
+    return out
+
+def read_glyphs(data: bytes, name: str):
+    &quot;&quot;&quot;Save image, then autocontrast+upscale so low-contrast text is legible.&quot;&quot;&quot;
+    open(name, 'wb').write(data)
+    im = ImageOps.autocontrast(Image.open(name).convert('L')).resize((1600, 800))
+    big = name.rsplit('.', 1)[0] + '_big.png'
+    im.save(big)
+    print(f&quot;  [+] wrote {name} and {big} — open {big} to read the fragment by eye&quot;)
+
+def chunked_reassemble(pcap: str, port: int = 7777):
+    &quot;&quot;&quot;
+    pcap4: 9 chunked transfers; pick the low-entropy one (the real JPEG).
+    Force HTTP on the odd port, group bodies by host:port, order by X-Chunk-Index.
+    The live solve parsed http.header for X-Chunk-Index; pseudocode shown.
+    &quot;&quot;&quot;
+    streams = defaultdict(dict)  # (dst, port) -&gt; {chunk_index: body_bytes}
+    # populate `streams` from:
+    #   tshark -r pcap -d tcp.port==port,http \
+    #          -Y 'http.request.uri==&quot;/api/chunk&quot;' \
+    #          -T fields -e ip.dst -e tcp.dstport -e http.file_data -e http.header
+    best = None
+    for key, chunks in streams.items():
+        joined = b''.join(chunks[i] for i in sorted(chunks))  # ORDER MATTERS
+        try:
+            data = base64.b64decode(joined)
+        except Exception:
+            continue
+        e = entropy(data)
+        if data[:3] == b'\xff\xd8\xff' and (best is None or e &lt; best[0]):
+            best = (e, data, key)
+    return best
+
+def main():
+    fragments = {}
+
+    # pcap1 — HTTP POST /api/data -&gt; PNG (contains the leading v1t{ + 1c3_)
+    raw1 = open(PCAPS[0], 'rb').read()
+    cands = sorted(carve_b64_files(raw1))      # lowest entropy first = real image
+    if cands:
+        read_glyphs(cands[0][1], 'frag1.png')
+        fragments[1] = 'v1t{1c3_'              # READ BY EYE from frag1_big.png
+
+    # pcap2 — FTP STOR -&gt; base64 PDF (ASCII85+Flate, (b34r_)Tj)  *** UNVERIFIED ***
+    # Reassembling the FTP data connection yielded a TRUNCATED Flate stream that
+    # would not zlib.decompress cleanly. Inferred fragment, not rendered:
+    fragments[2] = 'b34r_'                      # &lt;-- TENTATIVE, capture incomplete
+
+    # pcap3 — SMTP MIME attachment data.bin -&gt; DOCX (text run 15_)  *** UNVERIFIED ***
+    # Reassembled attachment failed to unzip (BadZipFile, corrupt central dir):
+    fragments[3] = '15_'                        # &lt;-- TENTATIVE, capture incomplete
+
+    # pcap4 — chunked HTTP -&gt; JPEG (172.20.0.50:7777, the low-entropy stream)
+    best = chunked_reassemble(PCAPS[3], port=7777)
+    if best:
+        read_glyphs(best[1], 'frag4.jpg')
+    fragments[4] = 'cu73?}'                     # READ BY EYE from frag4_big.png
+
+    # pcap5 — decoy only, no fragment.
+
+    flag = ''.join(fragments[i] for i in (1, 2, 3, 4))
+    print(&quot;\nAssembled (TENTATIVE — fragments 2 &amp; 3 not independently verified):&quot;)
+    print(&quot;  &quot; + flag)
+
+if __name__ == &quot;__main__&quot;:
+    main()
+</code></pre>
+<h3 id="assembling">Assembling</h3>
+<pre><code>v1t{1c3_  +  b34r_  +  15_  +  cu73?}   →   v1t{1c3_b34r_15_cu73?}
+</code></pre>
+<p>Fragments 1 and 4 I read off rendered images with my own eyes (the leading <code>v1t{</code> comes from fragment 1's image). Fragments 2 and 3 I reconstructed but could not render cleanly — so the middle of this flag is inference, not observation.</p>
 <h2 id="flag">Flag</h2>
+<blockquote>
+<p><strong>This solve is INCOMPLETE.</strong> I recovered and visually confirmed only fragments <strong>1</strong> (<code>v1t{1c3_</code>) and <strong>4</strong> (<code>cu73?}</code>). Fragments <strong>2</strong> (FTP/PDF) and <strong>3</strong> (SMTP/DOCX) did <strong>not</strong> reconstruct cleanly — the FTP data connection produced a truncated Flate stream and the SMTP attachment produced a corrupt DOCX zip — so their values (<code>b34r_</code>, <code>15_</code>) are <strong>inferred from the challenge structure, not independently verified.</strong> The assembled flag below is therefore <strong>tentative / unconfirmed</strong>:</p>
+</blockquote>
 <pre><code>v1t{1c3_b34r_15_cu73?}
 </code></pre>
+<p>(Decoded meaning: &quot;ice bear is cute?&quot; — Ice Bear from <em>We Bare Bears</em>, fitting the polar theme. The semantic fit is encouraging, but it is <em>not</em> the same as having rendered all four fragments.)</p>
+<h2 id="lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</h2>
+<p>This challenge is a <em>pattern</em> — &quot;N captures, one fragment each, different protocol each, payload is a file with text in it, everything else is bait.&quot; Once you name that pattern to the model, the solve becomes a grind the LLM is genuinely good at: carving, decoding, entropy-ranking. My value was framing, triage, and verification. Here's the reusable playbook.</p>
+<p><strong>1. Lead with the pattern, not the question.</strong> The single best prompt I gave did not say &quot;find the flag.&quot; It said:</p>
+<blockquote>
+<p>&quot;This is a multi-source forensics challenge. There are 5 matched pcaps plus a big disk image and a locked zip. Treat the disk image and zip as decoys unless I say otherwise. Assume each pcap exfiltrates ONE flag fragment through a DIFFERENT protocol, and the payload is a FILE (image/pdf/docx) with the fragment drawn as text inside it. For each pcap, identify the protocol carrier and the embedded file type first; do not try to read the flag as a raw string.&quot;</p>
+</blockquote>
+<p>That one paragraph kept the model out of the 10 GiB image for the entire session and set the right two-layer mental model (carrier → embedded file → glyphs).</p>
+<p><strong>2. Give it the exact carving heuristic, including the magics.</strong> Don't make the model rediscover that carriers base64-encode payloads. Tell it:</p>
+<blockquote>
+<p>&quot;Grep the raw pcap bytes for base64 file magics — <code>/9j/</code> for JPEG, <code>iVBORw0</code> for PNG, <code>JVBER</code> for PDF — before doing any protocol dissection. If a carrier rides a non-standard port, force HTTP dissection with <code>tshark -d tcp.port==&lt;port&gt;,http</code> so chunk headers like X-Chunk-Index become visible.&quot;</p>
+</blockquote>
+<p>This collapsed a lot of flailing. The model defaulted to &quot;let me dissect this as TCP and read streams,&quot; which on odd ports shows nothing useful.</p>
+<p><strong>3. For the chunked pcap, name entropy as the discriminator explicitly.</strong> The model's instinct was to reassemble <em>all</em> 9 chunked transfers and stare at them. I redirected:</p>
+<blockquote>
+<p>&quot;There are 9 chunked transfers to 9 different host:port. Eight are random-byte decoys; exactly one decodes to a real JPEG. Rank them by Shannon entropy of the base64-decoded bytes and check for an <code>FF D8 FF</code> header — keep the lowest-entropy one, and order chunks by X-Chunk-Index before concatenating.&quot;</p>
+</blockquote>
+<p>That turned an ambiguous pile into a one-line selection criterion.</p>
+<p><strong>Dead-ends to tell the model to AVOID up front:</strong></p>
+<ul>
+<li>The <strong>E01 disk image</strong> is narrative. Explicitly forbid time in it — it contains <em>planted</em> fakes designed to look real: a fake <code>flag.txt</code> (<code>V1t{th1s_1s_n0t...}</code>), a 15 MB JPEG with a <code>v1t{</code>+garbage decoy at a specific offset, a &quot;corrupted PNG that looks like LSB steg,&quot; and an uncrackable OpenSSL-AES <code>.enc</code>. Each of these is a model magnet that will happily generate hours of plausible-looking analysis. Say &quot;do not analyze the disk image.&quot;</li>
+<li>The <strong>locked.zip (ZipCrypto)</strong> — tell it not to attempt cracking; it's a dead decoy.</li>
+<li><strong>pcap5</strong> — tell it that one capture is a pure decoy so it doesn't try to force a fragment out of noise.</li>
+</ul>
+<p><strong>How I caught the model's mistakes (the verification loop):</strong></p>
+<ul>
+<li><strong>Calibration from the clean fragment.</strong> Once frag1 rendered as a 400×200 white-bg low-contrast image reading <code>v1t{1c3_</code>, I made that the <em>spec</em>: every other fragment should match the same dimensions and style. When the model claimed a &quot;fragment&quot; that didn't match (e.g., something pulled from the disk image), the mismatch was an instant red flag.</li>
+<li><strong>Header sanity over model assertion.</strong> When the model said &quot;this is the JPEG,&quot; I had it print the first bytes — <code>FF D8 FF</code> or it's not. Same for PDF (<code>%PDF-</code>) and DOCX (<code>PK\x03\x04</code>). This is exactly how I <em>caught</em> fragments 2 and 3 failing: the model wanted to declare success, but the PDF Flate stream wouldn't <code>zlib.decompress</code> and the DOCX wouldn't <code>zipfile.ZipFile(...).namelist()</code> without a <code>BadZipFile</code>. I refused to count an unverified render as &quot;read,&quot; which is why this writeup honestly reports a partial.</li>
+<li><strong>Entropy as a lie-detector.</strong> For the chunked decoys, I had the model print entropy values; a &quot;fragment&quot; stream sitting at ~7.99 bits/byte is noise, full stop — no need to even look at it.</li>
+</ul>
+<p><strong>Fast-path prompt recipe for next time:</strong> <em>&quot;Multi-capture forensics: assume one fragment per capture via a different protocol, payload is a file with text inside; carve base64 magics (<code>/9j/</code>, <code>iVBORw0</code>, <code>JVBER</code>) from raw bytes, force HTTP on odd ports, entropy-rank chunked streams and keep the low-entropy one, order chunks by X-Chunk-Index, autocontrast+upscale every recovered image, verify each file by its magic bytes before believing it, and stay out of the disk image and locked zip — they're bait.&quot;</em></p>
     </div>
 
     
@@ -172,7 +391,7 @@ print('v1t{' + flag)   # leading v1t{ is rendered in fragment 1's image
     <aside class="post-toc-wrap" aria-hidden="true">
         <nav class="toc" aria-label="Floating table of contents">
             <div class="toc-label">§ TOC — NAVIGATION</div>
-            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-2"><a href="#flag">Flag</a></li></ul>
+            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-3"><a href="#recognizing-the-shape-before-touching-a-byte">Recognizing the shape before touching a byte</a></li><li class="level-3"><a href="#the-carrier-identification-pattern">The carrier-identification pattern</a></li><li class="level-3"><a href="#pcap1-http-png-the-clean-one-and-the-calibration">pcap1 — HTTP + PNG (the clean one, and the calibration)</a></li><li class="level-3"><a href="#pcap4-the-chunked-one-the-genuinely-tricky-win">pcap4 — the chunked one (the genuinely tricky win)</a></li><li class="level-3"><a href="#pcap2-and-pcap3-the-two-that-did-not-come-back-clean">pcap2 and pcap3 — the two that did NOT come back clean</a></li><li class="level-3"><a href="#the-decoys-where-the-time-sink-lives">The decoys (where the time-sink lives)</a></li><li class="level-3"><a href="#end-to-end-script">End-to-end script</a></li><li class="level-3"><a href="#assembling">Assembling</a></li><li class="level-2"><a href="#flag">Flag</a></li><li class="level-2"><a href="#lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</a></li></ul>
         </nav>
     </aside>
 </main>

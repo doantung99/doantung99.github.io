@@ -8,7 +8,7 @@
 
     <title>#pwn — LazyBlog</title>
     <meta name="description" content="Posts tagged #pwn on LazyBlog.">
-            <meta name="author" content="XV5HP">
+            <meta name="author" content="tungdlm99">
         <meta name="generator" content="LazyBlog 1.11.0">
     <meta name="robots" content="index, follow, max-image-preview:large">
 
@@ -63,7 +63,7 @@
 
 
 <header>
-            <div class="callsign">XV5HP // MAYLAB // HẢI PHÒNG</div>
+            <div class="callsign">NAB // Hà Nội</div>
                     <p class="site-brand"><a href="/blog/" class="brand-link">LazyBlog</a></p>
                 <div class="subtitle">// A personal blog transmitting thoughts over imperfect radio waves. Expect noise, fading, and low bandwidth—but always authentic signals.</div>
         <div class="header-actions">
@@ -101,7 +101,7 @@
                                 <span class="post-title">
                                     <span class="post-icon">♟️</span>                                     StaleMate                                </span>
                             </a>
-                                                            <p class="post-summary">A userland re-implementation of io_uring provided buffer rings models CVE-2024-0582: unregister a mmap&apos;d PBUF ring and the stale mapping becomes a UAF read/write you ride to forge a page-table PTE onto the cred slot.</p>
+                                                            <p class="post-summary">A userland reimplementation of the io_uring provided-buffer-ring bug (CVE-2024-0582): unregister leaves the mmap alive, so a stale mapping over a reused slot gives a UAF write to forge a page-table entry onto the cred page.</p>
                                                                                                                     <div class="post-tags-row post-tags-row--chips">
                                                                             <a class="tag-chip" href="/blog/tags/ctf">#ctf</a>
                                                                             <a class="tag-chip" href="/blog/tags/v1t-ctf-2026">#v1t-ctf-2026</a>
@@ -114,7 +114,7 @@
                                 <span class="post-title">
                                     <span class="post-icon">♟️</span>                                     StaleMate Revenge                                </span>
                             </a>
-                                                            <p class="post-summary">Hardened userland io_uring/PBUF use-after-free where I groomed a workspace page-table page onto a freed slot, leaked it, inverted the keyed PTE MAC to recover both workspace keys, then forged a self-referential page table to patch and re-seal the winning record chain.</p>
+                                                            <p class="post-summary">A hardened userland io_uring/PBUF use-after-free where deterministic heap grooming leaks the workspace MAC keys, lets me forge a self-referential page table, and rewrite the sealed record chain into a winning position.</p>
                                                                                                                     <div class="post-tags-row post-tags-row--chips">
                                                                             <a class="tag-chip" href="/blog/tags/ctf">#ctf</a>
                                                                             <a class="tag-chip" href="/blog/tags/v1t-ctf-2026">#v1t-ctf-2026</a>

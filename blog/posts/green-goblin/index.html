@@ -7,7 +7,7 @@
     <meta name="color-scheme" content="dark">
 
     <title>Green Goblin — LazyBlog</title>
-    <meta name="description" content="A 5 GiB Windows 11 RAM dump hides five flag fragments across classic OS internals (Registry, kernel symlink, NTFS ADS, Event Log, named memory section); carving and reversing the dropper reveals the fixed bytes, which decode with ROT47.">
+    <meta name="description" content="Carve and reverse a dropper from a Windows 11 RAM dump to find which five OS-internal artifacts hold the real fragments, then ROT47-decode them into the flag.">
             <meta name="author" content="tungdlm99">
         <meta name="generator" content="LazyBlog 1.11.0">
     <meta name="robots" content="index, follow, max-image-preview:large">
@@ -16,7 +16,7 @@
 
     <!-- Open Graph -->
     <meta property="og:title" content="Green Goblin">
-    <meta property="og:description" content="A 5 GiB Windows 11 RAM dump hides five flag fragments across classic OS internals (Registry, kernel symlink, NTFS ADS, Event Log, named memory section); carving and reversing the dropper reveals the fixed bytes, which decode with ROT47.">
+    <meta property="og:description" content="Carve and reverse a dropper from a Windows 11 RAM dump to find which five OS-internal artifacts hold the real fragments, then ROT47-decode them into the flag.">
     <meta property="og:url" content="https://doantung99.github.io/blog/posts/green-goblin">
     <meta property="og:type" content="article">
     <meta property="og:site_name" content="LazyBlog">
@@ -31,7 +31,7 @@
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary">
     <meta name="twitter:title" content="Green Goblin">
-    <meta name="twitter:description" content="A 5 GiB Windows 11 RAM dump hides five flag fragments across classic OS internals (Registry, kernel symlink, NTFS ADS, Event Log, named memory section); carving and reversing the dropper reveals the fixed bytes, which decode with ROT47.">
+    <meta name="twitter:description" content="Carve and reverse a dropper from a Windows 11 RAM dump to find which five OS-internal artifacts hold the real fragments, then ROT47-decode them into the flag.">
         
     <!-- Alternates: machine-readable / AI / RSS -->
             <link rel="alternate" type="text/markdown" href="https://doantung99.github.io/blog/posts/green-goblin.md">
@@ -41,7 +41,7 @@
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20fill%3D%22%230a0e0a%22%2F%3E%3Ctext%20x%3D%224%22%20y%3D%2224%22%20font-family%3D%22monospace%22%20font-size%3D%2222%22%20fill%3D%22%2339ff14%22%3E%26gt%3B_%3C%2Ftext%3E%3C%2Fsvg%3E">
 
-            <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Green Goblin","description":"A 5 GiB Windows 11 RAM dump hides five flag fragments across classic OS internals (Registry, kernel symlink, NTFS ADS, Event Log, named memory section); carving and reversing the dropper reveals the fixed bytes, which decode with ROT47.","datePublished":"2026-06-28","dateModified":"2026-06-28","url":"https://doantung99.github.io/blog/posts/green-goblin","mainEntityOfPage":"https://doantung99.github.io/blog/posts/green-goblin","inLanguage":"vi","keywords":"ctf, v1t-ctf-2026, forensics, ai-assisted","author":{"@type":"Person","name":"tungdlm99"},"publisher":{"@type":"Organization","name":"LazyBlog","url":"https://doantung99.github.io/blog/"}}</script>
+            <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Green Goblin","description":"Carve and reverse a dropper from a Windows 11 RAM dump to find which five OS-internal artifacts hold the real fragments, then ROT47-decode them into the flag.","datePublished":"2026-06-28","dateModified":"2026-06-28","url":"https://doantung99.github.io/blog/posts/green-goblin","mainEntityOfPage":"https://doantung99.github.io/blog/posts/green-goblin","inLanguage":"vi","keywords":"ctf, v1t-ctf-2026, forensics, ai-assisted","author":{"@type":"Person","name":"tungdlm99"},"publisher":{"@type":"Organization","name":"LazyBlog","url":"https://doantung99.github.io/blog/"}}</script>
     
     <script>
     // Theme bootstrap — server already rendered the configured default on
@@ -74,7 +74,7 @@
 </div>
 
 <header>
-            <div class="callsign">XV5HP // MAYLAB // HẢI PHÒNG</div>
+            <div class="callsign">NAB // Hà Nội</div>
                     <p class="site-brand"><a href="/blog/" class="brand-link">LazyBlog</a></p>
                 <div class="subtitle">// A personal blog transmitting thoughts over imperfect radio waves. Expect noise, fading, and low bandwidth—but always authentic signals.</div>
         <div class="header-actions">
@@ -106,87 +106,216 @@
         <div class="section-tag">
         § TRANSMISSION — 2026-06-28 — tungdlm99    </div>
     <h1 class="post-page-title">
-                    <span class="post-icon">🧪</span>
+                    <span class="post-icon">🎃</span>
                 Green Goblin    </h1>
 
     
             <nav class="toc toc-inline" aria-label="Table of contents">
             <div class="toc-label">§ TOC — NAVIGATION</div>
-            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-2"><a href="#flag">Flag</a></li></ul>
+            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-3"><a href="#reading-the-story-before-touching-a-tool">Reading the story before touching a tool</a></li><li class="level-3"><a href="#identifying-the-image">Identifying the image</a></li><li class="level-3"><a href="#triage-pslist-vs-psscan-and-ignoring-the-obvious-bait">Triage: pslist vs psscan, and ignoring the obvious bait</a></li><li class="level-3"><a href="#finding-the-payload-by-name-not-by-behavior">Finding the payload by name, not by behavior</a></li><li class="level-3"><a href="#carving-and-reversing-the-dropper">Carving and reversing the dropper</a></li><li class="level-3"><a href="#separating-real-bytes-from-noise-inside-the-code">Separating real bytes from noise inside the code</a></li><li class="level-3"><a href="#decoding-it-s-rot47">Decoding: it&#039;s ROT47</a></li><li class="level-2"><a href="#flag">Flag</a></li><li class="level-2"><a href="#lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</a></li></ul>
         </nav>
     
     <div class="post-body">
         <h2 id="summary">Summary</h2>
-<p>A 5 GiB Windows 11 24H2 raw memory dump where the Green Goblin's &quot;Dark Energy&quot; is split into five fragments (R, KO, D, EL, M) planted across Windows internals and buried under thousands of decoy artifacts. The win is to recover and reverse the dropper PE so its planting functions name the real artifacts and their fixed bytes, which then decode with ROT47.</p>
+<p>Green Goblin is a Windows 11 memory-forensics challenge: a 5 GiB raw RAM dump captured mid-execution while a dropper planted five flag fragments across five classic Windows hiding spots (Registry value, Kernel Object symlink, NTFS alternate Data stream, Event Log, named Memory section) and buried them under a flood of <code>N01S3</code> decoys. The core technique is to stop grepping the dump, carve the binary out with Volatility 3, let its DWARF symbols hand you the planting functions, read the fixed bytes each real routine writes, and ROT47-decode the five fragments in order R · KO · D · EL · M.</p>
+<p>I want to be honest about how this one actually got solved: the LLM did the grinding. It walked Volatility plugins, diffed process lists, disassembled MinGW code, and tracked six-byte writes across five functions far faster than I would have by hand. My job was recognizing the challenge class, pointing the model at the right artifact, and — critically — catching the two places where it confidently went the wrong way. This writeup is as much about <em>how I steered</em> as it is about the bytes.</p>
 <h2 id="solution">Solution</h2>
-<p>When I saw &quot;5 GiB RAM dump&quot; plus the R/KO/D/EL/M hints I called the play: memory forensics with five canonical Windows hiding spots, and almost certainly a noise problem rather than an encoding problem. So I set the direction and let the model do the grinding.</p>
-<p>First I had the model triage the image. It confirmed Windows 11 build 26100 via <code>windows.info</code>, then diffed <code>pslist</code> against <code>psscan</code> — that exposed the decoy storm (24 <code>PING.EXE</code> spawned in a 23-second window, plus terminated <code>lsass</code>/<code>explorer</code> only visible to the pool scan). The model's instinct was to start grepping artifacts; I corrected course, because every noise routine stamps <code>N01S3_</code> and you drown. The right move, which I prompted explicitly, was: don't grep the dump, carve the binary and read the code that plants the artifacts.</p>
-<p>The model ran a <code>strings</code> sweep to find the dropper (<code>GreenGoblin.exe</code>, internal name &quot;GreenPlasma&quot;), located it with <code>windows.filescan</code>, dumped it with <code>windows.dumpfiles</code>, and — because the PE shipped with DWARF symbols — recovered function names in radare2. I asked it to isolate the real check from the decoys: <code>wmain</code> calls <code>GenerateNoise()</code> first, then five fixed-name routines (<code>GenerateRegistryArtifact</code>, <code>NtCreateSymbolicLinkObject</code>, <code>GenerateADSArtifact</code>, <code>GenerateEventLogArtifact</code>, <code>GenerateMemoryArtifact</code>). I had it disassemble each of the five and pull the fixed 6-byte value each writes. Noticing every byte sat in the printable <code>0x21–0x75</code> band and the noise marker <code>N01S3}</code> was itself leetspeak, I told it the encoding was ROT47, and verified the concatenation produced a clean flag.</p>
-<p>The five real fragments, in the given order R · KO · D · EL · M:</p>
+<h3 id="reading-the-story-before-touching-a-tool">Reading the story before touching a tool</h3>
+<p>The prompt is doing real work, and it pays to parse it as a spec rather than flavor text:</p>
+<blockquote>
+<p>...shattering his Dark Energy into 5 fragments scattered across the OS internals (R, KO, D, EL and M). Can you recover all 5 fragments and assemble them in the correct order...</p>
+</blockquote>
+<p>Two hard constraints fall out immediately:</p>
+<ol>
+<li>There are exactly <strong>five</strong> fragments, each tied to an OS-internal artifact keyed by a label: <strong>R, KO, D, EL, M</strong>.</li>
+<li>Order matters — assemble them as given.</li>
+</ol>
+<p>The labels are the whole game. R is <strong>R</strong>egistry, KO is <strong>K</strong>ernel <strong>O</strong>bject, D is alternate <strong>D</strong>ata stream, EL is <strong>E</strong>vent <strong>L</strong>og, M is <strong>M</strong>emory section. That mapping is the single most important inference in the challenge, and I made the model commit to it up front so every later step had a target instead of wandering the dump looking for &quot;something flaggy.&quot; This is the human-judgment part: I've seen enough Windows forensics challenges to read &quot;R, KO, D, EL, M&quot; as a checklist of hiding spots, and I told the model that's what it was looking at rather than asking it to discover the theme.</p>
+<h3 id="identifying-the-image">Identifying the image</h3>
+<p>Everything in Volatility hangs off the right symbol table, so step zero is <code>windows.info</code>:</p>
+<pre><code class="language-bash">python3 -m venv volenv
+./volenv/bin/pip install volatility3
+./volenv/bin/vol -q -f GreenGoblin.raw windows.info
+</code></pre>
+<p>Key fields: <code>Major/Minor 15.26100</code>, <code>NtMajorVersion 10</code> → <strong>Windows 11 24H2, build 26100</strong>, <code>SystemTime</code> in June 2026, primary user <code>trtr5</code>. Confirming build 26100 matters because it tells you Volatility's stock symbols will resolve and you're not going to fight a profile mismatch — a dead-end I explicitly warned the model away from so it didn't start hunting for custom ISF files it didn't need.</p>
+<h3 id="triage-pslist-vs-psscan-and-ignoring-the-obvious-bait">Triage: pslist vs psscan, and ignoring the obvious bait</h3>
+<p>The instinct on a malware dump is to list processes and chase whatever looks hostile. Here that instinct walks you straight into the trap. Two plugins, two different views:</p>
+<ul>
+<li><code>windows.pslist</code> walks the active <code>EPROCESS</code> doubly-linked list — what was <em>alive</em> at capture: ~78 processes.</li>
+<li><code>windows.psscan</code> does a pool-tag scan of memory, so it also catches <strong>terminated and unlinked</strong> processes that the active list no longer references: ~230.</li>
+</ul>
+<p>The diff between them is the interesting surface. And the diff screams one thing: <strong>24 <code>PING.EXE</code></strong> processes spawned in a ~20-second window (19:09:13–19:09:36) off short-lived parents plus a <code>cmd.exe</code>. Meanwhile <code>lsass.exe</code>, <code>explorer.exe</code>, and <code>winlogon.exe</code> show up only under <code>psscan</code>, meaning most of the relevant activity is in processes that have already exited and been partly reclaimed — consistent with &quot;frozen mid-execution&quot; by <strong>DumpIt</strong> (<code>C:\Users\trtr5\Downloads\DumpIt.exe</code>).</p>
+<p>This is where I made my first correction. The model latched onto the ping flood and started theorizing about ICMP exfiltration — decoding the ping payloads, counting packets as bits, the whole rabbit hole. That's exactly the bait. I cut it off: the pings are <strong>decoy noise</strong>, the flag is not in network traffic, stop analyzing them. The tell is the volume and uniformity — real exfil doesn't announce itself as 24 identical short-lived <code>PING.EXE</code> in one tight burst. Recognizing decoy structure was judgment; the model had the data but wanted to chase the loudest signal.</p>
+<h3 id="finding-the-payload-by-name-not-by-behavior">Finding the payload by name, not by behavior</h3>
+<p>A broad <code>strings</code> sweep over the raw image (both ASCII and UTF-16LE, because Windows paths and registry data are wide strings) surfaces the dropper without any reversing yet:</p>
+<pre><code>http://192.168.1.244/GreenGoblin.exe
+https://995ae3f22dbe1279-118-71-145-133.serveousercontent.com/Green_Plasma/GreenGoblin.exe
+C:\Users\trtr5\Downloads\GreenGoblin (1).exe
+</code></pre>
+<p>Corroborating artifacts make the attribution airtight: Defender alias strings <code>GoblinRumba</code>, <code>CauldronDLL</code>, <code>MZPEMemoryArtifacts</code>, and an in-memory Windows Error Reporting detection <code>Exploit:Win32/CTFMonWritePE.BB</code>. The binary was pulled over a <strong>serveo.net</strong> reverse tunnel (<code>...serveousercontent.com</code>, resolving to a Vietnamese IP <code>118.71.145.133</code>) and from an internal host <code>192.168.1.244</code>. Its internal product name is <em>&quot;GreenPlasma&quot;</em>.</p>
+<p>Two things to note. First, the <code>(1).exe</code> suffix is the real on-disk copy you want — that's the one that actually landed in Downloads. Second, and this is the pivotal strategic call: <strong>do not try to extract the fragments by grepping the dump.</strong> The whole point of the design is that every artifact type is flooded with <code>N01S3</code> decoys, so <code>strings | grep</code> and <code>windows.registry.printkey</code> will drown you in plausible-looking junk. I told the model in plain terms: we are going to carve and reverse the binary, because the planting code is ground truth and the dump is a hall of mirrors.</p>
+<h3 id="carving-and-reversing-the-dropper">Carving and reversing the dropper</h3>
+<p>Locate the file object in the pool, then dump its backing pages:</p>
+<pre><code class="language-bash">./volenv/bin/vol -q -f GreenGoblin.raw windows.filescan.FileScan | grep -i goblin
+# 0xaa083c41b650  \Users\trtr5\Downloads\GreenGoblin (1).exe
+
+./volenv/bin/vol -q -f GreenGoblin.raw -o dump \
+    windows.dumpfiles.DumpFiles --virtaddr 0xaa083c41b650
+
+file dump/*.dat
+# PE32+ executable (console) x86-64, for MS Windows — MinGW/GCC, DWARF debug info
+</code></pre>
+<p>The gift here is that it's a <strong>MinGW/GCC build with DWARF symbols left in.</strong> That means radare2 recovers the real function names instead of <code>fcn.0x140001abc</code> blobs:</p>
+<pre><code class="language-bash">r2 -2 -q -c 'aaa; afl~Artifact; afl~Noise; pdf @ sym.wmain' &quot;GreenGoblin (1).exe&quot;
+</code></pre>
+<p><code>wmain</code> reads like a table of contents:</p>
+<pre><code>GenerateNoise()
+GenerateADSArtifact()
+GenerateEventLogArtifact()
+GenerateMemoryArtifact()
+GenerateRegistryArtifact()
+... then NtCreateSymbolicLinkObject(...)
+</code></pre>
+<p>So there are exactly five real planting routines plus <code>GenerateNoise</code>, and the symlink is created inline in <code>wmain</code> rather than in its own <code>Generate*</code> function — which is why the kernel-object fragment doesn't have a matching <code>GenerateKernelObjectArtifact</code> name. That asymmetry tripped the model up: it searched the function list for a KO routine, didn't find one, and started to conclude there were only four fragments. I sent it back to the <code>wmain</code> disassembly specifically to read past the five <code>Generate*</code> calls, and the <code>NtCreateSymbolicLinkObject</code> call was sitting right there. Lesson for steering: when a count doesn't match, re-read the caller, don't trust the callee list.</p>
+<h3 id="separating-real-bytes-from-noise-inside-the-code">Separating real bytes from noise inside the code</h3>
+<p>This is the crux, and it's why reversing beats grepping. The decoy routines and the real routines are structurally different:</p>
+<ul>
+<li><strong>Noise routines</strong> write <em>parameterized</em> names with a format specifier and embed a <code>N01S3_</code> / <code>N01S3}</code> marker — e.g. 15× registry values <code>DiagnosticData_%d</code>, ADS files <code>temp_%d.log:hidden</code>, sections <code>Local\N01s3_%d</code>, and the <code>ping</code> flood. The <code>%d</code> and the <code>N01S3</code> token are the fingerprints of fake.</li>
+<li><strong>Real routines</strong> use a <em>fixed, hardcoded</em> artifact name and write a single fixed <strong>6-byte</strong> value. No format string, no <code>N01S3</code>.</li>
+</ul>
+<p>So inside each <code>Generate*</code> function you look for the one <code>mov</code>/<code>lea</code> sequence that loads a constant 6-byte blob into the buffer that gets written to the artifact. Disassembling each function yields the exact bytes. Mapping them out:</p>
 <table>
 <thead>
 <tr>
+<th align="right">Order</th>
 <th>Frag</th>
-<th>Mechanism</th>
-<th>Bytes (ASCII)</th>
-<th>ROT47</th>
+<th>Routine / mechanism</th>
+<th>Artifact location</th>
+<th>Stored bytes</th>
+<th>ASCII</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>R</td>
-<td>Registry value <code>HKCU\...\CloudFiles\DiagnosticData</code></td>
+<td align="right">1</td>
+<td><strong>R</strong></td>
+<td><code>GenerateRegistryArtifact</code></td>
+<td><code>HKCU\Software\Policies\Microsoft\CloudFiles</code> value <code>DiagnosticData</code></td>
+<td><code>27 60 25 4C 60 30</code></td>
 <td><code>'`%L`0</code></td>
-<td><code>V1T{1_</code></td>
 </tr>
 <tr>
-<td>KO</td>
-<td>Kernel object symlink → <code>\BaseNamedObjects\9cGb0c</code></td>
+<td align="right">2</td>
+<td><strong>KO</strong></td>
+<td><code>NtCreateSymbolicLinkObject</code> (symlink <code>CTF.AsmListCache.FMPWinlogon</code> → <code>\BaseNamedObjects\9cGb0c</code>)</td>
+<td>Object Manager namespace</td>
+<td><code>39 63 47 62 30 63</code></td>
 <td><code>9cGb0c</code></td>
-<td><code>h4v3_4</code></td>
 </tr>
 <tr>
-<td>D</td>
-<td>NTFS ADS <code>...\config.ini:hidden</code></td>
+<td align="right">3</td>
+<td><strong>D</strong></td>
+<td><code>GenerateADSArtifact</code></td>
+<td>NTFS ADS <code>C:\Users\Public\Downloads\config.ini:hidden</code></td>
+<td><code>30 33 60 38 30 39</code></td>
 <td><code>03`809</code></td>
-<td><code>_b1g_h</code></td>
 </tr>
 <tr>
-<td>EL</td>
-<td>Fake Application Error event, faulting-module path</td>
+<td align="right">4</td>
+<td><strong>EL</strong></td>
+<td><code>GenerateEventLogArtifact</code></td>
+<td>fake &quot;Application Error&quot; event, <em>faulting module path</em> field</td>
+<td><code>63 43 35 30 43 5F</code></td>
 <td><code>cC50C_</code></td>
-<td><code>4rd_r0</code></td>
 </tr>
 <tr>
-<td>M</td>
-<td>Named section <code>Local\9cGb0c</code> at <code>+0x250</code></td>
+<td align="right">5</td>
+<td><strong>M</strong></td>
+<td><code>GenerateMemoryArtifact</code></td>
+<td>named section <code>Local\9cGb0c</code>, payload at offset <code>+0x250</code></td>
+<td><code>5F 64 45 62 43 4E</code></td>
 <td><code>_dEbCN</code></td>
-<td><code>05t3r}</code></td>
 </tr>
 </tbody>
 </table>
-<pre><code class="language-python">def rot47(s):
-    return ''.join(
-        chr(33 + (ord(c) - 33 + 47) % 94) if 33 &lt;= ord(c) &lt;= 126 else c
-        for c in s
-    )
+<p>A couple of the gotchas worth calling out, because they're the kind of thing that costs an hour if you don't read carefully:</p>
+<ul>
+<li><strong>KO</strong>: the symlink <em>name</em> <code>CTF.AsmListCache.FMPWinlogon</code> is window dressing; the fragment is the <strong>target</strong> it points at, <code>\BaseNamedObjects\9cGb0c</code>, and specifically the <code>9cGb0c</code> leaf. The model initially grabbed the symlink name as the fragment. The corrective is the same as always — the value is the data, not the label.</li>
+<li><strong>EL</strong>: the bytes live in the <em>faulting module path</em> field of a forged &quot;Application Error&quot; event, not in the message body. If you reconstruct the event from the dump you have to look at the right field.</li>
+<li><strong>M</strong>: the section <code>Local\9cGb0c</code> reuses the same <code>9cGb0c</code> token as the KO target (cute misdirection), but the actual six bytes sit at <strong>offset +0x250</strong> into the section, not at the start.</li>
+</ul>
+<p>Notice that the cross-cutting reuse of <code>9cGb0c</code> is a deliberate trap: it appears as a literal fragment (KO), as a symlink target, and as a section name (M). Treating &quot;I've seen <code>9cGb0c</code> before, it must be the answer everywhere&quot; as a heuristic gets you a wrong M fragment. Each artifact has to be read on its own terms.</p>
+<h3 id="decoding-it-s-rot47">Decoding: it's ROT47</h3>
+<p>Every fragment byte falls in the printable range <code>0x21–0x75</code>, and the noise marker <code>N01S3}</code> is itself leetspeak — both are hints that the encoding is a printable-ASCII rotation. The classic one over the <code>0x21–0x7E</code> band is <strong>ROT47</strong> (rotate by 47 within the 94 printable chars). Applying it to each fragment and concatenating in the given order R · KO · D · EL · M produces a clean <code>V1T{...}</code>, which is the verification that the encoding guess is right.</p>
+<p>Here is the complete, runnable end-to-end decoder. Feed it the five fixed byte-strings recovered from the disassembly and it prints the flag:</p>
+<pre><code class="language-python">#!/usr/bin/env python3
+# Green Goblin — decode the 5 fixed fragments carved from GreenGoblin.exe.
+# Each value is the hardcoded 6-byte blob written by one real Generate* routine
+# (noise routines use %d names + the N01S3 marker and are ignored).
 
-frags = {
-    'R':  &quot;'`%L`0&quot;,
-    'KO': &quot;9cGb0c&quot;,
-    'D':  &quot;03`809&quot;,
-    'EL': &quot;cC50C_&quot;,
-    'M':  &quot;_dEbCN&quot;,
+def rot47(s: str) -&gt; str:
+    out = []
+    for c in s:
+        o = ord(c)
+        if 0x21 &lt;= o &lt;= 0x7E:          # ROT47 operates on the 94 printable chars
+            out.append(chr(0x21 + (o - 0x21 + 47) % 94))
+        else:
+            out.append(c)
+    return ''.join(out)
+
+# Fragment -&gt; the exact 6 bytes the real routine writes, as recovered from r2.
+fragments = {
+    'R':  bytes([0x27, 0x60, 0x25, 0x4C, 0x60, 0x30]),  # GenerateRegistryArtifact
+    'KO': bytes([0x39, 0x63, 0x47, 0x62, 0x30, 0x63]),  # NtCreateSymbolicLinkObject target
+    'D':  bytes([0x30, 0x33, 0x60, 0x38, 0x30, 0x39]),  # GenerateADSArtifact
+    'EL': bytes([0x63, 0x43, 0x35, 0x30, 0x43, 0x5F]),  # GenerateEventLogArtifact (faulting module path)
+    'M':  bytes([0x5F, 0x64, 0x45, 0x62, 0x43, 0x4E]),  # GenerateMemoryArtifact (section +0x250)
 }
 
-flag = ''.join(rot47(frags[k]) for k in ['R', 'KO', 'D', 'EL', 'M'])
-print(flag)
-# V1T{1_h4v3_4_b1g_h4rd_r005t3r}
+order = ['R', 'KO', 'D', 'EL', 'M']   # assembly order given in the prompt
+
+flag = ''
+for label in order:
+    cipher = fragments[label].decode('latin-1')
+    plain  = rot47(cipher)
+    print(f&quot;{label:&gt;2}: {cipher!r:12} -&gt; {plain}&quot;)
+    flag += plain
+
+print(&quot;\nFLAG:&quot;, flag)
 </code></pre>
-<p>The difficulty was entirely separating signal from noise; the encoding was plain ROT47.</p>
+<p>Output:</p>
+<pre><code> R: &quot;'`%L`0&quot;     -&gt; V1T{1_
+KO: '9cGb0c'     -&gt; h4v3_4
+ D: '03`809'     -&gt; _b1g_h
+EL: 'cC50C_'     -&gt; 4rd_r0
+ M: '_dEbCN'     -&gt; 05t3r}
+
+FLAG: V1T{1_h4v3_4_b1g_h4rd_r005t3r}
+</code></pre>
+<p>The flag reads as leetspeak &quot;i have a big hard rooster.&quot; The entire difficulty of the challenge was <strong>separating signal from noise</strong> — the encoding itself was vanilla ROT47, and the only reliable way to find the five real six-byte writes was to read the dropper's own code rather than the dump's flooded artifacts.</p>
 <h2 id="flag">Flag</h2>
 <pre><code>V1T{1_h4v3_4_b1g_h4rd_r005t3r}
 </code></pre>
+<h2 id="lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</h2>
+<p>This challenge is the perfect shape for an LLM-driven solve <em>if</em> you steer it: lots of mechanical plugin-running and disassembly-reading (which the model is fast and tireless at), gated by two or three judgment calls (which the model gets wrong by default). Here's the reusable playbook for memory-forensics-with-decoys.</p>
+<p><strong>Anchor on the label scheme before any tooling.</strong> The single highest-leverage prompt I gave was making the model commit to the artifact mapping up front, so every later step had a destination:</p>
+<blockquote>
+<p>&quot;The prompt says 5 fragments labeled R, KO, D, EL, M across OS internals. Treat these as artifact <em>types</em>: R=Registry value, KO=Kernel Object (likely an object-manager symlink), D=NTFS alternate Data stream, EL=Event Log, M=named Memory section. For each one, tell me the Volatility 3 plugin or technique that enumerates it. Do not look for a flag yet — build the checklist.&quot;</p>
+</blockquote>
+<p>Without this, the model treats the dump as an undifferentiated string soup and burns time.</p>
+<p><strong>Tell it to reverse the dropper, not grep the dump — and say why.</strong> The design floods every artifact type with decoys, so the prompt that turned the whole solve was:</p>
+<blockquote>
+<p>&quot;The artifacts are flooded with <code>N01S3</code> decoys, so <code>strings</code>/<code>printkey</code> will be useless. Use <code>windows.filescan</code> to find <code>GreenGoblin*.exe</code>, dump it with <code>windows.dumpfiles</code>, and reverse it. It's MinGW with DWARF symbols. The real fragments are whatever the <code>Generate*Artifact</code> functions hardcode; noise routines use <code>%d</code> format names and write the <code>N01S3</code> marker. Give me the fixed 6-byte value each real routine writes.&quot;</p>
+</blockquote>
+<p>Telling it the decoy fingerprint (<code>%d</code> + <code>N01S3</code>) versus the real fingerprint (fixed name + fixed 6 bytes) lets it filter inside the disassembly instead of guessing.</p>
+<p><strong>Dead-ends to pre-empt in the prompt.</strong> I explicitly told the model: (1) the 24× <code>PING.EXE</code> flood is decoy noise — do <strong>not</strong> analyze ICMP/packet timing for exfil; (2) do <strong>not</strong> try to read fragments directly from the live registry/section dumps, they're flooded; (3) don't go hunting for custom Volatility symbols — build 26100 resolves with stock ISF. Each of these is a place the model wanted to go on its own.</p>
+<p><strong>How I caught its mistakes — verification, not trust.</strong></p>
+<ul>
+<li><em>Wrong fragment count (4 vs 5):</em> the model found only four <code>Generate*Artifact</code> functions and concluded four fragments. I re-pointed it at the <code>wmain</code> disassembly and the <code>NtCreateSymbolicLinkObject</code> call past the five <code>Generate*</code> calls was the KO mechanism. <strong>Check: when a count is off, re-read the caller, not the callee list.</strong></li>
+<li><em>Grabbing labels instead of values:</em> it first took the symlink <em>name</em> (<code>CTF.AsmListCache.FMPWinlogon</code>) and the section <em>name</em> (<code>Local\9cGb0c</code>) as fragments. The corrective heuristic is &quot;the fragment is the data the routine writes, never the artifact's name.&quot; <strong>Check: the recovered byte must land in <code>0x21–0x75</code> and ROT47 to leetspeak — names don't.</strong></li>
+<li><em>Final verification:</em> the encoding guess is self-checking. If ROT47 over the five fragments in order R·KO·D·EL·M produces a well-formed <code>V1T{...}</code> with matching braces and readable leetspeak, the bytes and the order are both right. That's the cheap oracle I used to confirm nothing got transposed.</li>
+</ul>
+<p><strong>Fast-path prompt recipe for next time:</strong> <em>&quot;Memory dump + N labeled fragments across OS-internal artifact types — map each label to its artifact type and enumeration plugin, then carve and reverse the planting binary (DWARF symbols hand you the function names); the real fragments are the fixed bytes hardcoded in the <code>Generate*</code> routines, the <code>%d</code>/marker ones are decoys; recover each value (not its name), and confirm by decoding all fragments in the given order into a valid flag.&quot;</em></p>
     </div>
 
     
@@ -208,7 +337,7 @@ print(flag)
     <aside class="post-toc-wrap" aria-hidden="true">
         <nav class="toc" aria-label="Floating table of contents">
             <div class="toc-label">§ TOC — NAVIGATION</div>
-            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-2"><a href="#flag">Flag</a></li></ul>
+            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-3"><a href="#reading-the-story-before-touching-a-tool">Reading the story before touching a tool</a></li><li class="level-3"><a href="#identifying-the-image">Identifying the image</a></li><li class="level-3"><a href="#triage-pslist-vs-psscan-and-ignoring-the-obvious-bait">Triage: pslist vs psscan, and ignoring the obvious bait</a></li><li class="level-3"><a href="#finding-the-payload-by-name-not-by-behavior">Finding the payload by name, not by behavior</a></li><li class="level-3"><a href="#carving-and-reversing-the-dropper">Carving and reversing the dropper</a></li><li class="level-3"><a href="#separating-real-bytes-from-noise-inside-the-code">Separating real bytes from noise inside the code</a></li><li class="level-3"><a href="#decoding-it-s-rot47">Decoding: it&#039;s ROT47</a></li><li class="level-2"><a href="#flag">Flag</a></li><li class="level-2"><a href="#lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</a></li></ul>
         </nav>
     </aside>
 </main>

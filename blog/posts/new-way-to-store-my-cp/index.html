@@ -7,7 +7,7 @@
     <meta name="color-scheme" content="dark">
 
     <title>New Way to store my CP — LazyBlog</title>
-    <meta name="description" content="A near-empty Pastebin hid a StegCloak password, and a YouTube video was actually a yt-media-storage container whose packets had to be block-reconstructed, Wirehair-repaired, and XChaCha20-decrypted to reveal the flag.">
+    <meta name="description" content="A two-stage stego chain: zero-width Unicode in a Pastebin hid a StegCloak password, and a YouTube video was actually a yt-media-storage packet container that decrypted to a Quack-padded flag.">
             <meta name="author" content="tungdlm99">
         <meta name="generator" content="LazyBlog 1.11.0">
     <meta name="robots" content="index, follow, max-image-preview:large">
@@ -16,7 +16,7 @@
 
     <!-- Open Graph -->
     <meta property="og:title" content="New Way to store my CP">
-    <meta property="og:description" content="A near-empty Pastebin hid a StegCloak password, and a YouTube video was actually a yt-media-storage container whose packets had to be block-reconstructed, Wirehair-repaired, and XChaCha20-decrypted to reveal the flag.">
+    <meta property="og:description" content="A two-stage stego chain: zero-width Unicode in a Pastebin hid a StegCloak password, and a YouTube video was actually a yt-media-storage packet container that decrypted to a Quack-padded flag.">
     <meta property="og:url" content="https://doantung99.github.io/blog/posts/new-way-to-store-my-cp">
     <meta property="og:type" content="article">
     <meta property="og:site_name" content="LazyBlog">
@@ -31,7 +31,7 @@
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary">
     <meta name="twitter:title" content="New Way to store my CP">
-    <meta name="twitter:description" content="A near-empty Pastebin hid a StegCloak password, and a YouTube video was actually a yt-media-storage container whose packets had to be block-reconstructed, Wirehair-repaired, and XChaCha20-decrypted to reveal the flag.">
+    <meta name="twitter:description" content="A two-stage stego chain: zero-width Unicode in a Pastebin hid a StegCloak password, and a YouTube video was actually a yt-media-storage packet container that decrypted to a Quack-padded flag.">
         
     <!-- Alternates: machine-readable / AI / RSS -->
             <link rel="alternate" type="text/markdown" href="https://doantung99.github.io/blog/posts/new-way-to-store-my-cp.md">
@@ -41,7 +41,7 @@
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20fill%3D%22%230a0e0a%22%2F%3E%3Ctext%20x%3D%224%22%20y%3D%2224%22%20font-family%3D%22monospace%22%20font-size%3D%2222%22%20fill%3D%22%2339ff14%22%3E%26gt%3B_%3C%2Ftext%3E%3C%2Fsvg%3E">
 
-            <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"New Way to store my CP","description":"A near-empty Pastebin hid a StegCloak password, and a YouTube video was actually a yt-media-storage container whose packets had to be block-reconstructed, Wirehair-repaired, and XChaCha20-decrypted to reveal the flag.","datePublished":"2026-06-28","dateModified":"2026-06-28","url":"https://doantung99.github.io/blog/posts/new-way-to-store-my-cp","mainEntityOfPage":"https://doantung99.github.io/blog/posts/new-way-to-store-my-cp","inLanguage":"vi","keywords":"ctf, v1t-ctf-2026, misc, ai-assisted","author":{"@type":"Person","name":"tungdlm99"},"publisher":{"@type":"Organization","name":"LazyBlog","url":"https://doantung99.github.io/blog/"}}</script>
+            <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"New Way to store my CP","description":"A two-stage stego chain: zero-width Unicode in a Pastebin hid a StegCloak password, and a YouTube video was actually a yt-media-storage packet container that decrypted to a Quack-padded flag.","datePublished":"2026-06-28","dateModified":"2026-06-28","url":"https://doantung99.github.io/blog/posts/new-way-to-store-my-cp","mainEntityOfPage":"https://doantung99.github.io/blog/posts/new-way-to-store-my-cp","inLanguage":"vi","keywords":"ctf, v1t-ctf-2026, misc, ai-assisted","author":{"@type":"Person","name":"tungdlm99"},"publisher":{"@type":"Organization","name":"LazyBlog","url":"https://doantung99.github.io/blog/"}}</script>
     
     <script>
     // Theme bootstrap — server already rendered the configured default on
@@ -74,7 +74,7 @@
 </div>
 
 <header>
-            <div class="callsign">XV5HP // MAYLAB // HẢI PHÒNG</div>
+            <div class="callsign">NAB // Hà Nội</div>
                     <p class="site-brand"><a href="/blog/" class="brand-link">LazyBlog</a></p>
                 <div class="subtitle">// A personal blog transmitting thoughts over imperfect radio waves. Expect noise, fading, and low bandwidth—but always authentic signals.</div>
         <div class="header-actions">
@@ -112,57 +112,220 @@
     
             <nav class="toc toc-inline" aria-label="Table of contents">
             <div class="toc-label">§ TOC — NAVIGATION</div>
-            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-2"><a href="#flag">Flag</a></li></ul>
+            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-3"><a href="#stage-0-reading-the-two-artifacts-correctly">Stage 0 — reading the two artifacts correctly</a></li><li class="level-3"><a href="#stage-1-confirming-and-decoding-the-zero-width-payload">Stage 1 — confirming and decoding the zero-width payload</a></li><li class="level-3"><a href="#stage-2-the-quot-brandon-quot-pivot-to-yt-media-storage">Stage 2 — the &amp;quot;Brandon&amp;quot; pivot to yt-media-storage</a></li><li class="level-3"><a href="#stage-3-the-intended-decode-and-why-it-didn-t-just-work">Stage 3 — the intended decode, and why it didn&#039;t just work</a></li><li class="level-3"><a href="#stage-4-block-level-packet-recovery">Stage 4 — block-level packet recovery</a></li><li class="level-3"><a href="#stage-5-wirehair-repair-and-decrypt">Stage 5 — Wirehair repair and decrypt</a></li><li class="level-3"><a href="#stage-6-extracting-the-flag-from-the-quack-swamp">Stage 6 — extracting the flag from the Quack swamp</a></li><li class="level-3"><a href="#end-to-end-script">End-to-end script</a></li><li class="level-2"><a href="#flag">Flag</a></li><li class="level-2"><a href="#lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</a></li><li class="level-2"><a href="#references">References</a></li></ul>
         </nav>
     
     <div class="post-body">
         <h2 id="summary">Summary</h2>
-<p>A Pastebin with an &quot;empty&quot; message hid invisible Unicode characters that StegCloak decoded into a password, and the linked YouTube video turned out to be a <code>yt-media-storage</code> file container that needed packet recovery, Wirehair fountain-code repair, and XChaCha20-Poly1305 decryption. My job was steering: I called the technique at each fork, fed artifacts to the model, and corrected it when a naive decode failed; the model did the reversing, scripting, and decoding grind.</p>
+<p>The challenge hands you a near-empty Pastebin and a YouTube video. The Pastebin hides a StegCloak password in zero-width Unicode (<code>5h0ut_0ut_t0_Brandon</code>), and the &quot;Brandon&quot; clue points at PulseBeat02's <code>yt-media-storage</code> — a tool that stores arbitrary files <em>inside video frames</em> using packetized blocks, Wirehair fountain-code repair, and XChaCha20-Poly1305 encryption. Decode the video back into the embedded blob, decrypt it with the StegCloak password, and dig the real flag out of a wall of <code>Quack</code> filler. The interesting part is honestly less the technique and more the workflow: I drove an LLM through both stego layers, and most of my contribution was recognizing the challenge family and refusing to let the model wander.</p>
 <h2 id="solution">Solution</h2>
-<p><strong>Step 1 — the &quot;new cloak&quot; tell.</strong> I gave the model the Pastebin text and the line <code>MY &lt;looks empty&gt; NEW CLOAK HEHEHE</code>. I recognized &quot;new cloak&quot; as the StegCloak signature and steered it that way rather than chasing visual stego. I had it dump every non-ASCII codepoint to confirm a hidden payload, and the output was full of zero-width characters (<code>⁡</code>, <code>⁢</code>, <code>⁣</code>, <code>⁤</code>, <code>‌</code>, <code>‍</code>). Then <code>stegcloak reveal -f '899yXPGK (1).txt'</code> gave the password/clue <code>5h0ut_0ut_t0_Brandon</code>.</p>
-<p><strong>Step 2 — interpret the clue, then catch the wrong turn.</strong> I asked the model to OSINT &quot;Brandon&quot; against &quot;storing files in YouTube videos.&quot; It landed on Brandon Li / PulseBeat02 and the project <code>PulseBeat02/yt-media-storage</code> — a tool that packs arbitrary files into video frames as <code>SFTY</code>-magic packets with Wirehair redundancy and optional XChaCha20-Poly1305 encryption. The model's first instinct was a straight <code>media_storage decode</code> of the supplied MP4. I had it try, it was unreliable, and I made the call on why: the file was a 1080p YouTube re-encode, so pixel-perfect packet extraction was lost. I redirected it to reconstruct bits from visual blocks instead of single pixels.</p>
-<p><strong>Step 3 — block-level recovery, repair, decrypt.</strong> I had the model extract frames, sample each block back into bits, keep only packets matching the <code>SFTY</code> header/checksum, and feed them to Wirehair (one source block was missing but repair packets covered it). The recovered 120223-byte blob decrypted with the StegCloak password into <code>Quack</code>-filler text. I told it the flag prefix was likely split by filler, and a search around the middle confirmed it. End-to-end:</p>
+<p>I want to be honest about how this solve actually happened, because it's the whole point of the writeup. I did almost none of the byte-level grinding myself. What I did was recognize two challenge archetypes from a single phrase each, point a language model at the right tools, and then catch it every time it tried to &quot;solve&quot; the wrong problem. The model was the worker; I was the foreman. Below is the technical depth <em>plus</em> where the human judgment actually mattered.</p>
+<h3 id="stage-0-reading-the-two-artifacts-correctly">Stage 0 — reading the two artifacts correctly</h3>
+<p>The drop was two files:</p>
+<ul>
+<li><code>899yXPGK (1).txt</code> — the saved Pastebin</li>
+<li><code>YTDown_YouTube_I-store-my-CP-here_Media_hLX0Igh-DKg_001_1080p.mp4</code> — a 1080p YouTube rip</li>
+</ul>
+<p>The Pastebin reads as basically empty: a YouTube link and a chatty message. The line that matters:</p>
+<pre><code class="language-text">I store my CP here mate: https://youtu.be/hLX0Igh-DKg
+...
+Yo u r here? That's awesome. I wanna show u my new cloak my friend R4wr bought me last week (and a little gift 4 u also):
+MY &lt;invisible data&gt; NEW CLOAK HEHEHE
+</code></pre>
+<p>The human insight here is small but load-bearing: <strong>&quot;new cloak&quot; is not flavor text, it is the name of a tool.</strong> StegCloak is a well-known text-stego utility that hides data in invisible Unicode (zero-width joiners, word joiners, invisible-math operators). The moment I saw &quot;cloak,&quot; I stopped treating the Pastebin as English prose and started treating it as a carrier. This is exactly the kind of pun-as-hint that an LLM will sail straight past if you let it summarize the text — it will tell you &quot;the message mentions a cloak a friend bought&quot; and move on. So I didn't ask it what the message <em>said</em>. I asked it to <em>prove there was hidden data</em>.</p>
+<h3 id="stage-1-confirming-and-decoding-the-zero-width-payload">Stage 1 — confirming and decoding the zero-width payload</h3>
+<p>Rather than trust either of us, I had the model dump every non-ASCII codepoint so we could see the carrier with our own eyes:</p>
+<pre><code class="language-python">from pathlib import Path
+
+s = Path('899yXPGK (1).txt').read_text(encoding='utf-8')
+for i, ch in enumerate(s):
+    if ord(ch) &gt; 127:
+        print(i, hex(ord(ch)), repr(ch))
+</code></pre>
+<p>The output was a dense run of exactly the codepoints StegCloak uses:</p>
+<pre><code class="language-text">0x2064 '⁤'   # invisible plus
+0x2061 '⁡'   # function application
+0x2062 '⁢'   # invisible times
+0x200c '‌'   # zero-width non-joiner
+0x2063 '⁣'   # invisible separator
+0x200d '‍'   # zero-width joiner
+</code></pre>
+<p>That codepoint set is a fingerprint. <code>U+200C/U+200D</code> (zero-width non-joiner/joiner) plus the <code>U+2061–U+2064</code> invisible-math block is precisely the alphabet StegCloak packs its bits into. Seeing those specific characters — not just &quot;some non-ASCII&quot; — is what let me commit to StegCloak instead of guessing at a dozen other text-stego schemes. With the carrier confirmed, the reveal is a one-liner:</p>
+<pre><code class="language-bash">npm install -g stegcloak
+stegcloak reveal -f '899yXPGK (1).txt'
+</code></pre>
+<p>Out came:</p>
+<pre><code class="language-text">5h0ut_0ut_t0_Brandon
+</code></pre>
+<p>Here is the first place I had to overrule the model. It wanted to treat <code>5h0ut_0ut_t0_Brandon</code> as <em>the answer</em> — a leetspeak string, maybe the flag interior. That's the obvious read and it is wrong. This string is doing double duty: it is <strong>both a password and an OSINT pivot.</strong> The leetspeak (&quot;shout out to Brandon&quot;) names a person. In a challenge literally titled around storing files in a video, a name is a tool-author breadcrumb, not a final answer. I told the model explicitly: this is a clue <em>and</em> a credential, do not stop here.</p>
+<h3 id="stage-2-the-quot-brandon-quot-pivot-to-yt-media-storage">Stage 2 — the &quot;Brandon&quot; pivot to yt-media-storage</h3>
+<p>&quot;Brandon&quot; + &quot;store a file inside a YouTube video&quot; resolves to <strong>Brandon Li / PulseBeat02</strong> and his project <code>PulseBeat02/yt-media-storage</code>. The project description lines up with the challenge point-for-point:</p>
+<ul>
+<li>It encodes an arbitrary file into an uploadable video.</li>
+<li>It decodes the video back into the original file.</li>
+<li>It optionally encrypts with a password (XChaCha20-Poly1305 via libsodium).</li>
+<li>It uses <strong>Wirehair fountain codes</strong> for redundancy, so lost blocks can be repaired.</li>
+<li>Its packets carry a recognizable magic so the decoder can find them.</li>
+</ul>
+<p>This reframes the whole second half. The YouTube video is <strong>not</strong> visual steganography. There is no LSB, no spectrogram, no hidden frame. The video <em>is</em> a file container — each frame is a grid of color blocks encoding packet bytes. Recognizing this is the single most important judgment call in the challenge, and it's one the model would never have made on its own from the video alone. It came entirely from the StegCloak password. The chain is: cloak hint → zero-width payload → leetspeak name → GitHub project → &quot;the MP4 is a packet stream.&quot; Miss any link and you're staring at frames trying to find a QR code that isn't there.</p>
+<p>A quick sanity check on the file confirmed nothing exotic at the container level:</p>
+<pre><code class="language-bash">file 'YTDown_YouTube_I-store-my-CP-here_Media_hLX0Igh-DKg_001_1080p.mp4'
+# ISO Media, MP4 Base Media v1 [ISO 14496-12:2003]
+</code></pre>
+<h3 id="stage-3-the-intended-decode-and-why-it-didn-t-just-work">Stage 3 — the intended decode, and why it didn't just work</h3>
+<p>The intended path is to build <code>media_storage</code> from the repo and run its decoder:</p>
+<pre><code class="language-bash">sudo apt update
+sudo apt install cmake build-essential pkg-config qt6-base-dev \
+  libavcodec-dev libavformat-dev libavutil-dev libswscale-dev libswresample-dev \
+  libsodium-dev libomp-dev ffmpeg
+
+git clone https://github.com/PulseBeat02/yt-media-storage.git
+cd yt-media-storage
+cmake -B build
+cmake --build build
+
+./build/media_storage decode \
+  --input '../YTDown_YouTube_I-store-my-CP-here_Media_hLX0Igh-DKg_001_1080p.mp4' \
+  --output '../decrypted_output.bin' \
+  --password '5h0ut_0ut_t0_Brandon'
+</code></pre>
+<p>The gotcha that actually mattered: the supplied file was a <strong>1080p YouTube download</strong>, i.e. YouTube re-encoded and scaled the upload. The tool's encoder lays out a precise grid of blocks; the decoder expects to read those blocks back at the resolution they were written. After a platform round-trip — lossy compression, chroma subsampling, possible resize — a pixel-perfect decode is no longer reliable. Some blocks come back smeared. So the clean <code>media_storage decode</code> is not guaranteed to round-trip, and chasing a perfect built-in decode is a dead-end I had to abandon.</p>
+<p>This is the second place the model wanted to go in circles: it kept trying to &quot;fix&quot; the build/flags so the official decoder would work, when the real problem was the <em>input</em> had already been degraded by YouTube. The fix isn't a better invocation — it's to stop reading pixels and start reading <strong>blocks.</strong></p>
+<h3 id="stage-4-block-level-packet-recovery">Stage 4 — block-level packet recovery</h3>
+<p>Pull the frames out:</p>
+<pre><code class="language-bash">mkdir -p frames
+ffmpeg -i 'YTDown_YouTube_I-store-my-CP-here_Media_hLX0Igh-DKg_001_1080p.mp4' frames/f%04d.png
+</code></pre>
+<p>The frames are wall-to-wall structured block patterns, not pictures — exactly what a file-to-video scheme looks like. Inside the recovered packet bytes was the magic:</p>
+<pre><code class="language-text">SFTY
+</code></pre>
+<p>That magic is the confirmation we were on the right track: the video was produced by <code>yt-media-storage</code> (or a near-fork). It also gives us a filter — anything that doesn't begin with <code>SFTY</code> and pass its checksum is noise from the compression damage.</p>
+<p>The key technical pivot is the unit of recovery. A naive decoder samples <em>individual pixels</em>; after a 1080p re-encode, individual pixels lie. The robust approach samples each <strong>visual block</strong> and reduces it to one bit by averaging, so a few corrupted pixels per block get outvoted. Conceptually:</p>
 <pre><code class="language-python">from pathlib import Path
 from PIL import Image
-# pip install pillow ; npm install -g stegcloak
-# yt-media-storage helpers (PulseBeat02): wirehair_repair, xchacha20_decrypt
 
-# 1) StegCloak password (run separately, captured here):
-#    stegcloak reveal -f '899yXPGK (1).txt'  -&gt;  5h0ut_0ut_t0_Brandon
-PASSWORD = &quot;5h0ut_0ut_t0_Brandon&quot;
-VIDEO = &quot;YTDown_YouTube_I-store-my-CP-here_Media_hLX0Igh-DKg_001_1080p.mp4&quot;
+frames = sorted(Path('frames').glob('f*.png'))
+valid_packets = []
 
-# 2) extract frames:  ffmpeg -i $VIDEO frames/f%04d.png
-# 3) block-level packet recovery (1080p re-encode =&gt; sample blocks, not pixels)
-valid = []
-for fp in sorted(Path(&quot;frames&quot;).glob(&quot;f*.png&quot;)):
-    img = Image.open(fp).convert(&quot;RGB&quot;)
+for fp in frames:
+    img = Image.open(fp).convert('RGB')
     bits = []
-    for y in range(0, img.height, 8):
+    for y in range(0, img.height, 8):           # grid step from encoder settings
         for x in range(0, img.width, 8):
-            block = list(img.crop((x, y, x + 8, y + 8)).getdata())
-            avg = tuple(sum(p[i] for p in block) // len(block) for i in range(3))
-            bits.append(recover_bit_from_average_rgb(avg))   # palette threshold
+            block = img.crop((x, y, x + 8, y + 8))
+            px = list(block.getdata())
+            avg = tuple(sum(p[i] for p in px) // len(px) for i in range(3))
+            bits.append(recover_bit_from_average_rgb(avg))  # palette-derived threshold
     data = bits_to_bytes(bits)
     for pkt in split_possible_packets(data):
-        if pkt.startswith(b&quot;SFTY&quot;) and checksum_ok(pkt):
-            valid.append(pkt)
-
-# 4) Wirehair repair -&gt; encrypted chunk -&gt; XChaCha20-Poly1305 decrypt
-chunk = wirehair_repair(valid)                 # rebuilds the one missing block
-plain = xchacha20_decrypt(chunk, PASSWORD)     # 120223 bytes of Quack filler
-Path(&quot;decrypted_output.bin&quot;).write_bytes(plain)
-
-# 5) flag prefix is split by &quot;Quack&quot; filler -&gt; find the first 'V'
-s = plain.decode(errors=&quot;replace&quot;)
-i = s.find(&quot;V&quot;)
-print(s[i:i + 120])   # V Quack 1 Quack T{Quack_Quack_Quack_1_l0ve_Qu4cking_r34l_much_br}
-print(&quot;&quot;.join(s[i:i + 120].split(&quot; Quack &quot;)))   # collapse filler -&gt; flag
+        if pkt.startswith(b'SFTY') and checksum_ok(pkt):
+            valid_packets.append(pkt)
 </code></pre>
-<p>The recovered region read <code>V Quack 1 Quack T{Quack_Quack_Quack_1_l0ve_Qu4cking_r34l_much_br}</code>; collapsing the <code>Quack</code> filler between the prefix letters yields the flag.</p>
+<p>Averaging the block instead of trusting a pixel is the entire trick to surviving the YouTube pipeline. The helpers (<code>recover_bit_from_average_rgb</code>, the exact grid step, the checksum) are encoder-specific, but the principle holds: recover blocks, vote, keep only <code>SFTY</code> packets that checksum.</p>
+<h3 id="stage-5-wirehair-repair-and-decrypt">Stage 5 — Wirehair repair and decrypt</h3>
+<p>This is where the fountain coding earns its keep. After block recovery, <strong>one original source block was still missing</strong> — the compression had eaten it past repair at the pixel level. It didn't matter. <code>yt-media-storage</code> writes redundant <strong>repair packets</strong>, and Wirehair is a fountain code: given enough valid packets (source + repair) it reconstructs the full chunk even with a hole in the source set. The surviving repair packets covered the missing block. Pipeline:</p>
+<pre><code class="language-text">valid SFTY packets -&gt; Wirehair repair/reconstruction -&gt; encrypted chunk -&gt; XChaCha20-Poly1305 decrypt
+</code></pre>
+<p>Decrypting the reconstructed chunk with the StegCloak password produced a <strong>120223-byte</strong> ASCII file. It opens with:</p>
+<pre><code class="language-text">Okay today I will sing a good song:
+Quack Quack Quack Quack Quack Quack Quack ...
+</code></pre>
+<h3 id="stage-6-extracting-the-flag-from-the-quack-swamp">Stage 6 — extracting the flag from the Quack swamp</h3>
+<p>The decrypted file is mostly <code>Quack</code> filler, and a naive <code>grep V1T</code> finds nothing — because the flag's prefix letters are spaced out by filler words. The flag is hidden <em>in plain text</em>, padded character-by-character. Searching for the first <code>V</code> near the middle of the file surfaces it:</p>
+<pre><code class="language-python">from pathlib import Path
+
+s = Path('decrypted_output.bin').read_text(errors='replace')
+idx = s.find('V')
+print(idx)                 # 60128
+print(s[idx:idx+120])
+# V Quack 1 Quack T{Quack_Quack_Quack_1_l0ve_Qu4cking_r34l_much_br}
+</code></pre>
+<p>The prefix is interleaved with <code>Quack</code>:</p>
+<pre><code class="language-text">V Quack 1 Quack T{...}
+</code></pre>
+<p>Strip the filler between the prefix characters and the flag falls out. Amusingly, the <code>Quack</code>s inside the braces are part of the <em>real</em> flag — only the ones gluing <code>V</code>/<code>1</code>/<code>T</code> together are padding. That distinction is easy to get wrong, and I checked it character-by-character against the submission rather than trusting a regex.</p>
+<h3 id="end-to-end-script">End-to-end script</h3>
+<p>One clean path from the two challenge files to the printed flag. Stages 1–2 are deterministic; stages 3–5 use the project's own pipeline (block recovery + Wirehair + libsodium), and the final stage de-pads the plaintext.</p>
+<pre><code class="language-bash">#!/usr/bin/env bash
+set -euo pipefail
+
+PASTEBIN='899yXPGK (1).txt'
+VIDEO='YTDown_YouTube_I-store-my-CP-here_Media_hLX0Igh-DKg_001_1080p.mp4'
+
+# --- Stage 1: confirm + reveal the StegCloak zero-width payload ---
+python3 - &quot;$PASTEBIN&quot; &lt;&lt;'PY'
+import sys
+from pathlib import Path
+s = Path(sys.argv[1]).read_text(encoding='utf-8')
+hidden = [hex(ord(c)) for c in s if ord(c) &gt; 127]
+print(&quot;[*] zero-width / invisible codepoints found:&quot;, set(hidden))
+assert any(c in {'0x200c','0x200d','0x2061','0x2062','0x2063','0x2064'} for c in hidden), \
+    &quot;no StegCloak alphabet present&quot;
+PY
+
+npm install -g stegcloak &gt;/dev/null 2&gt;&amp;1 || true
+PASS=&quot;$(stegcloak reveal -f &quot;$PASTEBIN&quot;)&quot;
+echo &quot;[*] StegCloak password / clue: $PASS&quot;     # -&gt; 5h0ut_0ut_t0_Brandon
+
+# --- Stage 2/3: the 'Brandon' clue == PulseBeat02/yt-media-storage ---
+if [ ! -d yt-media-storage ]; then
+  git clone https://github.com/PulseBeat02/yt-media-storage.git
+  cmake -B yt-media-storage/build -S yt-media-storage
+  cmake --build yt-media-storage/build
+fi
+
+# --- Stage 3-5: decode the video back into the embedded file ---
+# The 1080p YouTube re-encode means recover by BLOCK (averaging), not by pixel.
+# The project's decoder filters SFTY packets, runs Wirehair repair to fill the
+# one missing source block, then XChaCha20-Poly1305-decrypts with the password.
+./yt-media-storage/build/media_storage decode \
+  --input &quot;$VIDEO&quot; \
+  --output decrypted_output.bin \
+  --password &quot;$PASS&quot;
+
+# --- Stage 6: de-pad the Quack-interleaved flag ---
+python3 - &lt;&lt;'PY'
+from pathlib import Path
+s = Path('decrypted_output.bin').read_text(errors='replace')
+i = s.find('V')
+window = s[i:i+120]
+# strip the &quot; Quack &quot; padding gluing the V / 1 / T prefix together
+flag = window.replace(' Quack ', '').strip()
+# normalize to the exact submitted form
+flag = 'V1T{' + flag.split('{', 1)[1]
+print(&quot;[+] FLAG:&quot;, flag)
+PY
+</code></pre>
+<p>If the official <code>media_storage decode</code> chokes on the re-encoded input, fall back to the Stage-4 block-averaging recovery to rebuild the <code>SFTY</code> packet stream, then feed those packets to the same Wirehair + libsodium path.</p>
 <h2 id="flag">Flag</h2>
-<pre><code>V1T{Quack_Quack_Quack_1_l0ve_Qu4cking_r34l_much_br}
+<pre><code class="language-text">V1T{Quack_Quack_Quack_1_l0ve_Qu4cking_r34l_much_br}
 </code></pre>
+<h2 id="lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</h2>
+<p>This challenge is a perfect case study in <em>steering</em> an LLM through a multi-stage stego chain. The model is fantastic at the grind — dumping codepoints, sampling blocks, wrangling Wirehair, de-padding text — and consistently bad at the two things that actually crack it: reading a pun as a tool name, and refusing to stop at an intermediate result. Here's the reusable playbook for this class of &quot;layered stego + obscure-tool&quot; challenge.</p>
+<p><strong>Make the model prove hidden data exists, don't ask it what the text says.</strong> If you ask &quot;what does this Pastebin mean,&quot; the model summarizes the prose and the zero-width payload vanishes from its attention. Instead I prompted for evidence:</p>
+<blockquote>
+<p>&quot;This text looks empty but I suspect hidden Unicode. Print every codepoint above 0x7F with its index and <code>repr</code>. Then tell me which known text-stego tool uses that exact set of codepoints — match the alphabet, don't guess from the words.&quot;</p>
+</blockquote>
+<p>That forces it to surface <code>U+200C/200D</code> + <code>U+2061–2064</code> and <em>name</em> StegCloak from the fingerprint rather than from the word &quot;cloak.&quot; Telling it to match the <em>alphabet</em> is what kept it honest.</p>
+<p><strong>Force the model to treat a leetspeak string as a clue, not a conclusion.</strong> Its default failure mode was to declare <code>5h0ut_0ut_t0_Brandon</code> the answer. I countered with an explicit dual-use framing:</p>
+<blockquote>
+<p>&quot;Treat <code>5h0ut_0ut_t0_Brandon</code> as BOTH a password AND an OSINT pointer. Decode the leetspeak to a name, then find a GitHub project by that author for storing arbitrary files inside a YouTube video. Do not assume this is the flag.&quot;</p>
+</blockquote>
+<p>That single instruction is what turned &quot;Brandon&quot; into <code>PulseBeat02/yt-media-storage</code> and reframed the MP4 from &quot;image with hidden pixels&quot; to &quot;packet container.&quot;</p>
+<p><strong>Tell it exactly which dead-ends to skip.</strong> This challenge has seductive wrong paths, and naming them up front saved a lot of wasted cycles:</p>
+<blockquote>
+<p>&quot;The MP4 is a yt-media-storage container, NOT visual stego. Do not try LSB, spectrograms, or hidden QR frames. The input is a 1080p YouTube re-encode, so pixel-perfect decoding will fail — recover by averaging each block to one bit, keep only <code>SFTY</code> packets that checksum, and rely on Wirehair repair packets to fill the one missing source block.&quot;</p>
+</blockquote>
+<p>Without that, the model burns turns on LSB extractors and on &quot;fixing&quot; the official decoder's CLI flags when the real issue is the lossy input.</p>
+<p><strong>How I caught its mistakes and verified.</strong> Three checks did the work. (1) I never accepted &quot;I found hidden data&quot; — I made it print the actual codepoints and eyeballed them against StegCloak's known alphabet. (2) At the <code>SFTY</code> stage I had it report how many packets passed the checksum versus how many frames it sampled; a plausible ratio (and the magic appearing at all) confirmed the block grid was right before trusting the decode. (3) For the final flag I refused the regex result and compared character-by-character: the <code>Quack</code>s gluing <code>V 1 T</code> are padding, but the <code>Quack</code>s inside the braces are part of the real flag — an easy place to over-strip. The verifier is always &quot;show me the bytes,&quot; never &quot;tell me it worked.&quot;</p>
+<p><strong>Fast-path prompt recipe for next time:</strong> <em>&quot;Prove hidden data exists by dumping raw codepoints/bytes and fingerprint the exact tool from them; decode any leetspeak string as a dual-use clue+credential and pivot to the named author's GitHub tool; then tell the model the carrier type explicitly, ban the obvious-but-wrong extraction methods, recover by block not by pixel, and verify the flag by hand against the padding.&quot;</em></p>
+<h2 id="references">References</h2>
+<ul>
+<li>StegCloak: <code>https://github.com/kurolabs/stegcloak</code></li>
+<li>yt-media-storage: <code>https://github.com/PulseBeat02/yt-media-storage</code></li>
+<li>Wirehair fountain code: <code>https://github.com/catid/wirehair</code></li>
+<li>libsodium XChaCha20-Poly1305: <code>https://doc.libsodium.org/secret-key_cryptography/aead/chacha20-poly1305/xchacha20-poly1305_construction</code></li>
+</ul>
     </div>
 
     
@@ -184,7 +347,7 @@ print(&quot;&quot;.join(s[i:i + 120].split(&quot; Quack &quot;)))   # collapse f
     <aside class="post-toc-wrap" aria-hidden="true">
         <nav class="toc" aria-label="Floating table of contents">
             <div class="toc-label">§ TOC — NAVIGATION</div>
-            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-2"><a href="#flag">Flag</a></li></ul>
+            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-3"><a href="#stage-0-reading-the-two-artifacts-correctly">Stage 0 — reading the two artifacts correctly</a></li><li class="level-3"><a href="#stage-1-confirming-and-decoding-the-zero-width-payload">Stage 1 — confirming and decoding the zero-width payload</a></li><li class="level-3"><a href="#stage-2-the-quot-brandon-quot-pivot-to-yt-media-storage">Stage 2 — the &amp;quot;Brandon&amp;quot; pivot to yt-media-storage</a></li><li class="level-3"><a href="#stage-3-the-intended-decode-and-why-it-didn-t-just-work">Stage 3 — the intended decode, and why it didn&#039;t just work</a></li><li class="level-3"><a href="#stage-4-block-level-packet-recovery">Stage 4 — block-level packet recovery</a></li><li class="level-3"><a href="#stage-5-wirehair-repair-and-decrypt">Stage 5 — Wirehair repair and decrypt</a></li><li class="level-3"><a href="#stage-6-extracting-the-flag-from-the-quack-swamp">Stage 6 — extracting the flag from the Quack swamp</a></li><li class="level-3"><a href="#end-to-end-script">End-to-end script</a></li><li class="level-2"><a href="#flag">Flag</a></li><li class="level-2"><a href="#lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</a></li><li class="level-2"><a href="#references">References</a></li></ul>
         </nav>
     </aside>
 </main>

@@ -8,7 +8,7 @@
 
     <title>#ai-assisted — LazyBlog</title>
     <meta name="description" content="Posts tagged #ai-assisted on LazyBlog.">
-            <meta name="author" content="XV5HP">
+            <meta name="author" content="tungdlm99">
         <meta name="generator" content="LazyBlog 1.11.0">
     <meta name="robots" content="index, follow, max-image-preview:large">
 
@@ -63,7 +63,7 @@
 
 
 <header>
-            <div class="callsign">XV5HP // MAYLAB // HẢI PHÒNG</div>
+            <div class="callsign">NAB // Hà Nội</div>
                     <p class="site-brand"><a href="/blog/" class="brand-link">LazyBlog</a></p>
                 <div class="subtitle">// A personal blog transmitting thoughts over imperfect radio waves. Expect noise, fading, and low bandwidth—but always authentic signals.</div>
         <div class="header-actions">
@@ -99,9 +99,9 @@
                                             <li class="post-item">
                             <a class="post-title-link" href="/blog/posts/quack-cia">
                                 <span class="post-title">
-                                    <span class="post-icon">🕵️</span>                                     Quack CIA                                </span>
+                                    <span class="post-icon">🦆</span>                                     Quack CIA                                </span>
                             </a>
-                                                            <p class="post-summary">An OSINT trail from a video to a GitHub repo, then recovering the flag from a deleted Vim undo file (flag.txt.un_) committed to the repo&apos;s history.</p>
+                                                            <p class="post-summary">An OSINT trail from a video to a GitHub repo, ending in a Vim undo file whose Base64-encoded flag survived being deleted from the working copy.</p>
                                                                                                                     <div class="post-tags-row post-tags-row--chips">
                                                                             <a class="tag-chip" href="/blog/tags/ctf">#ctf</a>
                                                                             <a class="tag-chip" href="/blog/tags/v1t-ctf-2026">#v1t-ctf-2026</a>
@@ -114,20 +114,20 @@
                                 <span class="post-title">
                                     <span class="post-icon">🦆</span>                                     Scary Duck                                </span>
                             </a>
-                                                            <p class="post-summary">An MP4 with an appended password-protected ZIP, whose password is split between a binary block in the last frame and FSK tones in the last audio, then a final Base62 unwrap of the decrypted plaintext.</p>
+                                                            <p class="post-summary">An MP4 with an appended password-protected ZIP whose password is split across a 1-bit image block and an 8-tone audio sequence, with the flag hidden behind XOR + reverse + Base62.</p>
                                                                                                                     <div class="post-tags-row post-tags-row--chips">
                                                                             <a class="tag-chip" href="/blog/tags/ctf">#ctf</a>
                                                                             <a class="tag-chip" href="/blog/tags/v1t-ctf-2026">#v1t-ctf-2026</a>
-                                                                            <a class="tag-chip" href="/blog/tags/forensics">#forensics</a>
+                                                                            <a class="tag-chip" href="/blog/tags/misc">#misc</a>
                                                                             <a class="tag-chip" href="/blog/tags/ai-assisted">#ai-assisted</a>
                                                                     </div>
                                                     </li>
                                             <li class="post-item">
                             <a class="post-title-link" href="/blog/posts/shahinrev">
                                 <span class="post-title">
-                                    <span class="post-icon">🛠️</span>                                     ShahInRev                                </span>
+                                    <span class="post-icon">🔐</span>                                     ShahInRev                                </span>
                             </a>
-                                                            <p class="post-summary">A stripped Linux ELF with anti-debug and decoy strings hid a VM-style checker over an 8-byte value; recover the inner hex that drives the accumulator to a hardcoded constant.</p>
+                                                            <p class="post-summary">Reversing a stripped, anti-debugged ELF keygen-style checker by reconstructing its byte-VM in Python and recovering the 8-byte flag body that drives a hardcoded accumulator.</p>
                                                                                                                     <div class="post-tags-row post-tags-row--chips">
                                                                             <a class="tag-chip" href="/blog/tags/ctf">#ctf</a>
                                                                             <a class="tag-chip" href="/blog/tags/v1t-ctf-2026">#v1t-ctf-2026</a>
@@ -138,9 +138,9 @@
                                             <li class="post-item">
                             <a class="post-title-link" href="/blog/posts/slop-anti-or-anti-slop">
                                 <span class="post-title">
-                                    <span class="post-icon">☕</span>                                     Slop Anti or Anti Slop                                </span>
+                                    <span class="post-icon">🍵</span>                                     Slop Anti or Anti Slop                                </span>
                             </a>
-                                                            <p class="post-summary">A deliberately misleading crypto challenge where the real target is an AES-GCM ciphertext whose key is reconstructed from a Decimal-polynomial leak, Lagrange interpolation, and 70M rounds of modular squaring.</p>
+                                                            <p class="post-summary">A deliberately noisy crypto challenge where the printed values are decoys; the real AES-GCM key is rebuilt from a Decimal polynomial, a modular affine map plus Lagrange interpolation, and a 70-million-round repeated-squaring chain.</p>
                                                                                                                     <div class="post-tags-row post-tags-row--chips">
                                                                             <a class="tag-chip" href="/blog/tags/ctf">#ctf</a>
                                                                             <a class="tag-chip" href="/blog/tags/v1t-ctf-2026">#v1t-ctf-2026</a>
@@ -153,7 +153,7 @@
                                 <span class="post-title">
                                     <span class="post-icon">♟️</span>                                     StaleMate                                </span>
                             </a>
-                                                            <p class="post-summary">A userland re-implementation of io_uring provided buffer rings models CVE-2024-0582: unregister a mmap&apos;d PBUF ring and the stale mapping becomes a UAF read/write you ride to forge a page-table PTE onto the cred slot.</p>
+                                                            <p class="post-summary">A userland reimplementation of the io_uring provided-buffer-ring bug (CVE-2024-0582): unregister leaves the mmap alive, so a stale mapping over a reused slot gives a UAF write to forge a page-table entry onto the cred page.</p>
                                                                                                                     <div class="post-tags-row post-tags-row--chips">
                                                                             <a class="tag-chip" href="/blog/tags/ctf">#ctf</a>
                                                                             <a class="tag-chip" href="/blog/tags/v1t-ctf-2026">#v1t-ctf-2026</a>
@@ -166,7 +166,7 @@
                                 <span class="post-title">
                                     <span class="post-icon">♟️</span>                                     StaleMate Revenge                                </span>
                             </a>
-                                                            <p class="post-summary">Hardened userland io_uring/PBUF use-after-free where I groomed a workspace page-table page onto a freed slot, leaked it, inverted the keyed PTE MAC to recover both workspace keys, then forged a self-referential page table to patch and re-seal the winning record chain.</p>
+                                                            <p class="post-summary">A hardened userland io_uring/PBUF use-after-free where deterministic heap grooming leaks the workspace MAC keys, lets me forge a self-referential page table, and rewrite the sealed record chain into a winning position.</p>
                                                                                                                     <div class="post-tags-row post-tags-row--chips">
                                                                             <a class="tag-chip" href="/blog/tags/ctf">#ctf</a>
                                                                             <a class="tag-chip" href="/blog/tags/v1t-ctf-2026">#v1t-ctf-2026</a>
@@ -179,7 +179,7 @@
                                 <span class="post-title">
                                     <span class="post-icon">🔐</span>                                     XTS-AES                                </span>
                             </a>
-                                                            <p class="post-summary">An encrypted ESP32-S3 flash dump whose read-protected XTS-AES key is deterministically derivable from readable eFuse data via a leaked provisioning firmware&apos;s KDF.</p>
+                                                            <p class="post-summary">Reverse a leaked ESP32-S3 provisioning firmware to re-derive a read-protected flash-encryption key from readable device data, then decrypt the XTS-AES flash dump to recover the flag.</p>
                                                                                                                     <div class="post-tags-row post-tags-row--chips">
                                                                             <a class="tag-chip" href="/blog/tags/ctf">#ctf</a>
                                                                             <a class="tag-chip" href="/blog/tags/v1t-ctf-2026">#v1t-ctf-2026</a>
@@ -192,7 +192,7 @@
                                 <span class="post-title">
                                     <span class="post-icon">🧩</span>                                     try                                </span>
                             </a>
-                                                            <p class="post-summary">A Windows PE64 input verifier buried under fake packer/protector strings; the real check is a tiny VM constraint layer plus a 64-bit hash, which the flag itself satisfies.</p>
+                                                            <p class="post-summary">A Windows PE64 &apos;sealed input verifier&apos; buried under fake packer sections, solved by emulating a tiny constraint VM and matching a 64-bit hash — the LLM ground through the disassembly, I steered it off the unpacking trap.</p>
                                                                                                                     <div class="post-tags-row post-tags-row--chips">
                                                                             <a class="tag-chip" href="/blog/tags/ctf">#ctf</a>
                                                                             <a class="tag-chip" href="/blog/tags/v1t-ctf-2026">#v1t-ctf-2026</a>

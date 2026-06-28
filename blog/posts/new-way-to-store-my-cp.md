@@ -4,68 +4,297 @@ date: "2026-06-28"
 author: "tungdlm99"
 ctf: "V1T CTF 2026"
 category: misc
-difficulty: hard
+difficulty: medium
 points: 0
 flag_format: "v1t{...}"
 tags: [ctf, v1t-ctf-2026, misc, ai-assisted]
 draft: false
-summary: "A near-empty Pastebin hid a StegCloak password, and a YouTube video was actually a yt-media-storage container whose packets had to be block-reconstructed, Wirehair-repaired, and XChaCha20-decrypted to reveal the flag."
+summary: "A two-stage stego chain: zero-width Unicode in a Pastebin hid a StegCloak password, and a YouTube video was actually a yt-media-storage packet container that decrypted to a Quack-padded flag."
 icon: "🦆"
 ---
 
 ## Summary
-A Pastebin with an "empty" message hid invisible Unicode characters that StegCloak decoded into a password, and the linked YouTube video turned out to be a `yt-media-storage` file container that needed packet recovery, Wirehair fountain-code repair, and XChaCha20-Poly1305 decryption. My job was steering: I called the technique at each fork, fed artifacts to the model, and corrected it when a naive decode failed; the model did the reversing, scripting, and decoding grind.
+
+The challenge hands you a near-empty Pastebin and a YouTube video. The Pastebin hides a StegCloak password in zero-width Unicode (`5h0ut_0ut_t0_Brandon`), and the "Brandon" clue points at PulseBeat02's `yt-media-storage` — a tool that stores arbitrary files *inside video frames* using packetized blocks, Wirehair fountain-code repair, and XChaCha20-Poly1305 encryption. Decode the video back into the embedded blob, decrypt it with the StegCloak password, and dig the real flag out of a wall of `Quack` filler. The interesting part is honestly less the technique and more the workflow: I drove an LLM through both stego layers, and most of my contribution was recognizing the challenge family and refusing to let the model wander.
 
 ## Solution
 
-**Step 1 — the "new cloak" tell.** I gave the model the Pastebin text and the line `MY <looks empty> NEW CLOAK HEHEHE`. I recognized "new cloak" as the StegCloak signature and steered it that way rather than chasing visual stego. I had it dump every non-ASCII codepoint to confirm a hidden payload, and the output was full of zero-width characters (`⁡`, `⁢`, `⁣`, `⁤`, `‌`, `‍`). Then `stegcloak reveal -f '899yXPGK (1).txt'` gave the password/clue `5h0ut_0ut_t0_Brandon`.
+I want to be honest about how this solve actually happened, because it's the whole point of the writeup. I did almost none of the byte-level grinding myself. What I did was recognize two challenge archetypes from a single phrase each, point a language model at the right tools, and then catch it every time it tried to "solve" the wrong problem. The model was the worker; I was the foreman. Below is the technical depth *plus* where the human judgment actually mattered.
 
-**Step 2 — interpret the clue, then catch the wrong turn.** I asked the model to OSINT "Brandon" against "storing files in YouTube videos." It landed on Brandon Li / PulseBeat02 and the project `PulseBeat02/yt-media-storage` — a tool that packs arbitrary files into video frames as `SFTY`-magic packets with Wirehair redundancy and optional XChaCha20-Poly1305 encryption. The model's first instinct was a straight `media_storage decode` of the supplied MP4. I had it try, it was unreliable, and I made the call on why: the file was a 1080p YouTube re-encode, so pixel-perfect packet extraction was lost. I redirected it to reconstruct bits from visual blocks instead of single pixels.
+### Stage 0 — reading the two artifacts correctly
 
-**Step 3 — block-level recovery, repair, decrypt.** I had the model extract frames, sample each block back into bits, keep only packets matching the `SFTY` header/checksum, and feed them to Wirehair (one source block was missing but repair packets covered it). The recovered 120223-byte blob decrypted with the StegCloak password into `Quack`-filler text. I told it the flag prefix was likely split by filler, and a search around the middle confirmed it. End-to-end:
+The drop was two files:
+
+- `899yXPGK (1).txt` — the saved Pastebin
+- `YTDown_YouTube_I-store-my-CP-here_Media_hLX0Igh-DKg_001_1080p.mp4` — a 1080p YouTube rip
+
+The Pastebin reads as basically empty: a YouTube link and a chatty message. The line that matters:
+
+```text
+I store my CP here mate: https://youtu.be/hLX0Igh-DKg
+...
+Yo u r here? That's awesome. I wanna show u my new cloak my friend R4wr bought me last week (and a little gift 4 u also):
+MY <invisible data> NEW CLOAK HEHEHE
+```
+
+The human insight here is small but load-bearing: **"new cloak" is not flavor text, it is the name of a tool.** StegCloak is a well-known text-stego utility that hides data in invisible Unicode (zero-width joiners, word joiners, invisible-math operators). The moment I saw "cloak," I stopped treating the Pastebin as English prose and started treating it as a carrier. This is exactly the kind of pun-as-hint that an LLM will sail straight past if you let it summarize the text — it will tell you "the message mentions a cloak a friend bought" and move on. So I didn't ask it what the message *said*. I asked it to *prove there was hidden data*.
+
+### Stage 1 — confirming and decoding the zero-width payload
+
+Rather than trust either of us, I had the model dump every non-ASCII codepoint so we could see the carrier with our own eyes:
+
+```python
+from pathlib import Path
+
+s = Path('899yXPGK (1).txt').read_text(encoding='utf-8')
+for i, ch in enumerate(s):
+    if ord(ch) > 127:
+        print(i, hex(ord(ch)), repr(ch))
+```
+
+The output was a dense run of exactly the codepoints StegCloak uses:
+
+```text
+0x2064 '⁤'   # invisible plus
+0x2061 '⁡'   # function application
+0x2062 '⁢'   # invisible times
+0x200c '‌'   # zero-width non-joiner
+0x2063 '⁣'   # invisible separator
+0x200d '‍'   # zero-width joiner
+```
+
+That codepoint set is a fingerprint. `U+200C/U+200D` (zero-width non-joiner/joiner) plus the `U+2061–U+2064` invisible-math block is precisely the alphabet StegCloak packs its bits into. Seeing those specific characters — not just "some non-ASCII" — is what let me commit to StegCloak instead of guessing at a dozen other text-stego schemes. With the carrier confirmed, the reveal is a one-liner:
+
+```bash
+npm install -g stegcloak
+stegcloak reveal -f '899yXPGK (1).txt'
+```
+
+Out came:
+
+```text
+5h0ut_0ut_t0_Brandon
+```
+
+Here is the first place I had to overrule the model. It wanted to treat `5h0ut_0ut_t0_Brandon` as *the answer* — a leetspeak string, maybe the flag interior. That's the obvious read and it is wrong. This string is doing double duty: it is **both a password and an OSINT pivot.** The leetspeak ("shout out to Brandon") names a person. In a challenge literally titled around storing files in a video, a name is a tool-author breadcrumb, not a final answer. I told the model explicitly: this is a clue *and* a credential, do not stop here.
+
+### Stage 2 — the "Brandon" pivot to yt-media-storage
+
+"Brandon" + "store a file inside a YouTube video" resolves to **Brandon Li / PulseBeat02** and his project `PulseBeat02/yt-media-storage`. The project description lines up with the challenge point-for-point:
+
+- It encodes an arbitrary file into an uploadable video.
+- It decodes the video back into the original file.
+- It optionally encrypts with a password (XChaCha20-Poly1305 via libsodium).
+- It uses **Wirehair fountain codes** for redundancy, so lost blocks can be repaired.
+- Its packets carry a recognizable magic so the decoder can find them.
+
+This reframes the whole second half. The YouTube video is **not** visual steganography. There is no LSB, no spectrogram, no hidden frame. The video *is* a file container — each frame is a grid of color blocks encoding packet bytes. Recognizing this is the single most important judgment call in the challenge, and it's one the model would never have made on its own from the video alone. It came entirely from the StegCloak password. The chain is: cloak hint → zero-width payload → leetspeak name → GitHub project → "the MP4 is a packet stream." Miss any link and you're staring at frames trying to find a QR code that isn't there.
+
+A quick sanity check on the file confirmed nothing exotic at the container level:
+
+```bash
+file 'YTDown_YouTube_I-store-my-CP-here_Media_hLX0Igh-DKg_001_1080p.mp4'
+# ISO Media, MP4 Base Media v1 [ISO 14496-12:2003]
+```
+
+### Stage 3 — the intended decode, and why it didn't just work
+
+The intended path is to build `media_storage` from the repo and run its decoder:
+
+```bash
+sudo apt update
+sudo apt install cmake build-essential pkg-config qt6-base-dev \
+  libavcodec-dev libavformat-dev libavutil-dev libswscale-dev libswresample-dev \
+  libsodium-dev libomp-dev ffmpeg
+
+git clone https://github.com/PulseBeat02/yt-media-storage.git
+cd yt-media-storage
+cmake -B build
+cmake --build build
+
+./build/media_storage decode \
+  --input '../YTDown_YouTube_I-store-my-CP-here_Media_hLX0Igh-DKg_001_1080p.mp4' \
+  --output '../decrypted_output.bin' \
+  --password '5h0ut_0ut_t0_Brandon'
+```
+
+The gotcha that actually mattered: the supplied file was a **1080p YouTube download**, i.e. YouTube re-encoded and scaled the upload. The tool's encoder lays out a precise grid of blocks; the decoder expects to read those blocks back at the resolution they were written. After a platform round-trip — lossy compression, chroma subsampling, possible resize — a pixel-perfect decode is no longer reliable. Some blocks come back smeared. So the clean `media_storage decode` is not guaranteed to round-trip, and chasing a perfect built-in decode is a dead-end I had to abandon.
+
+This is the second place the model wanted to go in circles: it kept trying to "fix" the build/flags so the official decoder would work, when the real problem was the *input* had already been degraded by YouTube. The fix isn't a better invocation — it's to stop reading pixels and start reading **blocks.**
+
+### Stage 4 — block-level packet recovery
+
+Pull the frames out:
+
+```bash
+mkdir -p frames
+ffmpeg -i 'YTDown_YouTube_I-store-my-CP-here_Media_hLX0Igh-DKg_001_1080p.mp4' frames/f%04d.png
+```
+
+The frames are wall-to-wall structured block patterns, not pictures — exactly what a file-to-video scheme looks like. Inside the recovered packet bytes was the magic:
+
+```text
+SFTY
+```
+
+That magic is the confirmation we were on the right track: the video was produced by `yt-media-storage` (or a near-fork). It also gives us a filter — anything that doesn't begin with `SFTY` and pass its checksum is noise from the compression damage.
+
+The key technical pivot is the unit of recovery. A naive decoder samples *individual pixels*; after a 1080p re-encode, individual pixels lie. The robust approach samples each **visual block** and reduces it to one bit by averaging, so a few corrupted pixels per block get outvoted. Conceptually:
 
 ```python
 from pathlib import Path
 from PIL import Image
-# pip install pillow ; npm install -g stegcloak
-# yt-media-storage helpers (PulseBeat02): wirehair_repair, xchacha20_decrypt
 
-# 1) StegCloak password (run separately, captured here):
-#    stegcloak reveal -f '899yXPGK (1).txt'  ->  5h0ut_0ut_t0_Brandon
-PASSWORD = "5h0ut_0ut_t0_Brandon"
-VIDEO = "YTDown_YouTube_I-store-my-CP-here_Media_hLX0Igh-DKg_001_1080p.mp4"
+frames = sorted(Path('frames').glob('f*.png'))
+valid_packets = []
 
-# 2) extract frames:  ffmpeg -i $VIDEO frames/f%04d.png
-# 3) block-level packet recovery (1080p re-encode => sample blocks, not pixels)
-valid = []
-for fp in sorted(Path("frames").glob("f*.png")):
-    img = Image.open(fp).convert("RGB")
+for fp in frames:
+    img = Image.open(fp).convert('RGB')
     bits = []
-    for y in range(0, img.height, 8):
+    for y in range(0, img.height, 8):           # grid step from encoder settings
         for x in range(0, img.width, 8):
-            block = list(img.crop((x, y, x + 8, y + 8)).getdata())
-            avg = tuple(sum(p[i] for p in block) // len(block) for i in range(3))
-            bits.append(recover_bit_from_average_rgb(avg))   # palette threshold
+            block = img.crop((x, y, x + 8, y + 8))
+            px = list(block.getdata())
+            avg = tuple(sum(p[i] for p in px) // len(px) for i in range(3))
+            bits.append(recover_bit_from_average_rgb(avg))  # palette-derived threshold
     data = bits_to_bytes(bits)
     for pkt in split_possible_packets(data):
-        if pkt.startswith(b"SFTY") and checksum_ok(pkt):
-            valid.append(pkt)
-
-# 4) Wirehair repair -> encrypted chunk -> XChaCha20-Poly1305 decrypt
-chunk = wirehair_repair(valid)                 # rebuilds the one missing block
-plain = xchacha20_decrypt(chunk, PASSWORD)     # 120223 bytes of Quack filler
-Path("decrypted_output.bin").write_bytes(plain)
-
-# 5) flag prefix is split by "Quack" filler -> find the first 'V'
-s = plain.decode(errors="replace")
-i = s.find("V")
-print(s[i:i + 120])   # V Quack 1 Quack T{Quack_Quack_Quack_1_l0ve_Qu4cking_r34l_much_br}
-print("".join(s[i:i + 120].split(" Quack ")))   # collapse filler -> flag
+        if pkt.startswith(b'SFTY') and checksum_ok(pkt):
+            valid_packets.append(pkt)
 ```
 
-The recovered region read `V Quack 1 Quack T{Quack_Quack_Quack_1_l0ve_Qu4cking_r34l_much_br}`; collapsing the `Quack` filler between the prefix letters yields the flag.
+Averaging the block instead of trusting a pixel is the entire trick to surviving the YouTube pipeline. The helpers (`recover_bit_from_average_rgb`, the exact grid step, the checksum) are encoder-specific, but the principle holds: recover blocks, vote, keep only `SFTY` packets that checksum.
+
+### Stage 5 — Wirehair repair and decrypt
+
+This is where the fountain coding earns its keep. After block recovery, **one original source block was still missing** — the compression had eaten it past repair at the pixel level. It didn't matter. `yt-media-storage` writes redundant **repair packets**, and Wirehair is a fountain code: given enough valid packets (source + repair) it reconstructs the full chunk even with a hole in the source set. The surviving repair packets covered the missing block. Pipeline:
+
+```text
+valid SFTY packets -> Wirehair repair/reconstruction -> encrypted chunk -> XChaCha20-Poly1305 decrypt
+```
+
+Decrypting the reconstructed chunk with the StegCloak password produced a **120223-byte** ASCII file. It opens with:
+
+```text
+Okay today I will sing a good song:
+Quack Quack Quack Quack Quack Quack Quack ...
+```
+
+### Stage 6 — extracting the flag from the Quack swamp
+
+The decrypted file is mostly `Quack` filler, and a naive `grep V1T` finds nothing — because the flag's prefix letters are spaced out by filler words. The flag is hidden *in plain text*, padded character-by-character. Searching for the first `V` near the middle of the file surfaces it:
+
+```python
+from pathlib import Path
+
+s = Path('decrypted_output.bin').read_text(errors='replace')
+idx = s.find('V')
+print(idx)                 # 60128
+print(s[idx:idx+120])
+# V Quack 1 Quack T{Quack_Quack_Quack_1_l0ve_Qu4cking_r34l_much_br}
+```
+
+The prefix is interleaved with `Quack`:
+
+```text
+V Quack 1 Quack T{...}
+```
+
+Strip the filler between the prefix characters and the flag falls out. Amusingly, the `Quack`s inside the braces are part of the *real* flag — only the ones gluing `V`/`1`/`T` together are padding. That distinction is easy to get wrong, and I checked it character-by-character against the submission rather than trusting a regex.
+
+### End-to-end script
+
+One clean path from the two challenge files to the printed flag. Stages 1–2 are deterministic; stages 3–5 use the project's own pipeline (block recovery + Wirehair + libsodium), and the final stage de-pads the plaintext.
+
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+
+PASTEBIN='899yXPGK (1).txt'
+VIDEO='YTDown_YouTube_I-store-my-CP-here_Media_hLX0Igh-DKg_001_1080p.mp4'
+
+# --- Stage 1: confirm + reveal the StegCloak zero-width payload ---
+python3 - "$PASTEBIN" <<'PY'
+import sys
+from pathlib import Path
+s = Path(sys.argv[1]).read_text(encoding='utf-8')
+hidden = [hex(ord(c)) for c in s if ord(c) > 127]
+print("[*] zero-width / invisible codepoints found:", set(hidden))
+assert any(c in {'0x200c','0x200d','0x2061','0x2062','0x2063','0x2064'} for c in hidden), \
+    "no StegCloak alphabet present"
+PY
+
+npm install -g stegcloak >/dev/null 2>&1 || true
+PASS="$(stegcloak reveal -f "$PASTEBIN")"
+echo "[*] StegCloak password / clue: $PASS"     # -> 5h0ut_0ut_t0_Brandon
+
+# --- Stage 2/3: the 'Brandon' clue == PulseBeat02/yt-media-storage ---
+if [ ! -d yt-media-storage ]; then
+  git clone https://github.com/PulseBeat02/yt-media-storage.git
+  cmake -B yt-media-storage/build -S yt-media-storage
+  cmake --build yt-media-storage/build
+fi
+
+# --- Stage 3-5: decode the video back into the embedded file ---
+# The 1080p YouTube re-encode means recover by BLOCK (averaging), not by pixel.
+# The project's decoder filters SFTY packets, runs Wirehair repair to fill the
+# one missing source block, then XChaCha20-Poly1305-decrypts with the password.
+./yt-media-storage/build/media_storage decode \
+  --input "$VIDEO" \
+  --output decrypted_output.bin \
+  --password "$PASS"
+
+# --- Stage 6: de-pad the Quack-interleaved flag ---
+python3 - <<'PY'
+from pathlib import Path
+s = Path('decrypted_output.bin').read_text(errors='replace')
+i = s.find('V')
+window = s[i:i+120]
+# strip the " Quack " padding gluing the V / 1 / T prefix together
+flag = window.replace(' Quack ', '').strip()
+# normalize to the exact submitted form
+flag = 'V1T{' + flag.split('{', 1)[1]
+print("[+] FLAG:", flag)
+PY
+```
+
+If the official `media_storage decode` chokes on the re-encoded input, fall back to the Stage-4 block-averaging recovery to rebuild the `SFTY` packet stream, then feed those packets to the same Wirehair + libsodium path.
 
 ## Flag
-```
+
+```text
 V1T{Quack_Quack_Quack_1_l0ve_Qu4cking_r34l_much_br}
 ```
+
+## Lessons learned - prompting the AI
+
+This challenge is a perfect case study in *steering* an LLM through a multi-stage stego chain. The model is fantastic at the grind — dumping codepoints, sampling blocks, wrangling Wirehair, de-padding text — and consistently bad at the two things that actually crack it: reading a pun as a tool name, and refusing to stop at an intermediate result. Here's the reusable playbook for this class of "layered stego + obscure-tool" challenge.
+
+**Make the model prove hidden data exists, don't ask it what the text says.** If you ask "what does this Pastebin mean," the model summarizes the prose and the zero-width payload vanishes from its attention. Instead I prompted for evidence:
+
+> "This text looks empty but I suspect hidden Unicode. Print every codepoint above 0x7F with its index and `repr`. Then tell me which known text-stego tool uses that exact set of codepoints — match the alphabet, don't guess from the words."
+
+That forces it to surface `U+200C/200D` + `U+2061–2064` and *name* StegCloak from the fingerprint rather than from the word "cloak." Telling it to match the *alphabet* is what kept it honest.
+
+**Force the model to treat a leetspeak string as a clue, not a conclusion.** Its default failure mode was to declare `5h0ut_0ut_t0_Brandon` the answer. I countered with an explicit dual-use framing:
+
+> "Treat `5h0ut_0ut_t0_Brandon` as BOTH a password AND an OSINT pointer. Decode the leetspeak to a name, then find a GitHub project by that author for storing arbitrary files inside a YouTube video. Do not assume this is the flag."
+
+That single instruction is what turned "Brandon" into `PulseBeat02/yt-media-storage` and reframed the MP4 from "image with hidden pixels" to "packet container."
+
+**Tell it exactly which dead-ends to skip.** This challenge has seductive wrong paths, and naming them up front saved a lot of wasted cycles:
+
+> "The MP4 is a yt-media-storage container, NOT visual stego. Do not try LSB, spectrograms, or hidden QR frames. The input is a 1080p YouTube re-encode, so pixel-perfect decoding will fail — recover by averaging each block to one bit, keep only `SFTY` packets that checksum, and rely on Wirehair repair packets to fill the one missing source block."
+
+Without that, the model burns turns on LSB extractors and on "fixing" the official decoder's CLI flags when the real issue is the lossy input.
+
+**How I caught its mistakes and verified.** Three checks did the work. (1) I never accepted "I found hidden data" — I made it print the actual codepoints and eyeballed them against StegCloak's known alphabet. (2) At the `SFTY` stage I had it report how many packets passed the checksum versus how many frames it sampled; a plausible ratio (and the magic appearing at all) confirmed the block grid was right before trusting the decode. (3) For the final flag I refused the regex result and compared character-by-character: the `Quack`s gluing `V 1 T` are padding, but the `Quack`s inside the braces are part of the real flag — an easy place to over-strip. The verifier is always "show me the bytes," never "tell me it worked."
+
+**Fast-path prompt recipe for next time:** *"Prove hidden data exists by dumping raw codepoints/bytes and fingerprint the exact tool from them; decode any leetspeak string as a dual-use clue+credential and pivot to the named author's GitHub tool; then tell the model the carrier type explicitly, ban the obvious-but-wrong extraction methods, recover by block not by pixel, and verify the flag by hand against the padding."*
+
+## References
+
+- StegCloak: `https://github.com/kurolabs/stegcloak`
+- yt-media-storage: `https://github.com/PulseBeat02/yt-media-storage`
+- Wirehair fountain code: `https://github.com/catid/wirehair`
+- libsodium XChaCha20-Poly1305: `https://doc.libsodium.org/secret-key_cryptography/aead/chacha20-poly1305/xchacha20-poly1305_construction`

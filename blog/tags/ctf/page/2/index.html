@@ -8,7 +8,7 @@
 
     <title>#ctf — LazyBlog</title>
     <meta name="description" content="Posts tagged #ctf on LazyBlog.">
-            <meta name="author" content="XV5HP">
+            <meta name="author" content="tungdlm99">
         <meta name="generator" content="LazyBlog 1.11.0">
     <meta name="robots" content="index, follow, max-image-preview:large">
 
@@ -63,7 +63,7 @@
 
 
 <header>
-            <div class="callsign">XV5HP // MAYLAB // HẢI PHÒNG</div>
+            <div class="callsign">NAB // Hà Nội</div>
                     <p class="site-brand"><a href="/blog/" class="brand-link">LazyBlog</a></p>
                 <div class="subtitle">// A personal blog transmitting thoughts over imperfect radio waves. Expect noise, fading, and low bandwidth—but always authentic signals.</div>
         <div class="header-actions">
@@ -101,7 +101,7 @@
                                 <span class="post-title">
                                     <span class="post-icon">🦆</span>                                     Duck Smuzzle                                </span>
                             </a>
-                                                            <p class="post-summary">A Caddy -&gt; nginx -&gt; FastAPI stack where an IP-allowlist WAF is bypassed by spoofing X-Forwarded-For, the JWT secret is leaked via X-Accel-Redirect, and /duck is reached by smuggling raw HTTP/2 streams through an h2c upgrade.</p>
+                                                            <p class="post-summary">Chain an X-Forwarded-For allowlist bypass and an OpenAPI operationId leak into an X-Accel-Redirect file read, forge a JWT, then h2c-smuggle past Caddy to reach the blocked /duck route.</p>
                                                                                                                     <div class="post-tags-row post-tags-row--chips">
                                                                             <a class="tag-chip" href="/blog/tags/ctf">#ctf</a>
                                                                             <a class="tag-chip" href="/blog/tags/v1t-ctf-2026">#v1t-ctf-2026</a>
@@ -114,7 +114,7 @@
                                 <span class="post-title">
                                     <span class="post-icon">🦆</span>                                     Duck Wiki                                </span>
                             </a>
-                                                            <p class="post-summary">Stored XSS in a Wiki.js page via a Vue 2 scoped-slot destructuring-default SSTI primitive, smuggled past DOMPurify&apos;s &lt;tabset&gt; allowlist and a ModSecurity CRS proxy to exfiltrate localStorage.FLAG from the bot.</p>
+                                                            <p class="post-summary">Stored XSS in Wiki.js via a Vue scoped-slot destructuring-default SSTI, chained with an incremental ModSecurity CRS bypass to exfiltrate the bot&apos;s localStorage flag.</p>
                                                                                                                     <div class="post-tags-row post-tags-row--chips">
                                                                             <a class="tag-chip" href="/blog/tags/ctf">#ctf</a>
                                                                             <a class="tag-chip" href="/blog/tags/v1t-ctf-2026">#v1t-ctf-2026</a>
@@ -127,7 +127,7 @@
                                 <span class="post-title">
                                     <span class="post-icon">🦆</span>                                     Ducks Ping-Pong                                </span>
                             </a>
-                                                            <p class="post-summary">A user-mode EXE that ping-pongs IOCTLs with a kernel driver; recover the driver&apos;s response buffer and apply the user-mode final transform offline to print the flag.</p>
+                                                            <p class="post-summary">A user-mode EXE ping-pongs a buffer through a Windows kernel driver, then mixes it locally; emulate both halves offline to recover the flag.</p>
                                                                                                                     <div class="post-tags-row post-tags-row--chips">
                                                                             <a class="tag-chip" href="/blog/tags/ctf">#ctf</a>
                                                                             <a class="tag-chip" href="/blog/tags/v1t-ctf-2026">#v1t-ctf-2026</a>
@@ -140,7 +140,7 @@
                                 <span class="post-title">
                                     <span class="post-icon">🦆</span>                                     Ducks Ping-Pong Revenge                                </span>
                             </a>
-                                                            <p class="post-summary">A user-mode EXE and a kernel driver play a multi-stage IOCTL ping-pong; recover the driver-validated stage state offline, then run the final transform to decrypt the flag.</p>
+                                                            <p class="post-summary">A user-mode/kernel ping-pong where the flag only decrypts after five driver-validated stage commitments rebuild the final key state.</p>
                                                                                                                     <div class="post-tags-row post-tags-row--chips">
                                                                             <a class="tag-chip" href="/blog/tags/ctf">#ctf</a>
                                                                             <a class="tag-chip" href="/blog/tags/v1t-ctf-2026">#v1t-ctf-2026</a>
@@ -151,9 +151,9 @@
                                             <li class="post-item">
                             <a class="post-title-link" href="/blog/posts/green-goblin">
                                 <span class="post-title">
-                                    <span class="post-icon">🧪</span>                                     Green Goblin                                </span>
+                                    <span class="post-icon">🎃</span>                                     Green Goblin                                </span>
                             </a>
-                                                            <p class="post-summary">A 5 GiB Windows 11 RAM dump hides five flag fragments across classic OS internals (Registry, kernel symlink, NTFS ADS, Event Log, named memory section); carving and reversing the dropper reveals the fixed bytes, which decode with ROT47.</p>
+                                                            <p class="post-summary">Carve and reverse a dropper from a Windows 11 RAM dump to find which five OS-internal artifacts hold the real fragments, then ROT47-decode them into the flag.</p>
                                                                                                                     <div class="post-tags-row post-tags-row--chips">
                                                                             <a class="tag-chip" href="/blog/tags/ctf">#ctf</a>
                                                                             <a class="tag-chip" href="/blog/tags/v1t-ctf-2026">#v1t-ctf-2026</a>
@@ -166,7 +166,7 @@
                                 <span class="post-title">
                                     <span class="post-icon">🦆</span>                                     HVL                                </span>
                             </a>
-                                                            <p class="post-summary">A &apos;troll&apos; GitHub Pages site hides the flag behind two stego layers; the real one is a substitution-cipher font that renders emoji lyrics as flag text.</p>
+                                                            <p class="post-summary">A troll web challenge that hides its real flag in a substitution-cipher font, where emoji codepoints are mapped to flag characters and rendered on screen.</p>
                                                                                                                     <div class="post-tags-row post-tags-row--chips">
                                                                             <a class="tag-chip" href="/blog/tags/ctf">#ctf</a>
                                                                             <a class="tag-chip" href="/blog/tags/v1t-ctf-2026">#v1t-ctf-2026</a>
@@ -177,9 +177,9 @@
                                             <li class="post-item">
                             <a class="post-title-link" href="/blog/posts/huh">
                                 <span class="post-title">
-                                    <span class="post-icon">🕵️</span>                                     Huh                                </span>
+                                    <span class="post-icon">🧩</span>                                     Huh                                </span>
                             </a>
-                                                            <p class="post-summary">A mixed OSINT/stego challenge where a Vietnamese village photo gives the flag prefix and a hidden text fragment gives the suffix.</p>
+                                                            <p class="post-summary">A two-part misc challenge where image-based location OSINT supplies the flag prefix and a hidden text fragment supplies the suffix, reassembled in leetspeak.</p>
                                                                                                                     <div class="post-tags-row post-tags-row--chips">
                                                                             <a class="tag-chip" href="/blog/tags/ctf">#ctf</a>
                                                                             <a class="tag-chip" href="/blog/tags/v1t-ctf-2026">#v1t-ctf-2026</a>
@@ -190,9 +190,9 @@
                                             <li class="post-item">
                             <a class="post-title-link" href="/blog/posts/kaspersky">
                                 <span class="post-title">
-                                    <span class="post-icon">🛰️</span>                                     Kaspersky                                </span>
+                                    <span class="post-icon">🕵️</span>                                     Kaspersky                                </span>
                             </a>
-                                                            <p class="post-summary">A 5-question Kaspersky / Kaspersky Academy OSINT quiz at kaspersky.v1t.site, industrialized by scripting the grader&apos;s API — and the final question only accepted the course title in its native Cyrillic, not any romanization.</p>
+                                                            <p class="post-summary">A 5-question Kaspersky OSINT quiz solved by an LLM grinding artifacts while I steered the search, killed a costly false trail, and forced the final answer into native Cyrillic.</p>
                                                                                                                     <div class="post-tags-row post-tags-row--chips">
                                                                             <a class="tag-chip" href="/blog/tags/ctf">#ctf</a>
                                                                             <a class="tag-chip" href="/blog/tags/v1t-ctf-2026">#v1t-ctf-2026</a>
@@ -205,7 +205,7 @@
                                 <span class="post-title">
                                     <span class="post-icon">🦆</span>                                     New Way to store my CP                                </span>
                             </a>
-                                                            <p class="post-summary">A near-empty Pastebin hid a StegCloak password, and a YouTube video was actually a yt-media-storage container whose packets had to be block-reconstructed, Wirehair-repaired, and XChaCha20-decrypted to reveal the flag.</p>
+                                                            <p class="post-summary">A two-stage stego chain: zero-width Unicode in a Pastebin hid a StegCloak password, and a YouTube video was actually a yt-media-storage packet container that decrypted to a Quack-padded flag.</p>
                                                                                                                     <div class="post-tags-row post-tags-row--chips">
                                                                             <a class="tag-chip" href="/blog/tags/ctf">#ctf</a>
                                                                             <a class="tag-chip" href="/blog/tags/v1t-ctf-2026">#v1t-ctf-2026</a>
@@ -216,9 +216,9 @@
                                             <li class="post-item">
                             <a class="post-title-link" href="/blog/posts/polar-fragments">
                                 <span class="post-title">
-                                    <span class="post-icon">🐻‍❄️</span>                                     Polar Fragments                                </span>
+                                    <span class="post-icon">🧊</span>                                     Polar Fragments                                </span>
                             </a>
-                                                            <p class="post-summary">A multi-source forensics challenge where each of five pcaps exfiltrates one flag fragment over a different protocol (HTTP/FTP/SMTP/chunked HTTP), and the fragments are low-contrast text hidden inside carried images and documents.</p>
+                                                            <p class="post-summary">A multi-source forensics reconstruction where each pcap exfiltrates one flag fragment through a different protocol, and an LLM did the carving while I steered it past the decoys.</p>
                                                                                                                     <div class="post-tags-row post-tags-row--chips">
                                                                             <a class="tag-chip" href="/blog/tags/ctf">#ctf</a>
                                                                             <a class="tag-chip" href="/blog/tags/v1t-ctf-2026">#v1t-ctf-2026</a>

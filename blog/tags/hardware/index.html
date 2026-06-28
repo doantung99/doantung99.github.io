@@ -8,7 +8,7 @@
 
     <title>#hardware — LazyBlog</title>
     <meta name="description" content="Posts tagged #hardware on LazyBlog.">
-            <meta name="author" content="XV5HP">
+            <meta name="author" content="tungdlm99">
         <meta name="generator" content="LazyBlog 1.11.0">
     <meta name="robots" content="index, follow, max-image-preview:large">
 
@@ -63,7 +63,7 @@
 
 
 <header>
-            <div class="callsign">XV5HP // MAYLAB // HẢI PHÒNG</div>
+            <div class="callsign">NAB // Hà Nội</div>
                     <p class="site-brand"><a href="/blog/" class="brand-link">LazyBlog</a></p>
                 <div class="subtitle">// A personal blog transmitting thoughts over imperfect radio waves. Expect noise, fading, and low bandwidth—but always authentic signals.</div>
         <div class="header-actions">
@@ -99,9 +99,9 @@
                                             <li class="post-item">
                             <a class="post-title-link" href="/blog/posts/10x54">
                                 <span class="post-title">
-                                    <span class="post-icon">🔌</span>                                     10X54                                </span>
+                                    <span class="post-icon">🔑</span>                                     10X54                                </span>
                             </a>
-                                                            <p class="post-summary">An ESP32-S3 firmware crackme that XOR-obfuscates its UI strings and gates the flag behind an LCG keystream — recovered the key from just the V1T{ prefix instead of cracking the password.</p>
+                                                            <p class="post-summary">Reverse an ESP32-S3 firmware crackme, XOR-deobfuscate its strings, and recover the flag by cracking an LCG keystream from just the V1T{ prefix — no password needed.</p>
                                                                                                                     <div class="post-tags-row post-tags-row--chips">
                                                                             <a class="tag-chip" href="/blog/tags/ctf">#ctf</a>
                                                                             <a class="tag-chip" href="/blog/tags/v1t-ctf-2026">#v1t-ctf-2026</a>
@@ -114,7 +114,7 @@
                                 <span class="post-title">
                                     <span class="post-icon">🔐</span>                                     XTS-AES                                </span>
                             </a>
-                                                            <p class="post-summary">An encrypted ESP32-S3 flash dump whose read-protected XTS-AES key is deterministically derivable from readable eFuse data via a leaked provisioning firmware&apos;s KDF.</p>
+                                                            <p class="post-summary">Reverse a leaked ESP32-S3 provisioning firmware to re-derive a read-protected flash-encryption key from readable device data, then decrypt the XTS-AES flash dump to recover the flag.</p>
                                                                                                                     <div class="post-tags-row post-tags-row--chips">
                                                                             <a class="tag-chip" href="/blog/tags/ctf">#ctf</a>
                                                                             <a class="tag-chip" href="/blog/tags/v1t-ctf-2026">#v1t-ctf-2026</a>

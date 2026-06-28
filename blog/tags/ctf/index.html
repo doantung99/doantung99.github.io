@@ -8,7 +8,7 @@
 
     <title>#ctf — LazyBlog</title>
     <meta name="description" content="Posts tagged #ctf on LazyBlog.">
-            <meta name="author" content="XV5HP">
+            <meta name="author" content="tungdlm99">
         <meta name="generator" content="LazyBlog 1.11.0">
     <meta name="robots" content="index, follow, max-image-preview:large">
 
@@ -63,7 +63,7 @@
 
 
 <header>
-            <div class="callsign">XV5HP // MAYLAB // HẢI PHÒNG</div>
+            <div class="callsign">NAB // Hà Nội</div>
                     <p class="site-brand"><a href="/blog/" class="brand-link">LazyBlog</a></p>
                 <div class="subtitle">// A personal blog transmitting thoughts over imperfect radio waves. Expect noise, fading, and low bandwidth—but always authentic signals.</div>
         <div class="header-actions">
@@ -99,9 +99,9 @@
                                             <li class="post-item">
                             <a class="post-title-link" href="/blog/posts/10x54">
                                 <span class="post-title">
-                                    <span class="post-icon">🔌</span>                                     10X54                                </span>
+                                    <span class="post-icon">🔑</span>                                     10X54                                </span>
                             </a>
-                                                            <p class="post-summary">An ESP32-S3 firmware crackme that XOR-obfuscates its UI strings and gates the flag behind an LCG keystream — recovered the key from just the V1T{ prefix instead of cracking the password.</p>
+                                                            <p class="post-summary">Reverse an ESP32-S3 firmware crackme, XOR-deobfuscate its strings, and recover the flag by cracking an LCG keystream from just the V1T{ prefix — no password needed.</p>
                                                                                                                     <div class="post-tags-row post-tags-row--chips">
                                                                             <a class="tag-chip" href="/blog/tags/ctf">#ctf</a>
                                                                             <a class="tag-chip" href="/blog/tags/v1t-ctf-2026">#v1t-ctf-2026</a>
@@ -114,7 +114,7 @@
                                 <span class="post-title">
                                     <span class="post-icon">🐉</span>                                     78CT                                </span>
                             </a>
-                                                            <p class="post-summary">Geolocate an aerial dragon-shaped park in Vietnam, then decode a text-steganography string hidden in lake-themed words to recover the flag.</p>
+                                                            <p class="post-summary">Geolocate a dragon-shaped park from an aerial photo, find the Google Maps review tagged #v1tnamese, then decode the case-and-digit steganography hidden in its lake-themed words.</p>
                                                                                                                     <div class="post-tags-row post-tags-row--chips">
                                                                             <a class="tag-chip" href="/blog/tags/ctf">#ctf</a>
                                                                             <a class="tag-chip" href="/blog/tags/v1t-ctf-2026">#v1t-ctf-2026</a>
@@ -127,7 +127,7 @@
                                 <span class="post-title">
                                     <span class="post-icon">🛍️</span>                                     Anime Shop                                </span>
                             </a>
-                                                            <p class="post-summary">PrestaShop deployed straight from its GitHub source tree left dev mode on, exposing the Symfony profiler for an APP_SECRET leak and a signed /_fragment SSRF that reads the flag off an internal-only service.</p>
+                                                            <p class="post-summary">PrestaShop deployed from its GitHub source tree leaves dev mode ON, chaining an unauth Symfony profiler file-read to an APP_SECRET-signed /_fragment SSRF that reflects an internal-only flag.</p>
                                                                                                                     <div class="post-tags-row post-tags-row--chips">
                                                                             <a class="tag-chip" href="/blog/tags/ctf">#ctf</a>
                                                                             <a class="tag-chip" href="/blog/tags/v1t-ctf-2026">#v1t-ctf-2026</a>
@@ -140,7 +140,7 @@
                                 <span class="post-title">
                                     <span class="post-icon">🦆</span>                                     B1tsy Ducky                                </span>
                             </a>
-                                                            <p class="post-summary">A Bitsy browser game ships a Go WebAssembly module whose hidden duck routine derives an AES-GCM key from three page-sourced inputs; reconstructing the exact password string offline decrypts the flag.</p>
+                                                            <p class="post-summary">A Bitsy game ships a Go-WASM &apos;duck&apos; that derives an AES-GCM key from three page-local inputs; reconstruct the exact password string offline and decrypt the flag.</p>
                                                                                                                     <div class="post-tags-row post-tags-row--chips">
                                                                             <a class="tag-chip" href="/blog/tags/ctf">#ctf</a>
                                                                             <a class="tag-chip" href="/blog/tags/v1t-ctf-2026">#v1t-ctf-2026</a>
@@ -153,7 +153,7 @@
                                 <span class="post-title">
                                     <span class="post-icon">💾</span>                                     BootRoot Root of No Return                                </span>
                             </a>
-                                                            <p class="post-summary">A Windows 2000 &apos;bootkit&apos; challenge where the real payload lives inside a recovered EXE that writes a 16-bit MBR; the flag is hidden in 19 bytes the boot code decodes with SUB 0x0D but never prints.</p>
+                                                            <p class="post-summary">Carve a recovered bootkit installer out of a Windows 2000 disk image, disassemble the 512-byte MBR it writes, and reverse a tiny in-memory SUB-0x0D loop to recover a flag the boot code never prints.</p>
                                                                                                                     <div class="post-tags-row post-tags-row--chips">
                                                                             <a class="tag-chip" href="/blog/tags/ctf">#ctf</a>
                                                                             <a class="tag-chip" href="/blog/tags/v1t-ctf-2026">#v1t-ctf-2026</a>
@@ -164,9 +164,9 @@
                                             <li class="post-item">
                             <a class="post-title-link" href="/blog/posts/china-crack-202">
                                 <span class="post-title">
-                                    <span class="post-icon">🔐</span>                                     China Crack 202                                </span>
+                                    <span class="post-icon">🗜️</span>                                     China Crack 202                                </span>
                             </a>
-                                                            <p class="post-summary">A password-protected archive whose ZIP/7z password was reused verbatim from last year&apos;s &apos;tryna crack&apos; challenge — recover it from the title hint, extract, and read the flag off the decrypted artifact.</p>
+                                                            <p class="post-summary">A nested password-protected archive whose key was recycled verbatim from last year&apos;s &apos;Tryna Crack&apos; challenge; the flag&apos;s hash suffix was the giveaway that closed the loop.</p>
                                                                                                                     <div class="post-tags-row post-tags-row--chips">
                                                                             <a class="tag-chip" href="/blog/tags/ctf">#ctf</a>
                                                                             <a class="tag-chip" href="/blog/tags/v1t-ctf-2026">#v1t-ctf-2026</a>
@@ -177,13 +177,13 @@
                                             <li class="post-item">
                             <a class="post-title-link" href="/blog/posts/classless">
                                 <span class="post-title">
-                                    <span class="post-icon">🧬</span>                                     Classless                                </span>
+                                    <span class="post-icon">🧩</span>                                     Classless                                </span>
                             </a>
-                                                            <p class="post-summary">A stripped x86-64 &apos;object VM&apos; runs base64(zlib(JSON)) programs through a triple type-confusion vault; the flag is XOR-0x37-decoded straight out of .rodata.</p>
+                                                            <p class="post-summary">A stripped C++ object-VM whose success path XOR-decodes the flag from .rodata, so we skip the trilingual type-confusion vault and pull the flag straight out of the binary.</p>
                                                                                                                     <div class="post-tags-row post-tags-row--chips">
                                                                             <a class="tag-chip" href="/blog/tags/ctf">#ctf</a>
                                                                             <a class="tag-chip" href="/blog/tags/v1t-ctf-2026">#v1t-ctf-2026</a>
-                                                                            <a class="tag-chip" href="/blog/tags/rev">#rev</a>
+                                                                            <a class="tag-chip" href="/blog/tags/misc">#misc</a>
                                                                             <a class="tag-chip" href="/blog/tags/ai-assisted">#ai-assisted</a>
                                                                     </div>
                                                     </li>
@@ -192,20 +192,20 @@
                                 <span class="post-title">
                                     <span class="post-icon">🦆</span>                                     Diddy License Checker                                </span>
                             </a>
-                                                            <p class="post-summary">A Linux ELF crackme that derives an AES-CBC key/IV from &apos;innocent&apos; inputs (a Fibonacci-mod-9 lucky number and a license file), then masks the ciphertext with a repeating-XOR over the license name; reverse the pipeline to recover the flag offline.</p>
+                                                            <p class="post-summary">A Linux ELF crackme that derives an AES-128-CBC key and IV from innocent-looking inputs, hides the ciphertext behind a repeating-XOR mask, and double hex-encodes the flag.</p>
                                                                                                                     <div class="post-tags-row post-tags-row--chips">
                                                                             <a class="tag-chip" href="/blog/tags/ctf">#ctf</a>
                                                                             <a class="tag-chip" href="/blog/tags/v1t-ctf-2026">#v1t-ctf-2026</a>
-                                                                            <a class="tag-chip" href="/blog/tags/rev">#rev</a>
+                                                                            <a class="tag-chip" href="/blog/tags/misc">#misc</a>
                                                                             <a class="tag-chip" href="/blog/tags/ai-assisted">#ai-assisted</a>
                                                                     </div>
                                                     </li>
                                             <li class="post-item">
                             <a class="post-title-link" href="/blog/posts/diddy-license-checker-revenge">
                                 <span class="post-title">
-                                    <span class="post-icon">🔑</span>                                     Diddy License Checker Revenge                                </span>
+                                    <span class="post-icon">🦆</span>                                     Diddy License Checker Revenge                                </span>
                             </a>
-                                                            <p class="post-summary">A crackme whose &apos;revenge&apos; variant assembles its flag from 33 hard-coded byte offsets of a server-side PNG fetched at runtime — fully reversed, but the flag stays remote.</p>
+                                                            <p class="post-summary">A multi-stage Linux crackme that rebuilds its flag from a Fibonacci-derived AES IV, an XOR-masked ciphertext, and a hex-encoded key — plus its revenge twin that assembles the flag from bytes of a server-side PNG.</p>
                                                                                                                     <div class="post-tags-row post-tags-row--chips">
                                                                             <a class="tag-chip" href="/blog/tags/ctf">#ctf</a>
                                                                             <a class="tag-chip" href="/blog/tags/v1t-ctf-2026">#v1t-ctf-2026</a>
@@ -218,7 +218,7 @@
                                 <span class="post-title">
                                     <span class="post-icon">🦆</span>                                     Duck Nettool Revenge                                </span>
                             </a>
-                                                            <p class="post-summary">A ping tool with command injection behind a brutal character-set filter — RCE using only ;, ?, /, i, digits, and space to glob /bin/sh and leak app.py&apos;s source.</p>
+                                                            <p class="post-summary">Command injection through a brutally restrictive character-set filter, solved by globbing binaries with ? wildcards and tricking dash into leaking app.py through its own error messages.</p>
                                                                                                                     <div class="post-tags-row post-tags-row--chips">
                                                                             <a class="tag-chip" href="/blog/tags/ctf">#ctf</a>
                                                                             <a class="tag-chip" href="/blog/tags/v1t-ctf-2026">#v1t-ctf-2026</a>

@@ -7,7 +7,7 @@
     <meta name="color-scheme" content="dark">
 
     <title>XTS-AES — LazyBlog</title>
-    <meta name="description" content="An encrypted ESP32-S3 flash dump whose read-protected XTS-AES key is deterministically derivable from readable eFuse data via a leaked provisioning firmware&apos;s KDF.">
+    <meta name="description" content="Reverse a leaked ESP32-S3 provisioning firmware to re-derive a read-protected flash-encryption key from readable device data, then decrypt the XTS-AES flash dump to recover the flag.">
             <meta name="author" content="tungdlm99">
         <meta name="generator" content="LazyBlog 1.11.0">
     <meta name="robots" content="index, follow, max-image-preview:large">
@@ -16,7 +16,7 @@
 
     <!-- Open Graph -->
     <meta property="og:title" content="XTS-AES">
-    <meta property="og:description" content="An encrypted ESP32-S3 flash dump whose read-protected XTS-AES key is deterministically derivable from readable eFuse data via a leaked provisioning firmware&apos;s KDF.">
+    <meta property="og:description" content="Reverse a leaked ESP32-S3 provisioning firmware to re-derive a read-protected flash-encryption key from readable device data, then decrypt the XTS-AES flash dump to recover the flag.">
     <meta property="og:url" content="https://doantung99.github.io/blog/posts/xts-aes">
     <meta property="og:type" content="article">
     <meta property="og:site_name" content="LazyBlog">
@@ -31,7 +31,7 @@
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary">
     <meta name="twitter:title" content="XTS-AES">
-    <meta name="twitter:description" content="An encrypted ESP32-S3 flash dump whose read-protected XTS-AES key is deterministically derivable from readable eFuse data via a leaked provisioning firmware&apos;s KDF.">
+    <meta name="twitter:description" content="Reverse a leaked ESP32-S3 provisioning firmware to re-derive a read-protected flash-encryption key from readable device data, then decrypt the XTS-AES flash dump to recover the flag.">
         
     <!-- Alternates: machine-readable / AI / RSS -->
             <link rel="alternate" type="text/markdown" href="https://doantung99.github.io/blog/posts/xts-aes.md">
@@ -41,7 +41,7 @@
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20fill%3D%22%230a0e0a%22%2F%3E%3Ctext%20x%3D%224%22%20y%3D%2224%22%20font-family%3D%22monospace%22%20font-size%3D%2222%22%20fill%3D%22%2339ff14%22%3E%26gt%3B_%3C%2Ftext%3E%3C%2Fsvg%3E">
 
-            <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"XTS-AES","description":"An encrypted ESP32-S3 flash dump whose read-protected XTS-AES key is deterministically derivable from readable eFuse data via a leaked provisioning firmware\u0027s KDF.","datePublished":"2026-06-28","dateModified":"2026-06-28","url":"https://doantung99.github.io/blog/posts/xts-aes","mainEntityOfPage":"https://doantung99.github.io/blog/posts/xts-aes","inLanguage":"vi","keywords":"ctf, v1t-ctf-2026, hardware, ai-assisted","author":{"@type":"Person","name":"tungdlm99"},"publisher":{"@type":"Organization","name":"LazyBlog","url":"https://doantung99.github.io/blog/"}}</script>
+            <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"XTS-AES","description":"Reverse a leaked ESP32-S3 provisioning firmware to re-derive a read-protected flash-encryption key from readable device data, then decrypt the XTS-AES flash dump to recover the flag.","datePublished":"2026-06-28","dateModified":"2026-06-28","url":"https://doantung99.github.io/blog/posts/xts-aes","mainEntityOfPage":"https://doantung99.github.io/blog/posts/xts-aes","inLanguage":"vi","keywords":"ctf, v1t-ctf-2026, hardware, ai-assisted","author":{"@type":"Person","name":"tungdlm99"},"publisher":{"@type":"Organization","name":"LazyBlog","url":"https://doantung99.github.io/blog/"}}</script>
     
     <script>
     // Theme bootstrap — server already rendered the configured default on
@@ -74,7 +74,7 @@
 </div>
 
 <header>
-            <div class="callsign">XV5HP // MAYLAB // HẢI PHÒNG</div>
+            <div class="callsign">NAB // Hà Nội</div>
                     <p class="site-brand"><a href="/blog/" class="brand-link">LazyBlog</a></p>
                 <div class="subtitle">// A personal blog transmitting thoughts over imperfect radio waves. Expect noise, fading, and low bandwidth—but always authentic signals.</div>
         <div class="header-actions">
@@ -112,50 +112,190 @@
     
             <nav class="toc toc-inline" aria-label="Table of contents">
             <div class="toc-label">§ TOC — NAVIGATION</div>
-            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-2"><a href="#flag">Flag</a></li></ul>
+            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-3"><a href="#reading-the-shape-before-touching-anything">Reading the shape before touching anything</a></li><li class="level-3"><a href="#step-1-efuse-recon-confirm-the-key-is-quot-secret-quot-but-the-inputs-aren-t">Step 1 — eFuse recon: confirm the key is &amp;quot;secret&amp;quot; but the inputs aren&#039;t</a></li><li class="level-3"><a href="#step-2-reversing-the-leaked-kdf">Step 2 — reversing the leaked KDF</a></li><li class="level-3"><a href="#step-3-espressif-s-xts-aes-is-not-textbook-xts">Step 3 — Espressif&#039;s XTS-AES is not textbook XTS</a></li><li class="level-3"><a href="#step-4-find-the-flag-partition-and-read-it">Step 4 — find the flag partition and read it</a></li><li class="level-3"><a href="#end-to-end-script">End-to-end script</a></li><li class="level-2"><a href="#flag">Flag</a></li><li class="level-2"><a href="#lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</a></li></ul>
         </nav>
     
     <div class="post-body">
         <h2 id="summary">Summary</h2>
-<p>We get an encrypted ESP32-S3 SPI-flash dump (flash encryption ON, XTS-AES-128) plus an eFuse summary and a &quot;leaked&quot; provisioning firmware. The hardware key is read-protected in eFuse, but the leaked tool derives it deterministically from <em>readable</em> device data (MAC + <code>BLOCK_USR_DATA</code>), so we reverse the KDF, rebuild the key, and decrypt the <code>flagdata</code> partition.</p>
+<p>This is an ESP32-S3 flash-encryption challenge: we get a 4 MB SPI-flash dump encrypted with hardware XTS-AES-128, an eFuse summary showing the key is read-protected, and a &quot;leaked&quot; provisioning firmware. The whole game is that the read-protected key is <em>not</em> random — a leaked KDF re-derives it deterministically from readable device data (MAC + <code>BLOCK_USR_DATA</code>). Re-implement that derivation, reproduce the key, then decrypt the flash with Espressif's quirky XTS-AES addressing to read the flag out of the <code>flagdata</code> partition.</p>
+<p>I want to be honest up front about how I solved this: an LLM did almost all of the grinding — reading the Xtensa disassembly, recalling Espressif's exact XTS data-unit format, writing the <code>cryptography</code> boilerplate. My job was recognizing the challenge shape, pointing the model at the right artifacts in the right order, catching the two places it confidently went wrong, and verifying every claim against ground truth before I trusted it. That division of labor is the whole story, so the prompting section at the end is the part I actually care about.</p>
 <h2 id="solution">Solution</h2>
-<p>I recognized this as the classic embedded trap: a &quot;secure&quot; key that's read-protected in fuses but actually reproducible if its derivation leaks. So I set the direction up front — find the KDF in the provisioning binary, recover the constants, then run ESP32's flash-encryption math in reverse. The model did the grinding; my job was steering and verifying.</p>
-<p><strong>1. Triage the inputs.</strong> I handed the model <code>efuse_sum.json</code> and asked it to strip the espefuse banner and pull the security-relevant fuses. It confirmed <code>SPI_BOOT_CRYPT_CNT=Enable</code>, <code>KEY_PURPOSE_0=XTS_AES_128_KEY</code>, <code>BLOCK_KEY0 readable=False</code>, and — crucially — the readable per-device values: <code>MAC=d0:cf:13:2f:36:c8</code> and <code>BLOCK_USR_DATA</code>. That readable data is the KDF input.</p>
-<p><strong>2. Isolate the real KDF, not the banner.</strong> <code>strings</code> on <code>leaked_debug_firmware.bin</code> (a stripped Xtensa ELF) showed the derivation as <code>PBKDF2(HMAC-SHA256(...))</code>. I told the model to ignore the human-readable log lines and actually pin the constants in the binary — radare2 won't auto-resolve Xtensa <code>l32r</code> literal-pool references, so I steered it to scan <code>.flash.text</code> for the little-endian addresses of those format strings and read the literal pool that holds them (around vaddr <code>0x42000b20</code>). It came back with the SHA-256 IV (<code>6a09e667…</code>), a 16-byte HMAC key constant <code>855780fc45bce8878d68f0040630cdbb</code>, and the integers <code>6000</code> and <code>4096</code>. The model first guessed 6000 was the iteration count; I had it re-check the KDF function at <code>0x420096a4</code>, where the call signature <code>(USR_DATA, 24, MAC, 6, out, 32)</code> makes clear the PBKDF2 salt is the 6-byte MAC and the iteration count is <strong>4096</strong>.</p>
-<p><strong>3. Rebuild the key and run ESP32's XTS quirks in reverse.</strong> I had the model implement Espressif's flash-encryption scheme exactly: 128-byte data units, a tweak of <code>address &amp; ~0x7F</code> packed little-endian, and the byte-reversal before/after each AES-XTS block. I verified the key by checking that flash offset <code>0x0</code> decrypts to the <code>0xE9</code> ESP image magic before trusting it on the <code>flagdata</code> partition (<code>off=0x113000</code>, from the plaintext partition table at <code>0x8000</code>).</p>
-<pre><code class="language-python">import struct, hashlib, hmac
+<h3 id="reading-the-shape-before-touching-anything">Reading the shape before touching anything</h3>
+<p>Three files ship with the challenge:</p>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>What it is</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>flash_dump.bin</code></td>
+<td>4 MB SPI-flash dump of an ESP32-S3 with flash encryption ON (XTS-AES-128)</td>
+</tr>
+<tr>
+<td><code>efuse_sum.json</code></td>
+<td><code>espefuse.py summary --format json</code> of that exact chip</td>
+</tr>
+<tr>
+<td><code>leaked_debug_firmware.bin</code></td>
+<td>Xtensa ELF, <em>&quot;V1T PROVISIONING TOOL v2.1&quot;</em></td>
+</tr>
+</tbody>
+</table>
+<p>The moment I saw &quot;encrypted flash + read-protected key + a <em>leaked</em> provisioning tool,&quot; the structure was obvious: this is a key-recovery problem, not a cryptanalysis problem. You are not meant to break XTS-AES. You are meant to notice that the device's &quot;secret&quot; key is derived from things you can read, and that the derivation code was handed to you. So the plan wrote itself:</p>
+<ol>
+<li>Confirm from the eFuse summary that the key is read-protected <em>and</em> that the readable per-device fields exist.</li>
+<li>Reverse the leaked firmware to recover the exact KDF (algorithm + every constant).</li>
+<li>Re-run the KDF on the readable fields to reproduce the 32-byte key.</li>
+<li>Decrypt the flash the way Espressif does it (this is the subtle part), find the flag partition, read it.</li>
+</ol>
+<p>This ordering matters. Each step produces a checkable artifact that gates the next one, which is exactly what you want when an LLM is doing the work — you never let it run three inferential steps deep without a ground-truth check in between.</p>
+<h3 id="step-1-efuse-recon-confirm-the-key-is-quot-secret-quot-but-the-inputs-aren-t">Step 1 — eFuse recon: confirm the key is &quot;secret&quot; but the inputs aren't</h3>
+<p><code>efuse_sum.json</code> is annoying: espefuse prefixes the JSON with banner text, so a naive <code>json.load</code> fails. Strip everything before the first <code>{</code>. The fuses that matter:</p>
+<pre><code>SPI_BOOT_CRYPT_CNT : Enable          # flash encryption is ON
+KEY_PURPOSE_0      : XTS_AES_128_KEY # BLOCK_KEY0 holds the XTS-AES-128 key
+BLOCK_KEY0         : readable=False  # RD_DIS set -&gt; key cannot be read back
+SECURE_BOOT_EN     : False           # no secure boot in the way
+MAC                : d0:cf:13:2f:36:c8
+BLOCK_USR_DATA     : ee d8 22 f5 40 24 e4 90 e5 9c a5 e6 70 78 4a 5d aa 1f 04 fd 07 78 73 53 ...
+OPTIONAL_UNIQUE_ID : b5 da f6 15 64 cd b2 6d 2f 10 8d c7 ce a3 af cd
+</code></pre>
+<p>The key insight is the contrast on this one screen: <code>BLOCK_KEY0</code> is <code>readable=False</code> (the actual XTS key is gone), but <code>MAC</code> and <code>BLOCK_USR_DATA</code> are right there in the clear. If the KDF turns out to consume only readable fields, the read-protection is cosmetic. So before reversing anything, I already knew what I was hunting for in the firmware: a function whose inputs are the MAC and the user-data block.</p>
+<p>Two gotchas to note for later: only the <strong>first 24 bytes</strong> of <code>BLOCK_USR_DATA</code> are used (the firmware strings literally say &quot;reading BLOCK_USR_DATA (24 bytes)&quot;), and the MAC is consumed as raw 6 bytes, not as the human-readable colon string. Both are easy to get subtly wrong, and both break the key silently if you do.</p>
+<h3 id="step-2-reversing-the-leaked-kdf">Step 2 — reversing the leaked KDF</h3>
+<p><code>strings</code> on the firmware is the single highest-value command in the whole challenge. It dumps the algorithm in human-readable form:</p>
+<pre><code>V1T PROVISIONING TOOL v2.1
+target device MAC: %02x:%02x:%02x:%02x:%02x:%02x
+reading BLOCK_USR_DATA (24 bytes)... ok
+computing intermediate key material...
+  step 1: hmac-sha256 digest (32 bytes)
+  step 2: pbkdf2-hmac-sha256 (%d rounds, %d-byte output)
+burning derived key to BLOCK_KEY0
+  key_purpose  : XTS_AES_128_KEY
+writing flag data to partition 'flagdata'... ok
+</code></pre>
+<p>So the structure is <code>key = PBKDF2(HMAC-SHA256(...))</code>. But the strings tell you the <em>shape</em>, not the <em>constants</em> — and PBKDF2 with the wrong salt, wrong iteration count, or wrong HMAC key gives you 32 bytes of garbage with no error. You have to recover the exact numbers from the code.</p>
+<p>This is where Xtensa fights back. Constants on Xtensa aren't immediates baked into instructions; they live in a <strong>literal pool</strong> and get loaded via <code>l32r</code> (PC-relative load of a 32-bit literal). radare2 does not resolve those references for you, so the disassembly is full of <code>l32r a8, 0x...</code> loads pointing at addresses whose contents you have to go read manually. The trick that unsticks this: take the known format strings, compute their little-endian virtual addresses, and grep the literal region for those byte patterns. That locates the literal pool the KDF uses, around vaddr <code>0x42000b20</code>, and it contains the giveaways:</p>
+<ul>
+<li>the SHA-256 IV words (<code>6a09e667 …</code>) and a pointer to the K-table → confirms it's genuinely SHA-256 under the hood;</li>
+<li>a <strong>16-byte constant</strong> at <code>0x3c028b90</code> = <code>855780fc45bce8878d68f0040630cdbb</code> → this is the HMAC key;</li>
+<li><code>0x00001770</code> = <strong>6000</strong> and <code>0x00001000</code> = <strong>4096</strong> → two candidate iteration counts.</li>
+</ul>
+<p>That last pair is the first real dead-end, and it's worth dwelling on because it's exactly the kind of thing an LLM will guess wrong. There are <em>two</em> round-number literals in the pool, 6000 and 4096. The strings say PBKDF2 takes <code>%d rounds</code>. Which one is the iteration count? You cannot tell from constants alone — you have to read the KDF function at <code>vaddr 0x420096a4</code> and see which literal is moved into the iterations argument register at the PBKDF2 call site. It's <strong>4096</strong>. (6000 lives elsewhere and is a decoy as far as the key is concerned.) Picking 6000 produces a perfectly valid-looking 32-byte key that decrypts to nothing.</p>
+<p>Reading the function <code>0x420096a4</code>, the call signature is <code>(USR_DATA, 24, MAC, 6, out, 32)</code>, and it does exactly two things:</p>
+<ol>
+<li><strong>HMAC-SHA256</strong> — <code>digest = HMAC-SHA256(key = 855780fc45bce8878d68f0040630cdbb, msg = BLOCK_USR_DATA[:24])</code></li>
+<li><strong>PBKDF2-HMAC-SHA256</strong> — <code>key32 = PBKDF2(password = digest, salt = MAC[:6], iterations = 4096, dklen = 32)</code></li>
+</ol>
+<p>The HMAC digest becomes the <em>password</em> for PBKDF2, and the <strong>MAC is the salt</strong> (not the password, not unused). That role assignment is the second easy-to-invert mistake. The resulting 32 bytes are what got burned into BLOCK_KEY0 as the XTS-AES-128 key:</p>
+<pre><code>3c0c3d36a5f470de0bb31bffb7cf4e1f2cc68b04868d0482c408a218976797ce
+</code></pre>
+<h3 id="step-3-espressif-s-xts-aes-is-not-textbook-xts">Step 3 — Espressif's XTS-AES is not textbook XTS</h3>
+<p>Here is the part that's genuinely Espressif-specific and where general &quot;AES-XTS&quot; knowledge actively misleads you. The S2/S3/C3 family does flash encryption with AES-XTS, but with its own addressing and a byte-reversal quirk that does not exist in standard XTS. The authoritative reference is <code>espsecure.py</code> in <code>esptool 5.3.0</code> — the same version that produced this dump — and the rules are:</p>
+<ul>
+<li>the <strong>data unit is 128 bytes</strong> (<code>0x80</code>), not the 512 you'd assume from disk encryption;</li>
+<li>per unit, the <strong>tweak</strong> = <code>struct.pack(&quot;&lt;I&quot;, flash_address &amp; ~0x7F) + b&quot;\x00&quot;*12</code> — the unit-aligned flash address as a little-endian u32, zero-padded to 16 bytes;</li>
+<li>each 128-byte block is <strong>byte-reversed</strong>, AES-XTS'd with that tweak, then the output is <strong>byte-reversed again</strong>;</li>
+<li>the 32-byte key is used as-is (XTS-AES-128 means two 128-bit halves, which the library splits internally).</li>
+</ul>
+<p>Skip the byte-reversal and you get noise. Use a 512-byte unit and you get noise. Feed the colon-string MAC into the KDF and you get noise. Every one of these fails <em>silently</em> — there is no padding error, no MAC check, just wrong bytes — so you are entirely dependent on a known-plaintext sanity check to tell signal from noise.</p>
+<p>That check exists: decrypt flash offset <code>0x0</code> and you should see the ESP image magic byte <code>0xE9</code> followed by a sane IRAM entry point. With the recovered key, offset <code>0x0</code> decrypts to <code>e9 03 02 2f f4 88 3c 40 …</code> — magic <code>0xE9</code>, entry <code>0x403c88f4</code>. That is the moment the whole chain is confirmed: key right, KDF right, XTS implementation right. I did not move on until I saw that byte.</p>
+<h3 id="step-4-find-the-flag-partition-and-read-it">Step 4 — find the flag partition and read it</h3>
+<p>The partition table lives in plaintext at flash <code>0x8000</code> (Espressif leaves the partition table unencrypted by default), so you can parse it without the key. It lists a custom partition:</p>
+<pre><code>flagdata   type=1(data)  subtype=0x40  off=0x113000  size=0x1000
+</code></pre>
+<p>That region is XTS-encrypted. Decrypt <code>flash[0x113000:0x114000]</code> with the recovered key and the flag is sitting at the very start of the partition.</p>
+<h3 id="end-to-end-script">End-to-end script</h3>
+<p>This runs from the three challenge files to the printed flag. It only assumes the <code>cryptography</code> package and the three constants recovered from reversing (the 16-byte HMAC key, iteration count 4096, and the <code>flagdata</code> offset). Everything else is read from the files.</p>
+<pre><code class="language-python">#!/usr/bin/env python3
+import json, re, struct, hashlib, hmac
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
 
-# --- Step 1+2: reverse the leaked KDF -&gt; recover the read-protected XTS key ---
-K16    = bytes.fromhex(&quot;855780fc45bce8878d68f0040630cdbb&quot;)          # HMAC key constant
-USR    = bytes.fromhex(&quot;eed822f54024e490e59ca5e670784a5daa1f04fd07787353&quot;)  # BLOCK_USR_DATA[0:24]
-MAC    = bytes.fromhex(&quot;d0cf132f36c8&quot;)                              # device MAC (PBKDF2 salt)
-digest = hmac.new(K16, USR, hashlib.sha256).digest()
-key32  = hashlib.pbkdf2_hmac(&quot;sha256&quot;, digest, MAC, 4096, 32)       # XTS-AES-128 key
+# ---- 0. inputs from the challenge files ----
+FLASH = open(&quot;flash_dump.bin&quot;, &quot;rb&quot;).read()
 
-# --- ESP32-S3 flash XTS-AES decrypt (128-byte unit + byte-reversal quirk) ---
+raw = open(&quot;efuse_sum.json&quot;).read()
+efuse = json.loads(raw[raw.index(&quot;{&quot;):])          # strip espefuse banner
+
+def fuse_bytes(name):
+    # espefuse json stores values as space-separated hex; tolerate either form
+    v = efuse[name][&quot;value&quot;] if isinstance(efuse[name], dict) else efuse[name]
+    return bytes.fromhex(re.sub(r&quot;[^0-9a-fA-F]&quot;, &quot;&quot;, v))
+
+MAC = fuse_bytes(&quot;MAC&quot;)[:6]                        # d0 cf 13 2f 36 c8
+USR = fuse_bytes(&quot;BLOCK_USR_DATA&quot;)[:24]           # first 24 bytes only
+
+# ---- 1. constants recovered by reversing leaked_debug_firmware.bin ----
+HMAC_KEY = bytes.fromhex(&quot;855780fc45bce8878d68f0040630cdbb&quot;)  # literal @ 0x3c028b90
+ITER     = 4096                                               # 0x1000 (NOT 6000)
+
+# ---- 2. re-derive the read-protected XTS key ----
+digest = hmac.new(HMAC_KEY, USR, hashlib.sha256).digest()     # step 1
+key32  = hashlib.pbkdf2_hmac(&quot;sha256&quot;, digest, MAC, ITER, 32) # step 2 (MAC = salt)
+print(&quot;[*] recovered XTS key:&quot;, key32.hex())
+
+# ---- 3. Espressif XTS-AES flash decryption (esptool 5.3.x semantics) ----
 def xts_dec(key, flash_address, indata):
-    be = default_backend(); out = []
-    pad_left = flash_address % 0x80
-    data = b&quot;\x00&quot; * pad_left + indata
-    data += b&quot;\x00&quot; * ((-len(data)) % 0x80)
-    fa = flash_address
+    be  = default_backend()
+    pad = flash_address % 0x80                     # align to 128-byte unit
+    data = b&quot;\x00&quot; * pad + indata
+    data += b&quot;\x00&quot; * ((-len(data)) % 0x80)        # pad up to a whole unit
+    fa, out = flash_address, []
     for i in range(0, len(data), 0x80):
-        tweak = struct.pack(&quot;&lt;I&quot;, fa &amp; ~0x7F) + b&quot;\x00&quot; * 12; fa += 0x80
-        c = Cipher(algorithms.AES(key), modes.XTS(tweak), backend=be).decryptor()
-        out.append(c.update(data[i:i + 0x80][::-1])[::-1])
-    return b&quot;&quot;.join(out)[pad_left: pad_left + len(indata)]
+        tweak = struct.pack(&quot;&lt;I&quot;, fa &amp; ~0x7F) + b&quot;\x00&quot; * 12
+        fa += 0x80
+        dec = Cipher(algorithms.AES(key), modes.XTS(tweak),
+                     backend=be).decryptor()
+        out.append(dec.update(data[i:i+0x80][::-1])[::-1])  # byte-reverse both ways
+    return b&quot;&quot;.join(out)[pad: pad + len(indata)]
 
-flash = open(&quot;flash_dump.bin&quot;, &quot;rb&quot;).read()
-assert xts_dec(key32, 0x0, flash[0x0:0x80])[0] == 0xE9          # ESP image magic -&gt; key confirmed
-flagdata = xts_dec(key32, 0x113000, flash[0x113000:0x114000])  # flagdata partition
-print(flagdata.split(b&quot;\x00&quot;, 1)[0].decode())
+# ---- 4. sanity check: flash @0x0 must start with ESP image magic 0xE9 ----
+head = xts_dec(key32, 0x0, FLASH[0x0:0x80])
+assert head[0] == 0xE9, &quot;wrong key/XTS impl: no 0xE9 image magic&quot;
+print(&quot;[*] image magic OK, entry =&quot;, hex(struct.unpack(&quot;&lt;I&quot;, head[4:8])[0]))
+
+# ---- 5. decrypt the flagdata partition (off=0x113000, size=0x1000) ----
+flag_region = xts_dec(key32, 0x113000, FLASH[0x113000:0x114000])
+flag = flag_region.split(b&quot;\x00&quot;, 1)[0].decode()
+print(&quot;[+] FLAG:&quot;, flag)
 </code></pre>
-<p>This prints the flag straight out of the decrypted partition (<code>V1T{...}</code>, stored uppercase even though the prompt shows lowercase <code>v1t{}</code>).</p>
+<p>Running it walks straight to the flag bytes at the start of the partition:</p>
+<pre><code>0x113000: 56 31 54 7b 37 68 31 35 5f 35 68 31 64 5f 6b 31  V1T{7h15_5h1d_k1
+0x113010: 6e 64 34 5f 68 34 72 64 5f 31 6b 6e 30 77 7d 00  nd4_h4rd_1kn0w}.
+</code></pre>
+<p>One last gotcha worth flagging: the flag is stored <strong>uppercase</strong> <code>V1T{...}</code> even though the challenge's stated format is <code>v1t{...}</code>. Submit exactly what's in the partition.</p>
 <h2 id="flag">Flag</h2>
 <pre><code>V1T{7h15_5h1d_k1nd4_h4rd_1kn0w}
 </code></pre>
+<p>(&quot;this shi(d) kinda hard, i know.&quot;)</p>
+<h2 id="lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</h2>
+<p>This challenge is a perfect case study in the human-steers / model-grinds split, because every individual step is something an LLM can do faster than me (read Xtensa, recall Espressif's XTS quirk, write <code>cryptography</code> boilerplate) but the <em>sequencing</em> and <em>failure detection</em> are pure judgment. Here's the reusable playbook for ESP32 flash-encryption / leaked-KDF challenges.</p>
+<p><strong>1. Open by forcing the model to classify, not solve.</strong> My first prompt was deliberately about strategy, not code:</p>
+<blockquote>
+<p>&quot;Here are three files: an encrypted ESP32-S3 flash dump, an espefuse summary, and a leaked 'provisioning tool' firmware. Don't write any decryption code yet. Tell me what <em>class</em> of challenge this is and what the intended solve path is, in order, with a checkable artifact at each step.&quot;</p>
+</blockquote>
+<p>This stops the model from diving into &quot;let me try to brute-force the key&quot; nonsense and gets it to articulate the key-recovery-from-readable-inputs structure. It also produces the gated plan that makes verification cheap.</p>
+<p><strong>2. Make it extract constants from the binary, then make it prove which ones matter.</strong> The strings give the algorithm shape for free, but the constants are the trap. The prompt that moved the solve:</p>
+<blockquote>
+<p>&quot;From the literal pool around 0x42000b20, list every numeric constant and what role it plays. There are two round numbers, 6000 and 4096 — read the function at 0x420096a4 and tell me specifically which register holds the PBKDF2 iteration count at the call site, with the disassembly line. Do not guess from 'which looks more like an iteration count.'&quot;</p>
+</blockquote>
+<p>The model's first instinct was to pick 6000 (it &quot;looked like a reasonable round count&quot;). Forcing it to point at the actual call-site argument register flipped it to 4096. <strong>Tell the model explicitly to avoid reasoning from plausibility and to cite the instruction that consumes the constant.</strong> The same discipline fixed the HMAC/PBKDF2 role assignment: I made it state, given the call signature <code>(USR,24,MAC,6,out,32)</code>, which argument is password and which is salt — it had them backwards on the first pass (MAC as password) and self-corrected when asked to map args onto the PBKDF2 prototype.</p>
+<p><strong>3. Demand the Espressif-specific XTS, not textbook XTS.</strong> General LLM knowledge of &quot;AES-XTS&quot; is disk-encryption XTS (512-byte units, no byte reversal) and it will write that confidently. I anchored it to the source of truth:</p>
+<blockquote>
+<p>&quot;This is ESP32-S3 flash encryption, not generic XTS. Reproduce the exact data-unit size, tweak construction, and any byte-reversal that espsecure.py / esptool 5.3 uses for decrypt_flash_data. If you're unsure of the unit size or reversal, say so — do not invent it.&quot;</p>
+</blockquote>
+<p>Adding &quot;say so, do not invent it&quot; is what kept it from hand-waving the byte-reversal, which is the single most-skipped detail and the one that silently produces garbage.</p>
+<p><strong>Verification — how I caught the mistakes.</strong> Every silent-failure step got a ground-truth gate I could check without trusting the model:</p>
+<ul>
+<li>After key derivation, I did <strong>not</strong> ask &quot;is this right?&quot; I had it decrypt flash <code>0x0</code> and assert byte <code>0xE9</code>. A wrong iteration count or wrong salt role sails through key derivation and only dies here, so this one assert catches both KDF mistakes at once.</li>
+<li>I sanity-checked that the entry point (<code>0x403c88f4</code>) is a plausible IRAM address, not just that the magic byte matched — a single matching byte can be a coincidence.</li>
+<li>I read the partition table myself from the plaintext <code>0x8000</code> region rather than trusting the model's recollection of where <code>flagdata</code> lives.</li>
+</ul>
+<p>The meta-lesson: in a challenge full of <em>silent</em> failures, the human's entire value is inserting cheap, objective checkpoints between the model's inferential leaps and refusing to advance until one passes. The model is fast; you are the assertion.</p>
+<p><strong>Fast-path prompt recipe for next time:</strong> <em>&quot;Classify the challenge and give me a gated solve path; extract every binary constant and cite the instruction that consumes each one (no plausibility guesses); use the vendor-exact crypto (say if unsure, don't invent); after each step give me one ground-truth assert I can run before continuing.&quot;</em></p>
     </div>
 
     
@@ -177,7 +317,7 @@ print(flagdata.split(b&quot;\x00&quot;, 1)[0].decode())
     <aside class="post-toc-wrap" aria-hidden="true">
         <nav class="toc" aria-label="Floating table of contents">
             <div class="toc-label">§ TOC — NAVIGATION</div>
-            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-2"><a href="#flag">Flag</a></li></ul>
+            <ul class="toc-list"><li class="level-2"><a href="#summary">Summary</a></li><li class="level-2"><a href="#solution">Solution</a></li><li class="level-3"><a href="#reading-the-shape-before-touching-anything">Reading the shape before touching anything</a></li><li class="level-3"><a href="#step-1-efuse-recon-confirm-the-key-is-quot-secret-quot-but-the-inputs-aren-t">Step 1 — eFuse recon: confirm the key is &amp;quot;secret&amp;quot; but the inputs aren&#039;t</a></li><li class="level-3"><a href="#step-2-reversing-the-leaked-kdf">Step 2 — reversing the leaked KDF</a></li><li class="level-3"><a href="#step-3-espressif-s-xts-aes-is-not-textbook-xts">Step 3 — Espressif&#039;s XTS-AES is not textbook XTS</a></li><li class="level-3"><a href="#step-4-find-the-flag-partition-and-read-it">Step 4 — find the flag partition and read it</a></li><li class="level-3"><a href="#end-to-end-script">End-to-end script</a></li><li class="level-2"><a href="#flag">Flag</a></li><li class="level-2"><a href="#lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</a></li></ul>
         </nav>
     </aside>
 </main>
