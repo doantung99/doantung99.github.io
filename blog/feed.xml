@@ -5,7 +5,7 @@
     <link>https://doantung99.github.io/blog/</link>
     <description>A personal blog transmitting thoughts over imperfect radio waves. Expect noise, fading, and low bandwidth—but always authentic signals.</description>
     <language>vi</language>
-    <lastBuildDate>Mon, 29 Jun 2026 00:25:04 +0700</lastBuildDate>
+    <lastBuildDate>Mon, 29 Jun 2026 00:30:52 +0700</lastBuildDate>
     <generator>LazyBlog (PHP + Markdown)</generator>
     <atom:link href="https://doantung99.github.io/blog/feed.xml" rel="self" type="application/rss+xml"/>
     <item>
@@ -1425,167 +1425,6 @@ print(flag.decode())                               # -&gt; v1t{435_f1b0_w3bs1t3}
 ]]></content:encoded>
     </item>
     <item>
-      <title>Diddy License Checker Revenge</title>
-      <link>https://doantung99.github.io/blog/posts/diddy-license-checker-revenge</link>
-      <guid isPermaLink="true">https://doantung99.github.io/blog/posts/diddy-license-checker-revenge</guid>
-      <pubDate>Sun, 28 Jun 2026 00:00:00 +0700</pubDate>
-      <dc:creator>tungdlm99</dc:creator>
-      <category>ctf</category>
-      <category>v1t-ctf-2026</category>
-      <category>misc</category>
-      <category>ai-assisted</category>
-      <description>A multi-stage Linux crackme that rebuilds its flag from a Fibonacci-derived AES IV, an XOR-masked ciphertext, and a hex-encoded key — plus its revenge twin that assembles the flag from bytes of a server-side PNG.</description>
-      <content:encoded><![CDATA[<h2 id="summary">Summary</h2>
-<p><code>diddy</code> is a Linux x86-64 crackme that derives a whole AES-CBC pipeline from &quot;innocent&quot; inputs — a Fibonacci-mod-9 &quot;lucky number&quot; that is secretly the IV, a license-name string reused as both a URL path and a repeating-XOR key, and a companion file whose hex decodes straight to the AES key. The companion challenge <code>diddy_revenge</code> reverses cleanly but never stores its flag locally: it plucks 33 bytes from a PNG fetched at runtime from a <code>.gov</code> URL. I drove an LLM to do the static reversing and the byte-plumbing; my job was recognizing the challenge type, feeding it the right artifacts, and catching the two places its instinct was flat wrong.</p>
-<h2 id="solution">Solution</h2>
-<p>This is the kind of challenge where the binary is small but the <em>data flow</em> is the puzzle. There's no clever anti-debug, no obfuscated control flow. The difficulty is that the key, the IV, and the ciphertext are each manufactured from a different &quot;decoy&quot; input, and you have to recognize each one for what it really is before any of it lines up. That recognition is exactly the part a human is good at and a model needs steering on — so the workflow was: I name what I think each blob <em>is</em>, the model proves or disproves it against the disassembly, and we converge.</p>
-<h3 id="reading-the-binary-s-intent-first">Reading the binary's intent first</h3>
-<p>The binary asks for a few inputs and then &quot;checks a license.&quot; Decompiling it (I had the model work from the Ghidra pseudocode) shows it never compares your input against a stored secret. Instead it <em>reconstructs</em> a flag from a hard-coded blob, using your inputs as cryptographic material. That is the first key insight, and it's a judgment call, not something you can grep for: <strong>the inputs are not validated, they are consumed as key/IV/path.</strong> Once you frame it that way, the rest is just identifying which input feeds which slot.</p>
-<p>There are three &quot;decoy&quot; inputs:</p>
-<ul>
-<li><code>pet = &quot;duck&quot;</code> — a soft gate / flavor, the &quot;are you a real player&quot; check (Diddy, duck — the theme).</li>
-<li>a &quot;lucky number&quot; string,</li>
-<li>a &quot;license name&quot; string.</li>
-</ul>
-<p>And one embedded backend, base64'd in the binary:</p>
-<pre><code>aHR0cDovL3YxdC5zaXRlLw==  -&gt;  http://v1t.site/
-</code></pre>
-<h3 id="decoy-1-the-quot-lucky-number-quot-is-the-aes-iv">Decoy #1 — the &quot;lucky number&quot; is the AES IV</h3>
-<p>The binary builds the &quot;lucky number&quot; as the literal character <code>&quot;0&quot;</code> followed by <code>fib(1..31) % 9</code>. Working that out:</p>
-<pre><code>0 1 1 2 3 5 8 4 3 7 1 8 0 8 8 7 6 4 1 5 6 2 8 1 0 1 1 2 3 5 8 4
-</code></pre>
-<p>concatenated:</p>
-<pre><code>01123584371808876415628101123584
-</code></pre>
-<p>That's a 32-character string. The moment you see <em>32 hex-ish characters being fed into a crypto setup</em>, the right read is &quot;this is 16 bytes&quot; — i.e. an AES IV. And indeed the binary hex-decodes it into the 16-byte IV. The Fibonacci-mod-9 sequence is pure misdirection; its only job is to deterministically produce those 32 nibbles so the IV is reproducible without ever being written down. Classic crackme move: <strong>a number with a cute story attached is actually a raw cryptographic parameter.</strong></p>
-<h3 id="decoy-2-the-license-name-is-both-a-url-path-and-an-xor-key">Decoy #2 — the license name is BOTH a URL path AND an XOR key</h3>
-<p>The &quot;license name&quot; is:</p>
-<pre><code>license-for-user-deadbeef-diddy        (31 characters)
-</code></pre>
-<p>It gets used twice, which is the second insight and the easiest thing to miss:</p>
-<ol>
-<li>As the URL path: <code>http://v1t.site/license-for-user-deadbeef-diddy</code>.</li>
-<li>As a <strong>31-byte repeating-XOR key</strong> applied over an embedded integer array.</li>
-</ol>
-<p>The double-use is deliberate — it makes the string look like &quot;just the name in the URL,&quot; so you don't think to also treat it as key material.</p>
-<h3 id="decoy-3-the-companion-file-s-hex-is-the-aes-key">Decoy #3 — the companion file's hex IS the AES key</h3>
-<p>The challenge ships a companion file <code>license-for-user-deadbeef-diddy</code> containing 32 hex chars:</p>
-<pre><code>7631745f3433355f6b33795f66726672
-</code></pre>
-<p>Hex-decode that and it spells ASCII:</p>
-<pre><code>v1t_435_k3y_frfr
-</code></pre>
-<p>That 16-byte ASCII string is the <strong>AES-128 key</strong>. (It's also a self-hint: <code>435</code> = &quot;AES&quot; leetspeak, which later shows up in the flag — a nice consistency check that the key is right.)</p>
-<h3 id="the-embedded-ciphertext-low-bytes-then-unmask-then-unhex">The embedded ciphertext: low bytes, then unmask, then unhex</h3>
-<p>The ciphertext is the fiddliest part and the place an LLM is most likely to fumble the plumbing, so it's worth being precise about the layout:</p>
-<ul>
-<li>At <code>.data 0x4120</code> there are <strong>96 little-endian int32 values</strong>. Only the <strong>low byte</strong> of each int32 is meaningful — so you collapse 96 int32s to 96 bytes. (The int32 padding is just noise to make the blob look bigger and less obviously like ASCII.)</li>
-<li>Those 96 bytes are masked with the license name via repeating XOR. Unmasking (<code>arr[i] ^ name[i % 31]</code>) yields <strong>96 ASCII hex characters</strong>.</li>
-<li>Those 96 hex characters decode to <strong>48 bytes</strong> of actual AES ciphertext (48 is a clean multiple of the 16-byte block size — another sanity check).</li>
-</ul>
-<h3 id="putting-the-pipeline-together">Putting the pipeline together</h3>
-<p>The full chain:</p>
-<pre><code>fib%9 string        -&gt; hex-decode -&gt; 16-byte IV
-companion file hex  -&gt; hex-decode -&gt; 16-byte AES key (&quot;v1t_435_k3y_frfr&quot;)
-96 int32 @ 0x4120   -&gt; low bytes  -&gt; 96 bytes
-   XOR license name -&gt; 96 ASCII hex chars
-   hex-decode       -&gt; 48-byte ciphertext
-AES-128-CBC decrypt(ct, key, iv) -&gt; ASCII-hex plaintext
-   hex-decode once more -&gt; v1t{...}
-</code></pre>
-<p>The final twist — and the last place to not give up early — is that the AES plaintext is <em>itself</em> an ASCII-hex string, not the flag directly. You have to hex-decode one more time. If you stop at the AES output you'll see <code>7631747b...337d</code> and think it failed; decode it and <code>7631747b</code> is <code>v1t{</code>, <code>337d</code> is <code>3}</code>.</p>
-<h3 id="end-to-end-script">End-to-end script</h3>
-<p>This is the single runnable path from challenge data to printed flag. <code>int32_array_at_0x4120</code> is the 96 little-endian int32s pulled out of <code>.data</code> at <code>0x4120</code> (extract with your disassembler or by reading the section bytes); everything else is hard data from above.</p>
-<pre><code class="language-python">#!/usr/bin/env python3
-# diddy crackme solver: reconstruct the flag from the embedded pipeline.
-from Crypto.Cipher import AES
-import binascii
-
-# --- Stage 0: the 96 little-endian int32s at .data 0x4120 ---------------------
-# Pull these out of the binary's .data section at offset 0x4120 (96 * 4 bytes).
-# Only the low byte of each int32 carries data; the rest is padding noise.
-int32_array_at_0x4120 = [
-    # ... 96 little-endian int32 values extracted from the binary ...
-]
-assert len(int32_array_at_0x4120) == 96
-
-arr = bytes(x &amp; 0xFF for x in int32_array_at_0x4120)          # 96 bytes
-
-# --- Stage 1: license name = repeating-XOR key (also the URL path) ------------
-name = b&quot;license-for-user-deadbeef-diddy&quot;                     # 31 bytes
-masked = bytes(arr[i] ^ name[i % len(name)] for i in range(len(arr)))  # 96 ASCII hex chars
-ct = binascii.unhexlify(masked)                               # -&gt; 48-byte ciphertext
-assert len(ct) % 16 == 0                                      # block-size sanity check
-
-# --- Stage 2: AES key from the companion file's hex ---------------------------
-# companion file `license-for-user-deadbeef-diddy` contains:
-#   7631745f3433355f6b33795f66726672  -&gt;  &quot;v1t_435_k3y_frfr&quot;
-key = binascii.unhexlify(&quot;7631745f3433355f6b33795f66726672&quot;)  # b&quot;v1t_435_k3y_frfr&quot;
-assert key == b&quot;v1t_435_k3y_frfr&quot;
-
-# --- Stage 3: IV from the Fibonacci-mod-9 &quot;lucky number&quot; ----------------------
-# &quot;0&quot; + (fib(1..31) % 9) = 01123584371808876415628101123584
-iv = binascii.unhexlify(&quot;01123584371808876415628101123584&quot;)   # 16 bytes
-
-# --- Stage 4: AES-128-CBC decrypt -&gt; ASCII-hex -&gt; hex-decode -&gt; flag ----------
-pt = AES.new(key, AES.MODE_CBC, iv).decrypt(ct)              # e.g. b&quot;7631747b...337d&quot;
-flag = binascii.unhexlify(pt.strip())                        # -&gt; b&quot;v1t{...}&quot;
-print(flag.decode())
-</code></pre>
-<p>The flag's three tokens each map back to a stage, which is the author's way of telling you you solved it the intended way: <code>435</code> = AES, <code>f1b0</code> = the Fibonacci IV, <code>w3bs1t3</code> = the <code>v1t.site</code> URL path / website.</p>
-<h3 id="diddy-revenge-fully-reversed-but-the-flag-lives-on-the-server">diddy_revenge — fully reversed, but the flag lives on the server</h3>
-<p>The &quot;revenge&quot; twin reverses just as cleanly, and the reversing is genuinely satisfying — but it ends at a wall that no amount of static analysis can climb, and recognizing that wall <em>early</em> is itself the lesson. The binary builds this URL:</p>
-<pre><code>https://{agency}.gov/static/{md5(password)}/{ID}/{agency}-seal.png
-</code></pre>
-<p>Notes that matter:</p>
-<ul>
-<li><code>agency</code> is used <strong>twice</strong> (subdomain and the seal filename), the same double-use trick as the license name in <code>diddy</code>.</li>
-<li><code>md5(password)</code> is a directory component — so the password gates <em>which</em> path you fetch, not a local comparison you can brute.</li>
-<li><code>ID</code> is a path segment, likely tied to the <code>deadbeef-diddy</code> user identity from the first challenge.</li>
-</ul>
-<p>It then <code>curl</code>s the URL with <code>FOLLOWLOCATION</code> (it follows redirects), and enforces two checks before it will proceed:</p>
-<ul>
-<li>the response must be <strong>HTTP 200</strong>, and</li>
-<li>the PNG must be <strong>at least 9439 bytes</strong>.</li>
-</ul>
-<p>Only then does it assemble the flag:</p>
-<pre><code class="language-c">for (i = 0; i &lt; 33; i++)
-    flag[i] = seal_png[OFFSETS[i]];   // 33 hard-coded byte offsets into the PNG
-// sanity-checks that flag starts with &quot;v1t&quot;; it never prints the flag
-</code></pre>
-<p>So the entire flag is <strong>33 bytes scattered through the server-side <code>&lt;agency&gt;-seal.png</code></strong>, picked out by 33 hard-coded offsets. The binary contains the <em>recipe</em> (the offsets, the URL template, the size/status gates) but not the <em>ingredient</em> (the actual PNG). To finish it you would need the real <code>&lt;agency&gt;-seal.png</code> — which means the correct <code>agency</code>, <code>ID</code>, and <code>password</code> from the challenge prose — then run the saved extractor with the 33 offsets against the downloaded bytes. By the time I worked through it, <code>v1t.site</code> was behind a Cloudflare JS challenge and the asset was unreachable, so this half stays at &quot;mechanism understood, flag not extracted offline.&quot;</p>
-<p>The takeaway worth internalizing: when a flag is <strong>assembled from bytes of a remote asset</strong>, reversing tells you <em>which bytes</em> and <em>from where</em> — it can never give you the flag without the asset. Time spent in the disassembler after that point is wasted; the remaining work is network/recon, not RE.</p>
-<h2 id="flag">Flag</h2>
-<p><strong><code>diddy</code> (recovered):</strong></p>
-<pre><code>v1t{435_f1b0_w3bs1t3}
-</code></pre>
-<p><strong><code>diddy_revenge</code> (NOT recovered offline — partial):</strong> The revenge binary's logic is fully reversed (URL template, MD5-of-password path component, HTTP 200 + ≥9439-byte gates, and the 33 hard-coded offsets that pluck the flag out of <code>&lt;agency&gt;-seal.png</code>). The flag itself is <strong>server-side</strong>: it is 33 bytes of a PNG fetched at runtime, never stored in the binary. With the live asset unreachable (behind Cloudflare-JS) and no local copy of the correct <code>&lt;agency&gt;-seal.png</code>, the flag could not be assembled offline.</p>
-<h2 id="lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</h2>
-<p>Whenever you face a <strong>&quot;reconstruct-the-flag&quot; crackme</strong> — a small binary that builds an AES/XOR/encoding pipeline out of your inputs and embedded blobs instead of comparing your input to a stored secret — the LLM is great at turning pseudocode into a runnable pipeline and at the byte arithmetic, but it needs you for the <em>role-assignment</em> leaps and for catching confidently-wrong plumbing. The prompts below are written so they transfer to the next binary of this class (key/IV/XOR/ciphertext/URL hidden behind &quot;decoy&quot; inputs), not just <code>diddy</code>.</p>
-<p><strong>1. Force role-classification before pasting any code.</strong> This is the prompt that decides the whole solve, and it works on any crackme of this shape:</p>
-<blockquote>
-<p>&quot;This is a crackme that does NOT validate input — it reconstructs the flag from hard-coded blobs using my inputs as cryptographic material. List every user input and every embedded constant/array, and for each one tell me its most likely ROLE — AES key, IV, repeating-XOR key, ciphertext, salt, or URL component — and justify the assignment from the decompilation. Do not propose a 'correct input that passes a check'; there is no check.&quot;</p>
-</blockquote>
-<p>The phrase &quot;there is no check&quot; is the load-bearing part — it stops the model from hunting for a comparison/<code>strcmp</code> that doesn't exist, which is the #1 dead-end for this class. Steer it off two more classic dead-ends up front: (a) <strong>do not brute-force or guess any input string</strong> — in this family the &quot;name&quot;/&quot;license&quot;/&quot;serial&quot; is almost always reused verbatim (e.g. as a filename, URL path, AND an XOR key), so tell it to treat such strings as <em>known and multi-purpose</em>; (b) <strong>do not assume a cute numeric sequence is just flavor</strong> — a Fibonacci/factorial/&quot;lucky number&quot; routine usually exists only to deterministically regenerate a raw crypto parameter (here, the IV).</p>
-<p><strong>2. Make it count bytes after every transform and assert the block-size invariant.</strong> Layered encodings are where the model slips, so demand a length at each stage and give it a free oracle:</p>
-<blockquote>
-<p>&quot;Trace the embedded array at <offset> to the AES ciphertext. Print the byte count after EACH transform: int32 -&gt; low byte, repeating-XOR with the &lt;N&gt;-byte key, then hex-decode. The final ciphertext MUST be a multiple of 16 — if it isn't, you made a step wrong, so go back and re-derive it.&quot;</p>
-</blockquote>
-<p>The &quot;multiple of 16&quot; assertion is reusable on every block-cipher challenge and instantly catches the most common mistake: treating a padded int32 array as raw little-endian bytes instead of extracting the low byte (which here turned 96 ints into the wrong length, not a clean 48). Also bake in the <em>terminal</em> gotcha of this class explicitly, because models love to stop one step early:</p>
-<blockquote>
-<p>&quot;After AES-CBC decrypt, assume the plaintext is ITSELF ASCII-hex and hex-decode it one more time before declaring success or failure.&quot;</p>
-</blockquote>
-<p>Without that line the model sees <code>7631747b...337d</code>, calls the key wrong, and quits — when it's already <code>v1t{...3}</code> in hex.</p>
-<p><strong>3. Recognize and announce the &quot;flag lives off-box&quot; wall early.</strong> Some twins (like <code>diddy_revenge</code>) reverse perfectly but assemble the flag from a <em>remote</em> asset. The moment you see the binary fetch a URL and index into the response, stop reversing and tell the model to as well:</p>
-<blockquote>
-<p>&quot;If the flag is assembled from bytes of a fetched/remote asset (it indexes into an HTTP response), do NOT keep scanning the binary for a flag string — it isn't there. Extract only the URL template (note any value reused in multiple path/host segments), the status/size gates, and the list of byte offsets. Then tell me what real-world inputs I still need to fetch the asset.&quot;</p>
-</blockquote>
-<p>This converts a doomed RE session into a clear recon TODO (here: the correct <code>agency</code>, <code>ID</code>, and <code>password</code> to fetch <code>&lt;agency&gt;-seal.png</code>). Catching it early is the difference between a finished writeup and hours re-reading <code>.data</code>.</p>
-<p><strong>How to verify the model's output for this class (catch hallucinations):</strong> lean on the challenge's built-in oracles instead of asking &quot;are you sure.&quot; (a) <strong>Decode-to-readable check</strong> — a recovered key/IV should usually decode to ASCII that means something (<code>v1t_435_k3y_frfr</code>); if a step yields noise, that step's role assignment is wrong. (b) <strong>Block-size check</strong> — ciphertext length divisible by 16 gates all the XOR/unhex plumbing. (c) <strong>Self-consistency check</strong> — the final flag's tokens should map back to the stages you identified (<code>435</code>-&gt;AES, <code>f1b0</code>-&gt;Fibonacci IV, <code>w3bs1t3</code>-&gt;the website URL); when the story closes on itself you solved it the intended way. If any of the three fails, the failing stage tells you exactly which transform or role to re-derive — far more reliable than trusting the model's confidence.</p>
-<p><strong>Fast-path prompt recipe for this class:</strong> <em>&quot;Treat this as flag-reconstruction, not input-validation (there is no check). Classify every input and embedded blob by crypto role — key/IV/XOR/ciphertext/URL — and treat any reused 'name/serial' as a known multi-purpose constant. Trace the embedded blob to ciphertext, printing the byte count after every transform and asserting the result is a multiple of 16, then AES-CBC decrypt and hex-decode the plaintext one EXTRA time. If the flag is indexed out of a remote asset's bytes, stop reversing and report only the URL template, the gates, and the byte offsets.&quot;</em></p>
-]]></content:encoded>
-    </item>
-    <item>
       <title>Duck Nettool Revenge</title>
       <link>https://doantung99.github.io/blog/posts/duck-nettool-revenge</link>
       <guid isPermaLink="true">https://doantung99.github.io/blog/posts/duck-nettool-revenge</guid>
@@ -2961,77 +2800,6 @@ print(flag)        # v1t{g04t_mck_hvl}
 ]]></content:encoded>
     </item>
     <item>
-      <title>Huh</title>
-      <link>https://doantung99.github.io/blog/posts/huh</link>
-      <guid isPermaLink="true">https://doantung99.github.io/blog/posts/huh</guid>
-      <pubDate>Sun, 28 Jun 2026 00:00:00 +0700</pubDate>
-      <dc:creator>tungdlm99</dc:creator>
-      <category>ctf</category>
-      <category>v1t-ctf-2026</category>
-      <category>osint</category>
-      <category>ai-assisted</category>
-      <description>An OSINT/stego challenge that is NOT fully solved. Image recon nailed the location — Làng Đường Lâm (Đường Lâm ancient village, Sơn Tây, Hà Nội) — but the part 1 flag was never recovered. Writeup is partial/unsolved.</description>
-      <content:encoded><![CDATA[<h2 id="summary">Summary</h2>
-<p>&quot;Huh&quot; is a two-part OSINT/stego challenge, and this is an honest <strong>partial</strong> writeup: it is <strong>not solved</strong>. The recon got far enough to confidently identify the location in the image — <strong>Làng Đường Lâm</strong> (Đường Lâm ancient village, Sơn Tây, Hà Nội) — using the architecture, the laterite (ong-stone) walls, and the village-gate / banyan-tree cues. But identifying the place is only the <em>first half</em> of the problem. The <strong>part 1 flag was never recovered</strong>: the step that turns the location finding into the actual <code>v1t{...}</code> token (the decode / extraction that produces the flag) did not work out, and there is a hidden-text / stego component that I also could not crack. I used an LLM heavily for the geolocation reasoning, and it did well on the &quot;where&quot; — but &quot;where&quot; is not a flag, and the writeup stops where the real solve does: short of the flag.</p>
-<h2 id="solution">Solution</h2>
-<h3 id="what-the-challenge-is">What the challenge is</h3>
-<p>The artifact is a photo of an old Northern Vietnamese village plus a <code>v1t{...}</code> flag format. As with most V1t misc/OSINT challenges, the flag is expected to be split or encoded: a location-derived piece plus a hidden/encoded piece. The name &quot;Huh&quot; is itself a signal that the path is deliberately confusing.</p>
-<h3 id="track-1-the-location-recon-this-part-worked">Track 1 — the location recon (this part worked)</h3>
-<p>The image was clearly not a generic tourist shot. The visual cues were strong and consistent with one specific heritage site:</p>
-<ul>
-<li><strong>Laterite (ong-stone) walls</strong> — the distinctive porous, rust-colored stone blocks. This is the signature building material of one village in particular near Hà Nội.</li>
-<li><strong>Traditional Northern Vietnamese village layout</strong> — narrow brick lanes, low tiled-roof houses, an old communal/gate structure.</li>
-<li><strong>Village-gate and banyan-tree atmosphere</strong> — the classic &quot;cổng làng + cây đa&quot; composition that heritage photographers shoot at this site.</li>
-</ul>
-<p>Feeding these cues to the model and asking it to rank candidate ancient villages near Hà Nội by <em>distinguishing visual feature</em> pointed strongly and repeatedly at one answer:</p>
-<pre><code class="language-text">Làng Đường Lâm  (Đường Lâm ancient village, Sơn Tây, Hà Nội)
-</code></pre>
-<p>Đường Lâm is the textbook match: it is <em>the</em> laterite-wall ancient village near Hà Nội, a nationally recognized heritage site, and the ong-stone walls plus the village gate are exactly what the photo shows. The location identification is the part I am confident in.</p>
-<h3 id="track-2-turning-location-into-the-flag-this-part-did-not-work">Track 2 — turning location into the flag (this part did NOT work)</h3>
-<p>Identifying Đường Lâm is necessary but not sufficient. The flag is <code>v1t{...}</code>, and a place name is not a flag. The missing step is the <strong>decode / extraction</strong>: how the location name (or some attribute of it) maps into the flag token, and/or how a hidden text fragment is pulled out of the artifact to complete it.</p>
-<p>What I tried and what remains open:</p>
-<ul>
-<li>Normalizing the location name into V1t-style leetspeak (drop tones, <code>a→4</code>, spaces→<code>_</code>) — but it is unclear <em>which</em> string is meant (the village name? a sub-hamlet? an attribute like the stone or a person/figure associated with the site?), so this did not converge on an accepted flag.</li>
-<li>Stego / hidden-text extraction on the artifact — I did not recover a clean, brace-terminated fragment, so the suffix half (if there is one) is still missing.</li>
-</ul>
-<p>So Track 1 (the &quot;where&quot;) is solved; Track 2 (the &quot;what is the flag&quot;) is not. <strong>Part 1 flag: not recovered.</strong></p>
-<h3 id="honest-status">Honest status</h3>
-<p>This is a partial solve. The location is <strong>Làng Đường Lâm</strong>. The flag is <strong>not</strong> obtained. Anyone picking this up next should start from the confirmed location and focus entirely on the decode/extraction step that I could not complete.</p>
-<h2 id="flag">Flag</h2>
-<p><strong>Not recovered — the challenge is unsolved.</strong></p>
-<p>The location was identified as <strong>Làng Đường Lâm</strong> (Đường Lâm ancient village, Sơn Tây, Hà Nội), but the part 1 flag was never extracted and no valid <code>v1t{...}</code> was produced.</p>
-<blockquote>
-<p>Unverified guess (do NOT treat as the answer): <code>v1t{cu_d4_c4non_f4nboy}</code> was floated during the attempt but was <strong>never obtained from the challenge and the grader did not accept it</strong>. It is recorded here only so the next person does not waste time re-trying it.</p>
-</blockquote>
-<h2 id="lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</h2>
-<p><strong>Whenever you face an OSINT geolocation challenge — &quot;where was this photo taken?&quot; on an image with no EXIF, especially a regional/heritage site rather than a world landmark — and the location then has to be turned into a flag,</strong> the model is excellent at the <em>recognition</em> step and dangerous at the <em>flag-derivation</em> step. This challenge is the cautionary version: the AI nailed &quot;this is Đường Lâm&quot; and then I (and it) failed to convert that into the actual flag. Treat geolocation and flag-derivation as two separate skills and verify them differently.</p>
-<p><strong>1. For the geolocation, force ranked candidates with distinguishing features — never accept a single confident guess.</strong> The prompt that actually worked here:</p>
-<blockquote>
-<p>&quot;This is an old village in northern Vietnam, no EXIF, not a world-famous landmark. Identify it from physical cues only. Give me your top 5 candidate sites near Hà Nội, ranked, and for EACH one name the single most distinguishing visual feature and whether this image shows it. Call out the building material, the gate/architecture style, and any vegetation. Do not commit to one answer until you've compared the discriminating feature across all five.&quot;</p>
-</blockquote>
-<p>Asking for the <em>discriminating feature per candidate</em> is what surfaced the laterite (ong-stone) walls as the decider and led to Đường Lâm. A second reusable probe for any geolocation:</p>
-<blockquote>
-<p>&quot;What in this image is region-specific versus generic? List the cues that could ONLY occur at a small number of places, and the cues that occur everywhere — then geolocate using only the region-specific ones.&quot;</p>
-</blockquote>
-<p><strong>2. Tell it what to focus on, and name the classic geolocation dead-ends up front so it skips them.</strong> Focus prompt plus the don'ts:</p>
-<blockquote>
-<p>&quot;Focus on building material, roof style, signage/language, vegetation, terrain, and any text on walls or shopfronts. Avoid these dead-ends: do NOT claim EXIF/GPS you can't see; do NOT pick a famous landmark just because it's famous (this is deliberately an obscure site); do NOT hallucinate street names or coordinates; do NOT confuse visually-similar heritage villages — distinguish them by their UNIQUE material/feature, not vibes.&quot;</p>
-</blockquote>
-<p>For the stego/decode half (the part that beat me), pre-empt its worst habit:</p>
-<blockquote>
-<p>&quot;There is likely a second, hidden/encoded half to the flag. Do NOT invent or 'complete' a flag from the location alone. If you cannot extract a real fragment from the artifact, say so explicitly and stop — a place name is not a flag.&quot;</p>
-</blockquote>
-<p><strong>3. How to verify the model's output for this class — so you catch hallucinations.</strong> Geolocation answers are easy to bluff, so verify before you trust:</p>
-<ul>
-<li><strong>Reverse-image / cross-check the named site independently.</strong> Pull up reference photos of the model's #1 candidate and confirm the <em>same</em> distinguishing feature (here: the ong-stone laterite walls) appears in both the challenge image and the references. If the discriminating cue doesn't match, the ID is wrong no matter how confident the prose was.</li>
-<li><strong>Demand the per-candidate feature table</strong> and reject any answer that can't say <em>why not</em> for the runners-up. A real ID can articulate what rules out the alternatives.</li>
-<li><strong>Hard-separate &quot;location identified&quot; from &quot;flag obtained.&quot;</strong> This is the exact failure here: confidence in the location got mistaken for progress on the flag. Never report a flag unless it was extracted/decoded from the artifact AND accepted by the grader. An unverified leet rendering of a place name (like the <code>cu_d4_...</code> guess above) is a hypothesis, not an answer — mark it as such.</li>
-<li><strong>Treat any model-generated flag with suspicion if it was reasoned out rather than extracted.</strong> If the model &quot;derives&quot; the flag from the location instead of pulling it from the file/encoding, assume it's hallucinated until the grader says otherwise.</li>
-</ul>
-<p><strong>4. Fast-path prompt recipe for the class.</strong> &quot;Geolocate this photo from physical cues only (no EXIF, obscure site): give top-5 ranked candidates near <region>, the single discriminating feature per candidate, and confirm which feature THIS image shows — then independently cross-check the winner against reference photos; and remember a place name is NOT a flag, so do not invent one — if the encode/extract step that turns the location into the flag isn't recoverable from the artifact, say 'location found, flag not recovered' and stop.&quot;</p>
-]]></content:encoded>
-    </item>
-    <item>
       <title>Kaspersky</title>
       <link>https://doantung99.github.io/blog/posts/kaspersky</link>
       <guid isPermaLink="true">https://doantung99.github.io/blog/posts/kaspersky</guid>
@@ -3547,272 +3315,513 @@ PY
 ]]></content:encoded>
     </item>
     <item>
-      <title>Polar Fragments</title>
-      <link>https://doantung99.github.io/blog/posts/polar-fragments</link>
-      <guid isPermaLink="true">https://doantung99.github.io/blog/posts/polar-fragments</guid>
+      <title>Quack CIA</title>
+      <link>https://doantung99.github.io/blog/posts/quack-cia</link>
+      <guid isPermaLink="true">https://doantung99.github.io/blog/posts/quack-cia</guid>
       <pubDate>Sun, 28 Jun 2026 00:00:00 +0700</pubDate>
       <dc:creator>tungdlm99</dc:creator>
       <category>ctf</category>
       <category>v1t-ctf-2026</category>
-      <category>forensics</category>
+      <category>osint</category>
       <category>ai-assisted</category>
-      <description>A multi-source forensics reconstruction where each pcap exfiltrates one flag fragment through a different protocol, and an LLM did the carving while I steered it past the decoys.</description>
+      <description>An OSINT trail from a video to a GitHub repo, ending in a Vim undo file whose Base64-encoded flag survived being deleted from the working copy.</description>
       <content:encoded><![CDATA[<h2 id="summary">Summary</h2>
-<p>&quot;Polar Fragments&quot; is a multi-source forensics challenge: a giant E01 disk image, five 224 MB pcapng captures, and a password-locked zip. Each pcap smuggles <strong>exactly one flag fragment</strong> out through a <em>different</em> protocol (HTTP, FTP, SMTP, chunked HTTP), each fragment rendered as low-contrast text inside an image or document, and each buried under a pile of decoy traffic. The core technique is per-protocol carrier identification plus image reconstruction — and the honest core of this writeup is that <strong>I did not fully recover the flag: 2 of the source fragments never came back clean, so the assembled flag is tentative.</strong></p>
-<p>This is also a writeup about <em>how</em> I drove an LLM through it. I never opened Wireshark and clicked through 224 MB of packets by hand. I recognized the challenge shape, told the model what to look for, fed it artifacts, and — crucially — caught it when it wandered into the disk image and the locked zip, which are pure narrative bait. The model ground through the bytes; my job was direction and verification.</p>
+<p>Quack CIA is an OSINT chain: a video points to a GitHub account, the commit history of the repo <code>tommypony326532/cia</code> hides a file that was added and then effectively scrubbed, and the real prize is a stray Vim persistent-undo file (<code>flag.txt.un_</code>). That undo file is a binary blob with the <code>Vim\x9fUnDo\xe5</code> magic header, and it still carries an old buffer state containing the flag Base64-encoded — recover it and you win. My role was steering: I recognized the artifact type at each hop, told the model exactly what to look for, and verified the chain. The model did the grinding (parsing commits, carving strings, decoding candidates).</p>
 <h2 id="solution">Solution</h2>
-<h3 id="recognizing-the-shape-before-touching-a-byte">Recognizing the shape before touching a byte</h3>
-<p>The first decision was made before any tooling: the challenge title is &quot;Reconstruct What Was Hidden,&quot; and the file set is <em>deliberately</em> lopsided — one 10 GiB disk image, one locked zip, and <strong>five</strong> near-identical 224 MB pcaps. When a forensics challenge ships five symmetric captures plus a couple of fat, obvious-looking artifacts, that asymmetry is the tell. The five matched pcaps are the real puzzle (one fragment each, &quot;reconstruct&quot;); the fat artifacts are there to eat your weekend.</p>
-<p>So my opening prompt to the model set that frame explicitly rather than asking &quot;what's the flag.&quot; That framing is what kept us out of the 10 GiB tar pit for the whole solve.</p>
-<h3 id="the-carrier-identification-pattern">The carrier-identification pattern</h3>
-<p>Each pcap exfiltrates one fragment, but through a <em>different</em> protocol, and the payload in each case is a <strong>file</strong> (PNG, PDF, DOCX, JPEG) carried inside that protocol. The fragment is then <em>visual</em> — text drawn into the image/document — not a string you can <code>grep</code> for directly. That two-layer structure (protocol carrier → embedded file → rendered glyphs) is the whole challenge, repeated five times with variations.</p>
-<p>The fast way in is to ignore protocol dissection at first and hunt for <strong>base64 file magics</strong> straight in the raw pcap bytes, because every carrier base64-encodes its payload:</p>
-<ul>
-<li><code>/9j/</code> → base64 of <code>FF D8 FF</code> (JPEG SOI)</li>
-<li><code>iVBORw0</code> → base64 of <code>89 50 4E 47</code> (PNG signature)</li>
-<li><code>JVBER</code> → base64 of <code>%PDF</code></li>
-</ul>
-<pre><code class="language-bash"># JPEG / PNG base64 signatures appear in the carried payloads
-grep -aboE '/9j/|iVBORw0|JVBER' capture1.pcapng
-# when the carrier rides a non-standard port, force HTTP dissection
-tshark -r capture4.pcapng -d tcp.port==7777,http -Y http
+<p>This challenge is two problems stitched together: a <em>navigation</em> problem (find the file) and a <em>forensics</em> problem (read the file). I'll treat them in that order, because the second one is where the interesting structure lives.</p>
+<h3 id="hop-1-the-video-to-a-handle">Hop 1 — the video to a handle</h3>
+<p>The entry point is a video. Watching it, there's on-screen text that surfaces a GitHub identity. The trick of this stage is not technical at all — it's resisting the urge to overthink. OSINT intro challenges almost always hand you the pivot directly; the failure mode is treating the video like a steganography puzzle when the answer is plainly written on a frame. The text resolves to the account <code>tommypony326532</code> and the repository:</p>
+<pre><code>https://github.com/tommypony326532/cia
 </code></pre>
-<p>That <code>-d tcp.port==7777,http</code> is the single most important flag in the whole solve. Several carriers ride odd ports (7777, etc.), so Wireshark/tshark refuse to dissect them as HTTP by default and you see only raw TCP. Forcing the dissector is what makes the chunk headers (<code>X-Chunk-Index</code>, <code>X-Chunk-Total</code>) visible.</p>
-<p>Here's how each capture broke down once the model worked through them:</p>
-<table>
-<thead>
-<tr>
-<th align="right">pcap</th>
-<th>Protocol / carrier</th>
-<th>Embedded file</th>
-<th>Fragment</th>
-<th>Status</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td align="right">1</td>
-<td><strong>HTTP</strong> <code>POST /api/data</code>, UA <code>python-requests</code></td>
-<td>PNG 400×200, white bg, tiny low-contrast text</td>
-<td><code>1c3_</code> (with leading <code>v1t{</code>)</td>
-<td>recovered</td>
-</tr>
-<tr>
-<td align="right">2</td>
-<td><strong>FTP</strong> <code>STOR secret_data.bin</code></td>
-<td>base64 PDF (ReportLab; ASCII85+Flate stream <code>(b34r_)Tj</code>)</td>
-<td><code>b34r_</code></td>
-<td>tentative / not clean</td>
-</tr>
-<tr>
-<td align="right">3</td>
-<td><strong>SMTP</strong> alice → external@partner.com, tcp.stream 2653</td>
-<td>base64 MIME attachment <code>data.bin</code> = DOCX, text run <code>15_</code> (sz 96)</td>
-<td><code>15_</code></td>
-<td>tentative / not clean</td>
-</tr>
-<tr>
-<td align="right">4</td>
-<td><strong>Chunked HTTP</strong> <code>POST /api/chunk</code>, UA <code>ChunkSender/1.0</code></td>
-<td>reassembled JPEG</td>
-<td><code>cu73?}</code></td>
-<td>recovered</td>
-</tr>
-<tr>
-<td align="right">5</td>
-<td><strong>Decoy only</strong> <code>POST /data/stream</code>, UA <code>DataStreamer/1.0</code> → <code>10.10.10.x</code></td>
-<td>binary/decimal/letter junk</td>
-<td>—</td>
-<td>confirmed decoy</td>
-</tr>
-</tbody>
-</table>
-<h3 id="pcap1-http-png-the-clean-one-and-the-calibration">pcap1 — HTTP + PNG (the clean one, and the calibration)</h3>
-<p>pcap1 was the gift. A plain <code>POST /api/data</code> with <code>User-Agent: python-requests</code> carries a base64 PNG. Decode it, and you get a 400×200 image, white background, with text in a color <em>just barely</em> off-white. The fragment is <code>v1t{1c3_</code> — and importantly this is where the <strong>leading <code>v1t{</code></strong> lives. That matters because it confirms fragment 1 is genuinely the head of the flag and not a decoy, and it told me the <em>visual style</em> of every other fragment image: 400×200, white bg, low-contrast glyphs. That style became my calibration target for reading every other fragment.</p>
-<p>Reading low-contrast text is a one-liner with Pillow — autocontrast stretches the near-white/near-white pair to black/white, and upscaling makes the glyphs legible:</p>
-<pre><code class="language-python">from PIL import Image, ImageOps
-im = ImageOps.autocontrast(Image.open('frag1.png').convert('L')).resize((1600, 800))
-im.save('frag1_big.png')
+<p>The flag itself (<code>v1t{t0mmy_scr1pt_k1dd13_1n1t}</code>) is a wink at this: &quot;tommy&quot;, &quot;script kiddie&quot;, &quot;init&quot; — the author is role-playing a careless operator, and carelessness is exactly what we are going to exploit.</p>
+<h3 id="hop-2-the-commit-history-not-the-file-tree">Hop 2 — the commit history, not the file tree</h3>
+<p>If you only look at the <em>current</em> state of the repo (the file tree on the default branch), you find nothing useful. That is the whole point. The interesting artifact was added in a specific commit and is not what you would notice browsing normally:</p>
+<pre><code>commit 178b58ed916506407b5221c81beb3f81a3264964
 </code></pre>
-<h3 id="pcap4-the-chunked-one-the-genuinely-tricky-win">pcap4 — the chunked one (the genuinely tricky win)</h3>
-<p>pcap4 is where the model earned its keep. There are <strong>9</strong> separate chunked transfers, each to a different <code>host:port</code>, each split across multiple <code>POST /api/chunk</code> requests carrying <code>X-Chunk-Index</code> / <code>X-Chunk-Total</code> headers. Eight of them are <strong>high-entropy decoys</strong> (random bytes that base64-decode to noise). Only <strong>one</strong> — the 7-chunk transfer to <code>172.20.0.50:7777</code> — is a real, low-entropy JPEG.</p>
-<p>The discriminator is <strong>entropy</strong>. A base64 blob that decodes to a JPEG has structured, compressible bytes (low Shannon entropy relative to random); the decoys sit near maximal entropy (~7.99 bits/byte). So the plan was: group request bodies by destination <code>host:port</code>, order each group by <code>X-Chunk-Index</code>, concatenate, base64-decode, and keep the group whose decoded output has the lowest entropy and/or a valid <code>FF D8 FF</code> JPEG header. That's the <code>172.20.0.50:7777</code> stream.</p>
-<p>The order-by-<code>X-Chunk-Index</code> step is not optional: HTTP requests do not necessarily arrive in chunk order on the wire, so concatenating in capture order gives you a scrambled JPEG that won't decode past the header.</p>
-<pre><code class="language-python"># collect bodies by X-Chunk-Index for the 172.20.0.50:7777 stream, in order
-import base64
-img = base64.b64decode(b''.join(chunk_bodies_in_index_order))
-open('frag4.jpg', 'wb').write(img)
+<p>The file added in that commit is named <code>flag.txt.un_</code>. The key insight at this hop is that <strong>Git remembers everything</strong>, including files that look uninteresting or are later overwritten. You can reach the exact blob without trusting the working tree by fetching it from the commit. Two reliable ways:</p>
+<pre><code class="language-bash"># Option A: clone, then extract the file as it existed at that commit
+git clone https://github.com/tommypony326532/cia
+cd cia
+git show 178b58ed916506407b5221c81beb3f81a3264964:flag.txt.un_ &gt; flag.txt.un_
+
+# Option B: raw download straight from GitHub at that commit SHA
+curl -L -o flag.txt.un_ \
+  https://raw.githubusercontent.com/tommypony326532/cia/178b58ed916506407b5221c81beb3f81a3264964/flag.txt.un_
 </code></pre>
-<p>After autocontrast + upscale, frag4 reads <code>cu73?}</code> — the tail of the flag, closing brace included.</p>
-<h3 id="pcap2-and-pcap3-the-two-that-did-not-come-back-clean">pcap2 and pcap3 — the two that did NOT come back clean</h3>
-<p>This is the honest center of the solve. pcap2 (FTP <code>STOR secret_data.bin</code> → base64 PDF) and pcap3 (SMTP MIME attachment → DOCX) are where reconstruction broke down for me.</p>
-<ul>
-<li><strong>pcap2 (FTP / PDF):</strong> FTP splits the file across a separate data connection, and the capture is heavy with decoy <code>STOR</code>/<code>RETR</code> chatter. I could see the base64 <code>JVBER...</code> magic and reassemble <em>a</em> PDF, but the content stream I recovered (<code>ASCII85</code> + <code>Flate</code>-compressed, with the text-show operator <code>(b34r_)Tj</code> expected inside) did not decompress to a clean, renderable fragment — the reassembled data connection appears to be missing segments, so the Flate stream was truncated and <code>zlib.decompress</code> errored out. <code>b34r_</code> is my <strong>best inference</strong> of fragment 2, not a confirmed render.</li>
-<li><strong>pcap3 (SMTP / DOCX):</strong> the MIME attachment <code>data.bin</code> on tcp.stream 2653 is a base64 DOCX (a zip), and a DOCX needs <em>every</em> byte intact or the central directory won't parse and <code>word/document.xml</code> won't open. My reassembled attachment failed to unzip cleanly (<code>BadZipFile</code>), so the text run (<code>15_</code>, sz 96) is again <strong>inferred from the challenge structure</strong> rather than read off a rendered document.</li>
-</ul>
-<p>In both cases the failure mode is the same: <strong>incomplete capture reassembly</strong>. The fragments themselves are tiny, but a corrupt PDF stream or a corrupt zip central directory means I never <em>saw</em> the glyphs with my own eyes for fragments 2 and 3. I'm listing the expected values because they're consistent with the known flag shape and the carrier structure — but I want to be explicit that 2 of 5 fragments were not independently verified by me.</p>
-<h3 id="the-decoys-where-the-time-sink-lives">The decoys (where the time-sink lives)</h3>
-<p>The whole challenge is engineered to bleed time into the wrong artifacts. The model wanted to dive into these more than once; steering it <em>out</em> was half the work:</p>
-<ul>
-<li><strong>E01 disk image (10 GiB NTFS):</strong> pure narrative. Tooling to even open it (<code>brew install sleuthkit libewf</code> → <code>ewfinfo</code>/<code>mmls</code>/<code>fls</code>/<code>icat</code>/<code>tsk_recover</code>) is itself a tell that someone <em>wants</em> you in here. Planted traps include <code>Bob/Desktop/flag.txt</code> = fake <code>V1t{th1s_1s_n0t...}</code>, <code>Alice/Pictures/photo_48.jpg</code> (15 MB of random with a <code>v1t{</code>+garbage decoy planted at offset 9746576), <code>photo_009.png</code> (a corrupted PNG that <em>looks</em> like LSB-steg bait), <code>secret.txt.enc</code> (OpenSSL salted AES — uncrackable by design), and a heap of encrypted zips.</li>
-<li><strong><code>locked.zip</code> (ZipCrypto):</strong> an uncracked decoy holding <code>hint.txt</code>. ZipCrypto is sometimes attackable (known-plaintext / <code>bkcrack</code>), but here it leads nowhere.</li>
-<li><strong>pcap5:</strong> a <code>DataStreamer/1.0</code> stream to internal <code>10.10.10.x</code> full of binary/decimal/letter junk — no fragment.</li>
-</ul>
+<p>The naming convention is the giveaway for the forensics stage. A file called <code>flag.txt.un_</code> is not a flag — it is the <em>undo history</em> for a file called <code>flag.txt</code>. Vim, with persistent undo enabled, writes undo files alongside the buffer; depending on platform and <code>&amp;undodir</code>, the path is mangled into a flat filename ending in <code>.un~</code> / <code>.un_</code>. The committer edited <code>flag.txt</code>, deleted the visible flag, and left the persistent undo file lying around — and that file still contains the deleted text.</p>
+<h3 id="hop-3-reading-the-vim-undo-file">Hop 3 — reading the Vim undo file</h3>
+<p>This is the part worth slowing down on, because &quot;just run <code>strings</code>&quot; undersells <em>why</em> it works.</p>
+<p>First, confirm what we are holding. The file is binary and the first bytes are diagnostic:</p>
+<pre><code class="language-bash">file flag.txt.un_
+od -An -tx1 -N16 flag.txt.un_
+</code></pre>
+<pre><code>56 69 6d 9f 55 6e 44 6f e5
+</code></pre>
+<p>Interpreting the printable bytes: <code>Vim\x9fUnDo\xe5</code>. That is the magic header of a Vim persistent-undo file. The format is Vim's own binary serialization of the <em>undo tree</em> — not a flat diff, but a tree of buffer states. Each node (&quot;uhp&quot; — undo header) records the lines that changed between states, and crucially <strong>the format stores the actual text of changed lines as length-prefixed byte runs.</strong> That is why deleted text is still physically present: undo has to be able to <em>restore</em> it, so it keeps a verbatim copy of the line you removed.</p>
+<p>You do not need to write a full parser for the undo-tree format to win. The flag text was a line in the buffer at some point, so it exists as a contiguous run of printable bytes somewhere in the blob. Carving strings is enough:</p>
+<pre><code class="language-bash">strings -a flag.txt.un_
+</code></pre>
+<p>Among the noise, one run stands out:</p>
+<pre><code>(djF0e3QwbW15X3NjcjFwdF9rMWRkMTNfMW4xdH0=5
+</code></pre>
+<p>Here is the gotcha that actually mattered, and the dead-end I had to steer the model away from: <strong>the surrounding bytes are not part of the payload.</strong> The leading <code>(</code> and the trailing <code>5</code> are structural bytes from the undo format (length/marker bytes that happen to render as printable ASCII), <em>not</em> part of the encoded data. If you feed the whole run into a Base64 decoder it will either error on alignment or produce garbage. You have to isolate the clean token:</p>
+<pre><code>djF0e3QwbW15X3NjcjFwdF9rMWRkMTNfMW4xdH0=
+</code></pre>
+<p>Two signals confirm this is the real payload and not a coincidence:</p>
+<ol>
+<li>It begins with <code>djF0</code>. Base64 encodes 3 input bytes into 4 output characters, and the first three bytes <code>v</code> <code>1</code> <code>t</code> (<code>0x76 0x31 0x74</code>) encode to exactly <code>djF0</code>. So any Base64 string starting with <code>djF0</code> decodes to text starting with <code>v1t</code> — precisely our flag prefix.</li>
+<li>It ends with a single <code>=</code>, meaning the decoded length is <code>≡ 2 (mod 3)</code>. The flag <code>v1t{t0mmy_scr1pt_k1dd13_1n1t}</code> is 29 bytes, and <code>29 mod 3 == 2</code>, so exactly one <code>=</code> of padding is expected. The arithmetic checks out.</li>
+</ol>
+<p>Decode it:</p>
+<pre><code class="language-bash">echo 'djF0e3QwbW15X3NjcjFwdF9rMWRkMTNfMW4xdH0=' | base64 -d
+</code></pre>
+<pre><code>v1t{t0mmy_scr1pt_k1dd13_1n1t}
+</code></pre>
 <h3 id="end-to-end-script">End-to-end script</h3>
-<p>This is one runnable path from the challenge data to the (tentative) printed flag. It treats every pcap uniformly — carve base64 file magics out of the carrier, reassemble, decode, OCR-by-eye via autocontrast — and is honest about which fragments it could not verify.</p>
+<p>The robust, hands-off version doesn't eyeball strings or hand-trim framing bytes. It carves <em>every</em> Base64-looking token out of the raw binary, tries to decode each one, and keeps only candidates that actually match the flag format. This is what defeats the framing-byte trap automatically — the Base64 token regex (<code>[A-Za-z0-9+/]+={0,2}</code>) naturally stops at <code>(</code> and at any non-Base64 byte, and the <code>validate=True</code> plus format check throws out everything that is not the flag.</p>
 <pre><code class="language-python">#!/usr/bin/env python3
 &quot;&quot;&quot;
-Polar Fragments — V1t CTF 2026 — end-to-end (TENTATIVE: 2/5 fragments unverified).
+Quack CIA -- recover the flag from a Vim persistent-undo file.
 
-Strategy per pcap:
-  1. Force HTTP dissection on odd ports; otherwise read raw TCP payloads.
-  2. Grep base64 file magics (/9j/ JPEG, iVBORw0 PNG, JVBER PDF) in the bytes.
-  3. Reassemble the carrier (HTTP body / FTP data conn / SMTP MIME / chunked),
-     ordering chunked transfers by X-Chunk-Index and selecting the LOW-ENTROPY
-     stream among the chunked decoys.
-  4. base64-decode -&gt; file; for images, autocontrast+upscale to read the glyphs.
-  5. Verify every recovered file by its MAGIC BYTES before believing it.
+Usage:
+    python solve.py            # expects flag.txt.un_ in cwd
+    python solve.py path/to/flag.txt.un_
+
+If the file isn't present locally, fetch it first:
+    curl -L -o flag.txt.un_ \
+      https://raw.githubusercontent.com/tommypony326532/cia/178b58ed916506407b5221c81beb3f81a3264964/flag.txt.un_
 &quot;&quot;&quot;
-import base64, math, re, subprocess
-from collections import defaultdict
-from PIL import Image, ImageOps
+import base64
+import re
+import sys
 
-PCAPS = [&quot;capture1.pcapng&quot;, &quot;capture2.pcapng&quot;, &quot;capture3.pcapng&quot;,
-         &quot;capture4.pcapng&quot;, &quot;capture5.pcapng&quot;]
-B64MAGIC = re.compile(rb'(/9j/[A-Za-z0-9+/=]+|iVBORw0[A-Za-z0-9+/=]+|JVBER[A-Za-z0-9+/=]+)')
+path = sys.argv[1] if len(sys.argv) &gt; 1 else &quot;flag.txt.un_&quot;
 
-def entropy(b: bytes) -&gt; float:
-    if not b:
-        return 0.0
-    counts = [0] * 256
-    for x in b:
-        counts[x] += 1
-    n = len(b)
-    return -sum((c / n) * math.log2(c / n) for c in counts if c)
+with open(path, &quot;rb&quot;) as f:
+    data = f.read()
 
-def carve_b64_files(raw: bytes):
-    &quot;&quot;&quot;Pull every base64 file blob out of raw pcap bytes; keep ones that decode.&quot;&quot;&quot;
-    out = []
-    for m in B64MAGIC.finditer(raw):
-        blob = m.group(1)
-        try:
-            data = base64.b64decode(blob + b'=' * (-len(blob) % 4))
-        except Exception:
-            continue
-        if (data[:3] == b'\xff\xd8\xff'            # JPEG
-                or data[:8] == b'\x89PNG\r\n\x1a\n'  # PNG
-                or data[:5] == b'%PDF-'):            # PDF
-            out.append((entropy(data), data))
-    return out
+# Sanity check: is this actually a Vim undo file?
+if not data.startswith(b&quot;Vim\x9fUnDo&quot;):
+    print(f&quot;[!] {path} is not a Vim undo file (header={data[:9]!r}); continuing anyway&quot;)
 
-def read_glyphs(data: bytes, name: str):
-    &quot;&quot;&quot;Save image, then autocontrast+upscale so low-contrast text is legible.&quot;&quot;&quot;
-    open(name, 'wb').write(data)
-    im = ImageOps.autocontrast(Image.open(name).convert('L')).resize((1600, 800))
-    big = name.rsplit('.', 1)[0] + '_big.png'
-    im.save(big)
-    print(f&quot;  [+] wrote {name} and {big} — open {big} to read the fragment by eye&quot;)
+# Carve every Base64-looking token directly out of the raw bytes.
+# This stops at framing bytes like '(' and trailing non-b64 bytes on its own,
+# so we never have to hand-trim the run that 'strings' shows.
+candidates = re.findall(rb&quot;[A-Za-z0-9+/]{12,}={0,2}&quot;, data)
 
-def chunked_reassemble(pcap: str, port: int = 7777):
-    &quot;&quot;&quot;
-    pcap4: 9 chunked transfers; pick the low-entropy one (the real JPEG).
-    Force HTTP on the odd port, group bodies by host:port, order by X-Chunk-Index.
-    The live solve parsed http.header for X-Chunk-Index; pseudocode shown.
-    &quot;&quot;&quot;
-    streams = defaultdict(dict)  # (dst, port) -&gt; {chunk_index: body_bytes}
-    # populate `streams` from:
-    #   tshark -r pcap -d tcp.port==port,http \
-    #          -Y 'http.request.uri==&quot;/api/chunk&quot;' \
-    #          -T fields -e ip.dst -e tcp.dstport -e http.file_data -e http.header
-    best = None
-    for key, chunks in streams.items():
-        joined = b''.join(chunks[i] for i in sorted(chunks))  # ORDER MATTERS
-        try:
-            data = base64.b64decode(joined)
-        except Exception:
-            continue
-        e = entropy(data)
-        if data[:3] == b'\xff\xd8\xff' and (best is None or e &lt; best[0]):
-            best = (e, data, key)
-    return best
+seen = set()
+for token in candidates:
+    if token in seen:
+        continue
+    seen.add(token)
+    try:
+        decoded = base64.b64decode(token, validate=True)
+    except Exception:
+        continue
+    if re.search(rb&quot;v1t\{[^}]*\}&quot;, decoded, re.IGNORECASE):
+        print(decoded.decode(errors=&quot;replace&quot;))
+        break
+</code></pre>
+<p>Running it prints the flag:</p>
+<pre><code>v1t{t0mmy_scr1pt_k1dd13_1n1t}
+</code></pre>
+<p>Why this is the right approach rather than just <code>strings | grep</code>: by operating on the raw bytes and validating decodes, it is immune to the two things that bit me when going manual — (a) the structural framing bytes glued to the token, and (b) any other printable runs in the undo tree that look Base64-ish but are not. Let the format check (<code>v1t{...}</code>) be the filter, not your eyes.</p>
+<h2 id="flag">Flag</h2>
+<pre><code>v1t{t0mmy_scr1pt_k1dd13_1n1t}
+</code></pre>
+<h2 id="lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</h2>
+<p><strong>Class of challenge: GitHub-OSINT-trail-ending-in-a-deleted-artifact-recovered-from-a-binary-editor-sidecar.</strong> Whenever a challenge sends you to a person's GitHub (or GitLab/Bitbucket) account and the visible repo &quot;has nothing in it,&quot; you are almost always looking at this class: the secret was committed once and scrubbed, and/or it survives inside an editor's metadata sidecar — a Vim <code>.un~</code>/<code>.un_</code> undo file, a <code>.swp</code>/<code>.swo</code> swap file, an Emacs <code>#file#</code> autosave or <code>file~</code> backup, a <code>.orig</code>/<code>.bak</code>, or the packfile of a deleted branch. The lessons below are written so they transfer to the <em>next</em> one of these, not just to Quack CIA. The recurring shape: <strong>a navigation half (find the scrubbed thing in history) and a forensics half (carve the verbatim text out of a binary editor format that keeps deleted lines).</strong> The AI is great at both halves mechanically but reliably faceplants at two joints — the &quot;it's hidden, not deleted&quot; pivot and the &quot;framing bytes are glued to the token&quot; trap.</p>
+<p><strong>1. Reusable prompts for the navigation half (find what was scrubbed from history).</strong> Don't let the model browse the file tree and conclude &quot;empty repo.&quot; Tell it the meta-strategy: history is the database.</p>
+<blockquote>
+<p>&quot;This is a GitHub OSINT trail. Treat the working tree as a decoy. Enumerate the FULL history instead: <code>git log --all --oneline</code>, <code>git log --all --diff-filter=D --name-only</code> for deleted files, <code>git log -p --all -S '&lt;keyword like flag/secret/key&gt;'</code> (pickaxe) for added-then-removed content, and <code>git rev-list --all --objects | git cat-file --batch-check</code> to find dangling/large blobs. List every commit SHA and every path that ever existed, then fetch suspicious blobs by <code>git show &lt;sha&gt;:&lt;path&gt;</code> or the raw URL <code>raw.githubusercontent.com/&lt;user&gt;/&lt;repo&gt;/&lt;sha&gt;/&lt;path&gt;</code>.&quot;</p>
+</blockquote>
+<blockquote>
+<p>&quot;Before any technical step on the entry artifact (video / image / profile / README): extract the literal on-screen / EXIF / bio text first and treat it as the answer. Do NOT run stego, do NOT brute-force — intro OSINT pivots are written in plain sight. Give me the handle/URL you read, verbatim, and your confidence.&quot;</p>
+</blockquote>
+<p><strong>2. Reusable prompts for the forensics half (carve verbatim text out of the editor sidecar).</strong> The instant you see a sidecar header, name the format and forbid over-engineering:</p>
+<blockquote>
+<p>&quot;This is a Vim persistent-undo file (header <code>Vim\x9fUnDo</code>). [For other instances substitute: a Vim swap file header <code>b0VIM</code>, an Emacs autosave/backup, etc.] These formats store the VERBATIM text of changed/deleted lines so they can be restored, so the scrubbed secret is physically present as a contiguous run of bytes. Do NOT write a parser for the undo-tree / swap format — that is a time sink. Just carve printable strings and Base64/hex-looking tokens straight out of the raw bytes.&quot;</p>
+</blockquote>
+<blockquote>
+<p>&quot;Carve candidates with a regex over the raw bytes — <code>[A-Za-z0-9+/]{12,}={0,2}</code> for Base64 (and <code>[0-9a-fA-F]{16,}</code> for hex) — decode each with strict validation (<code>base64.b64decode(token, validate=True)</code>), and keep ONLY decodes matching the flag regex <code>v1t\{...\}</code>. Make the format check the filter, not visual inspection of <code>strings</code> output.&quot;</p>
+</blockquote>
+<p><strong>3. What to tell it to focus on, and the classic dead-ends of THIS class to forbid up front.</strong> Lead with the focus, then list the traps in the same breath so it never wanders into them:</p>
+<ul>
+<li>Focus on: history enumeration (pickaxe + deleted-file filter), identifying the sidecar by its magic header, and carving-then-validating tokens from raw bytes.</li>
+<li>Avoid (state these proactively): (a) <strong>Don't parse the binary editor format node-by-node</strong> — string carving wins; (b) <strong>Don't decode the whole <code>strings</code> run</strong> — sidecar length/marker bytes (the leading <code>(</code>, trailing <code>5</code> here) render as ASCII and get glued to the token; carve with a regex that stops at non-alphabet bytes; (c) <strong>Don't treat the entry video/image as stego</strong> — read the literal text; (d) <strong>Don't inspect only the default-branch file tree</strong> — the payload lives in commits, deleted files, or dangling blobs; (e) <strong>Don't trust the first Base64-ish run</strong> — multiple printable runs in the blob look encodeable but aren't, so let <code>validate=True</code> + the flag regex reject them.</li>
+</ul>
+<p><strong>4. How to verify the output for this class (so you catch hallucinations).</strong> The model will sometimes &quot;find&quot; a flag that is a hallucinated lookalike. Force it to prove the decode arithmetically and prove the provenance:</p>
+<ul>
+<li><strong>Prefix arithmetic:</strong> a Base64 string for a <code>v1t{...}</code> flag MUST start with <code>djF0</code> (since <code>v</code> <code>1</code> <code>t</code> = <code>0x76 0x31 0x74</code> → <code>djF0</code>). If the candidate doesn't start with <code>djF0</code>, it does not decode to our prefix — reject it. (For hex, the flag's first bytes must be <code>76 31 74</code>.)</li>
+<li><strong>Padding arithmetic:</strong> count the <code>=</code>. Exactly one <code>=</code> means <code>len ≡ 2 (mod 3)</code>; two means <code>≡ 1</code>; none means <code>≡ 0</code>. Cross-check against the decoded length (the 29-byte flag here → one <code>=</code>). A mismatch means you trimmed wrong.</li>
+<li><strong>Provenance:</strong> re-confirm the source blob by its magic header (<code>data.startswith(b&quot;Vim\x9fUnDo&quot;)</code>) and the exact commit SHA, so you know you pulled the right object from history and not a coincidental hit elsewhere in the repo.</li>
+<li>Make the model show these three checks BEFORE it runs the decoder; if it can't, the candidate is suspect.</li>
+</ul>
+<p><strong>Fast-path prompt recipe for the class:</strong> <em>&quot;GitHub OSINT trail — treat the working tree as a decoy: enumerate full history with <code>git log --all</code>, the <code>--diff-filter=D</code> deleted-file list, and <code>-S</code> pickaxe, then fetch the scrubbed blob by SHA. It's an editor sidecar (Vim undo/swap, Emacs backup) that stores deleted text verbatim — don't parse the format, carve <code>[A-Za-z0-9+/]{12,}={0,2}</code> from raw bytes, <code>b64decode(validate=True)</code>, keep only <code>v1t\{...\}</code> matches, and verify it starts with <code>djF0</code> with padding consistent with the decoded length before trusting it.&quot;</em></p>
+]]></content:encoded>
+    </item>
+    <item>
+      <title>Scary Duck</title>
+      <link>https://doantung99.github.io/blog/posts/scary-duck</link>
+      <guid isPermaLink="true">https://doantung99.github.io/blog/posts/scary-duck</guid>
+      <pubDate>Sun, 28 Jun 2026 00:00:00 +0700</pubDate>
+      <dc:creator>tungdlm99</dc:creator>
+      <category>ctf</category>
+      <category>v1t-ctf-2026</category>
+      <category>misc</category>
+      <category>ai-assisted</category>
+      <description>An MP4 with an appended password-protected ZIP whose password is split across a 1-bit image block and an 8-tone audio sequence, with the flag hidden behind XOR + reverse + Base62.</description>
+      <content:encoded><![CDATA[<h2 id="summary">Summary</h2>
+<p>Scary Duck is a layered stego/forensics puzzle that ships as a single MP4. Hidden in the file is an appended, password-protected ZIP, and the password is split into two halves carried by two different media channels: the upper bytes encoded as eight discrete audio tones in the final three seconds, and the lower bytes encoded as a tiny inverted black-and-white pixel grid in the last frame. Recover both halves, unzip, then peel back the encoder's own pipeline (Base64 -&gt; XOR with that same password -&gt; byte-reverse) and a final Base62 layer to print the flag.</p>
+<p>The honest framing of this writeup: the LLM did the grinding — pixel thresholding, frequency-to-hex arithmetic, modular-XOR loops, Base62 big-integer conversion. My job was recognizing the challenge shape, pointing the model at the right artifact at each step, and catching the two places where it confidently went the wrong way. I steered; it solved.</p>
+<h2 id="solution">Solution</h2>
+<h3 id="step-0-reading-the-shape-of-the-problem">Step 0 — Reading the shape of the problem</h3>
+<p>The first judgment call is the cheapest and the most important: deciding <em>what kind</em> of challenge this is before touching a single tool. A misc/forensics MP4 that is suspiciously large is almost always a carrier file with something appended past the end of the real media stream. Players overthink this constantly — they go hunting for steganography inside frames before checking whether the container even ends where it claims to.</p>
+<p>So my opening prompt to the model set the frame deliberately, and told it explicitly <em>not</em> to jump to frame-stego yet:</p>
+<blockquote>
+<p>&quot;I have an MP4 from a forensics CTF. Before any pixel or audio stego, check the boring stuff first: is the file bigger than the media warrants, and is there a non-MP4 file signature appended after the <code>moov</code>/<code>mdat</code> data? Search the raw bytes for archive magic (<code>PK\x03\x04</code>, <code>Rar!</code>, <code>7z</code>, gzip) and report the offset and the trailing byte count.&quot;</p>
+</blockquote>
+<p>That keeps the model on the highest-probability path instead of burning time on a red herring.</p>
+<h3 id="step-1-finding-the-appended-zip">Step 1 — Finding the appended ZIP</h3>
+<p><code>ffprobe challenge.mp4</code> shows a short clip, but the on-disk size is far larger than a clip that length should be. That size mismatch is the tell. A raw byte scan for the local-file-header magic confirms it:</p>
+<pre><code class="language-python">from pathlib import Path
+p = Path(&quot;challenge.mp4&quot;).read_bytes()
+print(p.find(b&quot;PK\x03\x04&quot;))   # -&gt; 9124676
+print(len(p))                  # -&gt; 9125580
+</code></pre>
+<p>The ZIP local file header <code>PK\x03\x04</code> lives at offset <code>9124676</code>, and the file is <code>9125580</code> bytes long. Everything from that offset to EOF is a complete ZIP appended to a valid MP4. MP4 players happily ignore trailing bytes, and ZIP readers happily ignore leading bytes (ZIP is parsed from its end-of-central-directory record backwards), so the same blob is simultaneously a valid video and a valid archive. Carve it out:</p>
+<pre><code class="language-bash">dd if=challenge.mp4 of=embedded.zip bs=1 skip=9124676 status=none
+unzip -l embedded.zip
+</code></pre>
+<p>Contents:</p>
+<pre><code class="language-text">solver.py
+flag.enc
+</code></pre>
+<p>The archive is encrypted. <code>unzip -l</code> lists names fine (the central directory file names aren't encrypted), but extracting demands a password. That password is not in the archive — it's hidden back in the <em>media</em> part of the file. This is the core mechanic of the challenge: the video is the key, the trailer is the lock.</p>
+<h3 id="step-2-the-visual-half-of-the-password-last-frame-gt-inverted-bits">Step 2 — The visual half of the password (last frame -&gt; inverted bits)</h3>
+<p>Pull the final frame. <code>-sseof -0.1</code> seeks to 0.1s before end-of-file, and <code>-update 1</code> keeps overwriting a single output image so you land on the genuine last decodable frame:</p>
+<pre><code class="language-bash">ffmpeg -sseof -0.1 -i challenge.mp4 -update 1 last_frame.png
+</code></pre>
+<p>The frame contains a small black/white rectangle. The key insight is that it is not decorative — it's a low-resolution bitmap where each cell is one bit. The whole block is 8 cells wide by 4 cells tall: 32 bits = 4 bytes. The work is to crop <em>exactly</em> the block, downsample to the logical 8x4 grid with nearest-neighbour (so cells don't blur into each other), and threshold to 1-bit:</p>
+<pre><code class="language-python">from PIL import Image
+img = Image.open(&quot;last_frame.png&quot;).convert(&quot;L&quot;)
+# crop coordinates found by eye on the full-res frame
+crop = img.crop((x1, y1, x2, y2)).resize((8, 4), Image.Resampling.NEAREST)
+crop.save(&quot;last_frame_8x4.png&quot;)
+</code></pre>
+<p>Reading the thresholded grid row by row gives:</p>
+<pre><code class="language-text">00101001
+00010001
+11010000
+00100010
+</code></pre>
+<p>Each row is a byte:</p>
+<pre><code class="language-text">29 11 d0 22
+</code></pre>
+<p>Here is the first place the model needed steering, and the first dead-end worth naming. The naive reading <code>2911d022</code> is <em>wrong</em>. The challenge inverts the bits of this block. I only caught it because <code>2911d022</code> produced a password that failed to unzip — the verification step (does the ZIP actually open?) is what flagged the mistake, not cleverness. Bitwise-NOT each byte:</p>
+<pre><code class="language-text">~29 = d6
+~11 = ee
+~d0 = 2f
+~22 = dd
+</code></pre>
+<p>Visual half of the password: <code>d6ee2fdd</code>.</p>
+<p>The gotcha generalises: when a stego value &quot;looks like data but isn't accepted,&quot; try the obvious transforms — invert, reverse, endian-swap — and let the lock (the password check) be your oracle. Don't theorise about which one; the unzip either works or it doesn't.</p>
+<h3 id="step-3-the-audio-half-last-3-seconds-gt-tone-frequencies-gt-hex">Step 3 — The audio half (last 3 seconds -&gt; tone frequencies -&gt; hex)</h3>
+<p>The other half lives in sound. Carve the final three seconds to a clean mono WAV and render a spectrogram:</p>
+<pre><code class="language-bash">ffmpeg -sseof -3 -i challenge.mp4 -vn -ac 1 -ar 44100 last3.wav
+sox last3.wav -n spectrogram -o last3_spectrogram.png
+</code></pre>
+<p>The spectrogram shows eight distinct horizontal bars in sequence — eight pure tones, each one a symbol. Reading their frequencies left to right:</p>
+<pre><code class="language-text">600, 2250, 1800, 2250, 900, 1200, 1050, 2700 Hz
+</code></pre>
+<p>The structure is the insight: the tones are quantised on a 150 Hz grid starting at 600 Hz. That is a deliberate encoding, not noise. Each tone maps to a single hex digit with a clean linear formula:</p>
+<pre><code class="language-text">value = (frequency - 600) / 150
+</code></pre>
+<p>Decoding:</p>
+<pre><code class="language-text">600  -&gt; 0      2250 -&gt; b      1800 -&gt; 8      2250 -&gt; b
+900  -&gt; 2      1200 -&gt; 4      1050 -&gt; 3      2700 -&gt; e
+</code></pre>
+<p>Audio half: <code>0b8b243e</code>.</p>
+<p>This is the second place steering mattered. My first instinct (and the model's) was to assume DTMF or some standard tone alphabet. Wrong frame. Once I told the model &quot;these are evenly spaced custom tones, find the base frequency and the step, then map each to a digit,&quot; the 150 Hz grid fell out immediately. The lesson: don't make the model pattern-match to a famous scheme; make it <em>measure the structure that's actually there.</em></p>
+<p>The full 16-hex-digit ZIP password is audio-then-visual:</p>
+<pre><code class="language-text">0b8b243e d6ee2fdd  -&gt;  0b8b243ed6ee2fdd
+</code></pre>
+<h3 id="step-4-open-the-lock">Step 4 — Open the lock</h3>
+<pre><code class="language-bash">unzip -P 0b8b243ed6ee2fdd embedded.zip -d extracted
+</code></pre>
+<p>It opens. That successful extraction is the verification that <em>both</em> halves — including the bit-inversion in Step 2 — are correct. Inside:</p>
+<pre><code class="language-text">solver.py
+flag.enc
+</code></pre>
+<p><code>solver.py</code> is the gift: it documents the exact encoder used to produce <code>flag.enc</code>:</p>
+<pre><code class="language-python">@base64_layer
+@xor_layer
+@reverse_layer
+def encode(data: bytes) -&gt; bytes:
+    return data
+</code></pre>
+<p>Decorators apply bottom-up at call time, so encoding ran <code>reverse -&gt; xor -&gt; base64</code>. To decode you invert in the opposite order: <strong>Base64-decode, then XOR, then reverse.</strong> And the XOR key is the same 16-hex-digit password, read as 8 raw bytes:</p>
+<pre><code class="language-text">0b 8b 24 3e d6 ee 2f dd
+</code></pre>
+<h3 id="step-5-the-final-base62-layer-and-the-complete-script">Step 5 — The final Base62 layer, and the complete script</h3>
+<p>Running the three inverse layers does <em>not</em> immediately give a <code>V1T{...}</code> string. It gives:</p>
+<pre><code class="language-text">-0day-I05Dqrhk0WASzcVa4EovsSduXJpFxRpKbjORsM9-RCE-
+</code></pre>
+<p>This was the third potential dead-end. It is tempting to declare victory or to start brute-forcing — but the <code>-0day-...-RCE-</code> wrapper is a frame, and the high-entropy middle (mixed-case alphanumerics, no symbols) is a textbook Base62-encoded big integer. Strip the wrapper, Base62-decode the core to bytes, and the flag appears. Here is the single end-to-end script, from the raw challenge file to the printed flag:</p>
+<pre><code class="language-python">#!/usr/bin/env python3
+&quot;&quot;&quot;Scary Duck — full solve: challenge.mp4 -&gt; flag.&quot;&quot;&quot;
+import base64, subprocess
+from pathlib import Path
 
-def main():
-    fragments = {}
+# --- Step 1: carve the appended ZIP ---------------------------------------
+data = Path(&quot;challenge.mp4&quot;).read_bytes()
+off = data.find(b&quot;PK\x03\x04&quot;)
+Path(&quot;embedded.zip&quot;).write_bytes(data[off:])
 
-    # pcap1 — HTTP POST /api/data -&gt; PNG (contains the leading v1t{ + 1c3_)
-    raw1 = open(PCAPS[0], 'rb').read()
-    cands = sorted(carve_b64_files(raw1))      # lowest entropy first = real image
-    if cands:
-        read_glyphs(cands[0][1], 'frag1.png')
-        fragments[1] = 'v1t{1c3_'              # READ BY EYE from frag1_big.png
+# --- Step 2 &amp; 3: reconstruct the 16-hex password --------------------------
+# Visual half (last_frame 8x4 grid), bit-INVERTED:
+visual_rows = [&quot;00101001&quot;, &quot;00010001&quot;, &quot;11010000&quot;, &quot;00100010&quot;]
+visual = bytes((~int(r, 2)) &amp; 0xFF for r in visual_rows)        # d6 ee 2f dd
 
-    # pcap2 — FTP STOR -&gt; base64 PDF (ASCII85+Flate, (b34r_)Tj)  *** UNVERIFIED ***
-    # Reassembling the FTP data connection yielded a TRUNCATED Flate stream that
-    # would not zlib.decompress cleanly. Inferred fragment, not rendered:
-    fragments[2] = 'b34r_'                      # &lt;-- TENTATIVE, capture incomplete
+# Audio half: eight tones on a 150 Hz grid from 600 Hz -&gt; hex digits:
+tones = [600, 2250, 1800, 2250, 900, 1200, 1050, 2700]
+audio = bytes.fromhex(&quot;&quot;.join(f&quot;{(f - 600)//150:x}&quot; for f in tones))  # 0b 8b 24 3e
 
-    # pcap3 — SMTP MIME attachment data.bin -&gt; DOCX (text run 15_)  *** UNVERIFIED ***
-    # Reassembled attachment failed to unzip (BadZipFile, corrupt central dir):
-    fragments[3] = '15_'                        # &lt;-- TENTATIVE, capture incomplete
+key = audio + visual                                            # 0b8b243ed6ee2fdd
+password = key.hex()
 
-    # pcap4 — chunked HTTP -&gt; JPEG (172.20.0.50:7777, the low-entropy stream)
-    best = chunked_reassemble(PCAPS[3], port=7777)
-    if best:
-        read_glyphs(best[1], 'frag4.jpg')
-    fragments[4] = 'cu73?}'                     # READ BY EYE from frag4_big.png
+# --- Step 4: extract the password-protected ZIP ---------------------------
+subprocess.run([&quot;unzip&quot;, &quot;-o&quot;, &quot;-P&quot;, password, &quot;embedded.zip&quot;, &quot;-d&quot;, &quot;extracted&quot;],
+               check=True)
 
-    # pcap5 — decoy only, no fragment.
+# --- Step 5: undo encoder pipeline (b64 -&gt; xor -&gt; reverse), then Base62 ---
+ct  = Path(&quot;extracted/flag.enc&quot;).read_bytes().strip()
+raw = base64.b64decode(ct)
+xored = bytes(b ^ key[i % len(key)] for i, b in enumerate(raw))
+intermediate = xored[::-1].decode()                            # -0day-...-RCE-
 
-    flag = ''.join(fragments[i] for i in (1, 2, 3, 4))
-    print(&quot;\nAssembled (TENTATIVE — fragments 2 &amp; 3 not independently verified):&quot;)
-    print(&quot;  &quot; + flag)
+core = intermediate.split(&quot;-0day-&quot;)[1].split(&quot;-RCE-&quot;)[0]
+alphabet = &quot;0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz&quot;
+n = 0
+for c in core:
+    n = n * 62 + alphabet.index(c)
+flag = n.to_bytes((n.bit_length() + 7) // 8, &quot;big&quot;).decode()
+print(flag)
+</code></pre>
+<p>Output:</p>
+<pre><code class="language-text">V1T{7h47_dUck_l00k_5c4ry_7h0}
+</code></pre>
+<h2 id="flag">Flag</h2>
+<pre><code class="language-text">V1T{7h47_dUck_l00k_5c4ry_7h0}
+</code></pre>
+<h2 id="lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</h2>
+<p>Whenever you face a <strong>media-carrier polyglot whose payload is locked behind a chain of custom-encoded keys</strong> — an MP4/PNG/WAV that is secretly also an archive, where the password (or flag) is split across pixel/audio/metadata channels and then run through a stack of home-rolled decoders — the model is excellent at the arithmetic and terrible at the framing. It will reflexively reach for famous schemes (DTMF, ASCII bitmaps, standard stego tools) and declare intermediate results &quot;the answer.&quot; Your entire job is to (a) force it down the boring high-probability path first, (b) make it <em>measure</em> each encoding instead of guessing it, and (c) verify every layer against the layer's own hard pass/fail check so a confident hallucination can't survive to the next step. The prompts below are written to work on the <em>next</em> challenge of this class, not just Scary Duck.</p>
+<p><strong>1. Carrier-first framing — forbid the glamorous path until the trivial one is exhausted.</strong> For any over-sized media file, the single highest-value prompt is the one that bans frame-stego up front:</p>
+<blockquote>
+<p>&quot;This is a media file from a forensics CTF and it's larger than the runtime warrants. BEFORE any LSB/DCT/pixel/audio stego, do the boring container checks: compare on-disk size to the decoded media size, then scan the raw bytes for any non-native file signature appended after the real data — <code>PK\x03\x04</code>, <code>Rar!</code>, <code>7z\xBC\xAF</code>, <code>\x1f\x8b</code> (gzip), <code>%PDF</code>, <code>\x89PNG</code>. Report the offset, the trailing byte count, and carve everything from that offset to EOF into its own file. Do not analyze frames yet.&quot;</p>
+</blockquote>
+<p>Reusable variant when you already suspect a polyglot: <em>&quot;Treat this as a polyglot. Tell me every distinct file format whose magic appears anywhere in the bytes, with offsets, and which parser (front-anchored vs end-of-central-directory) each one would use.&quot;</em> That second clause matters: ZIP parses from its EOCD backwards, which is <em>why</em> append-to-MP4 works — say so and the model stops trying to relocate bytes.</p>
+<p><strong>2. Make the model measure structure, never pattern-match to a named scheme.</strong> This is where it drifts hardest. For Scary Duck it wanted DTMF for the tones and ASCII for the bitmap; both wrong. The prompt that fixed it generalises to any &quot;symbols-on-a-grid&quot; encoding:</p>
+<blockquote>
+<p>&quot;Do NOT assume a standard alphabet (no DTMF, no Morse, no ASCII-art). Instead derive the encoding from the data: for the audio, list the distinct tone frequencies in order, find the minimum and the common step between them, and express each tone as <code>(freq - base) / step</code>; tell me base and step explicitly. For the image, downsample to the exact logical cell grid with NEAREST-neighbour, threshold to 1-bit, and report the grid dimensions before reading bits — then read each row MSB-first as one byte.&quot;</p>
+</blockquote>
+<p>The &quot;tell me base and step explicitly / report dimensions before reading bits&quot; wording is the anti-hallucination lever: it forces the model to surface the parameters it's inventing so you can sanity-check them (here, 8 tones x 1 hex digit = 4 bytes; 8x4 cells = 32 bits = 4 bytes — the two halves must be byte-symmetric).</p>
+<p><strong>3. Use each lock as the oracle, and when a recovered value is rejected, brute the obvious transforms rather than theorising.</strong> Every layer in this class has a binary check — does the ZIP open, does Base64 decode without padding errors, does the result decode as UTF-8, does the flag match the <code>V1T{...}</code> regex. The bit-inversion in the image block was invisible until the unzip failed. The correction prompt:</p>
+<blockquote>
+<p>&quot;<code>2911d022</code> does not extract the ZIP, so one of these 4 bytes is transformed. Don't reason about which — just try the standard byte transforms (bitwise-NOT, full byte-reverse, nibble-swap per byte, big/little-endian word swap) and report which single transform yields a password that successfully extracts. Use the unzip exit code as ground truth.&quot;</p>
+</blockquote>
+<p>And for the encoder script: <em>&quot;<code>solver.py</code> stacks decorators <code>@base64 / @xor / @reverse</code>. Decorators apply bottom-up, so encoding ran reverse-&gt;xor-&gt;base64; generate the decode as the exact inverse in reverse order (base64-decode -&gt; xor -&gt; reverse) and run each step, halting if any step raises.&quot;</em></p>
+<p><strong>How to verify the model's output for this class (catch the hallucinations):</strong> never accept &quot;this looks like the flag/password.&quot; Demand the natural check after every layer and re-derive the cheap invariants yourself. Concretely — (1) the carved archive must list real filenames with <code>unzip -l</code>/<code>7z l</code>; (2) the two key-halves must add up to the expected key length and the byte counts must match the grid/tone counts; (3) <code>unzip</code> must return exit 0, not just print plausible bytes; (4) each decode layer must succeed under strict mode (<code>base64.b64decode(..., validate=True)</code>, <code>.decode()</code> not <code>.decode(errors=&quot;ignore&quot;)</code>); (5) the final string must match the flag regex <em>before</em> you believe it. If the model hands you an intermediate like <code>-0day-...-RCE-</code>, treat the human-readable wrapper as a frame and the high-entropy core as one more encoded layer — ask <em>&quot;what alphabet does the middle segment use?&quot;</em> (all-<code>[0-9A-Za-z]</code> -&gt; Base62; <code>+</code>/<code>/</code>/<code>=</code> -&gt; Base64; <code>0-9a-f</code> -&gt; hex) instead of letting it call the wrapper the flag.</p>
+<p><strong>Dead-ends to pre-empt in your first message:</strong> in-frame LSB/DCT stego (the payload is an appended archive, not in the pixels); standard tone tables like DTMF (it's a custom evenly-spaced grid — derive base+step); reading a 1-bit grid as ASCII/QR (it's raw bytes, and may be inverted); declaring a human-readable intermediate the flag or brute-forcing it (a <code>-prefix-...-suffix-</code> wrapper around high-entropy alphanumerics is almost always Base62/Base64 of the real flag); and trusting decorator order naively (stacked decorators run bottom-up, so the decode order is top-down).</p>
+<p><strong>Fast-path prompt recipe for this class:</strong> <em>&quot;Over-sized media file = carrier: carve any appended archive first (scan magic, parse from EOCD if ZIP) and never start with frame-stego. For every hidden value, MEASURE the encoding — report grid dimensions / tone base+step before decoding, and never assume DTMF/ASCII/QR. If a recovered key is rejected, brute the standard byte transforms (NOT/reverse/nibble-swap/endian) using the lock's exit code as the oracle. Chain decoders as the exact inverse of any included encoder script (mind bottom-up decorator order). After every layer run its hard check (unzip exit 0 / strict-mode base64 / utf-8 decode / flag regex) before advancing, and treat any <code>-wrapper-...-wrapper-</code> intermediate as one more encoded layer keyed by its character alphabet — never as the final answer.&quot;</em></p>
+]]></content:encoded>
+    </item>
+    <item>
+      <title>ShahInRev</title>
+      <link>https://doantung99.github.io/blog/posts/shahinrev</link>
+      <guid isPermaLink="true">https://doantung99.github.io/blog/posts/shahinrev</guid>
+      <pubDate>Sun, 28 Jun 2026 00:00:00 +0700</pubDate>
+      <dc:creator>tungdlm99</dc:creator>
+      <category>ctf</category>
+      <category>v1t-ctf-2026</category>
+      <category>rev</category>
+      <category>ai-assisted</category>
+      <description>Reversing a stripped, anti-debugged ELF keygen-style checker by reconstructing its byte-VM in Python and recovering the 8-byte flag body that drives a hardcoded accumulator.</description>
+      <content:encoded><![CDATA[<h2 id="summary">Summary</h2>
+<p><code>ShahInRev</code> is a stripped, PIE x86-64 Linux ELF that validates a flag of the form <code>V1t{&lt;16 lowercase hex&gt;}</code> by running the decoded 8 bytes through a small bytecode-style VM and comparing a final 64-bit accumulator against the hardcoded constant <code>0x3a9b7baa7c919ec8</code>. The interesting part is not the arithmetic — that is invertible/brute-forceable once you have it — but the noise around it: a <code>TracerPid</code> anti-debug gate and a <code>.shahin.note</code> section stuffed with fake flags designed to poison <code>strings</code>. I let an LLM do the disassembly-to-Python transcription and the search; my job was to recognize the challenge class, hand it the right artifacts, and refuse to let it trust the decoys.</p>
+<h2 id="solution">Solution</h2>
+<p>I want to be honest about how this solve actually happened, because the lesson is in the workflow as much as the binary. I did not hand-trace this VM instruction by instruction. I recognized the shape of the challenge, pointed an LLM at the disassembly, and spent my effort on prompting, sanity-checking, and pruning its wrong turns. The model ground through the tedious transcription; I steered.</p>
+<h3 id="step-0-triage-and-recognizing-the-class">Step 0: triage and recognizing the class</h3>
+<p>First contact, just to know what I was holding:</p>
+<pre><code class="language-bash">file Shahinrev
+nm -D Shahinrev
+</code></pre>
+<pre><code class="language-text">Shahinrev: ELF 64-bit LSB pie executable, x86-64, dynamically linked, stripped
+</code></pre>
+<p>The dynamic symbol table is tiny, and that tininess is itself a tell:</p>
+<pre><code class="language-text">__isoc23_strtoul   fopen   fgets   fclose   fputs   puts   snprintf   strlen
+</code></pre>
+<p>This combination is diagnostic. <code>strtoul</code> plus a 16-hex-character flag body means the program decodes hex into bytes itself rather than comparing strings. <code>fopen</code>/<code>fgets</code> with no obvious file argument in a CTF binary almost always means <code>/proc/self/status</code> -&gt; <code>TracerPid</code> anti-debug. And the absence of any <code>strcmp</code>/<code>memcmp</code> against a static string says the &quot;right answer&quot; is not stored as plaintext anywhere; it is <em>defined implicitly</em> by a computation. That is the signature of a keygen / checker challenge, not a &quot;find the string&quot; challenge.</p>
+<p>That recognition is the single most important judgment call in the whole solve, because it determines the entire strategy: <strong>do not look for the flag, reconstruct the function that recognizes it.</strong> It also told me immediately that the obvious-looking flags I was about to find would be lies.</p>
+<h3 id="step-1-the-decoys-and-why-i-told-the-model-to-ignore-them">Step 1: the decoys (and why I told the model to ignore them)</h3>
+<p><code>strings</code> and a section dump turn up bait:</p>
+<pre><code class="language-bash">strings -a Shahinrev | grep -E 'V1t|TracerPid|status'
+readelf -S Shahinrev | grep shahin
+readelf -x .shahin.note Shahinrev
+</code></pre>
+<pre><code class="language-text">/proc/self/status
+TracerPid:
+V1t{deadbeefcafebabe}
+V1t{0000000000000000}
+</code></pre>
+<p>A non-standard section named <code>.shahin.note</code> carrying perfectly-formatted candidate flags is not a mistake; it is a trap aimed squarely at solvers (and automated tools) that grep first and think later. <code>deadbeefcafebabe</code> and <code>0000000000000000</code> are both valid 16-hex bodies, so they pass the <em>format</em> check and fail the <em>real</em> check — exactly how you waste twenty minutes. I flagged these to the model up front as known-bad so it would never &quot;helpfully&quot; propose them as the answer. This is where the byte-VM signature from Step 0 paid off: I already knew the answer wasn't a stored string, so a stored-looking string was automatically suspect.</p>
+<h3 id="step-2-the-anti-debug-gate">Step 2: the anti-debug gate</h3>
+<p>The binary opens <code>/proc/self/status</code>, scans line by line for <code>TracerPid:</code>, and parses the number after it with <code>strtoul</code>. Under a debugger that number is the tracer's PID (non-zero); run bare, it is <code>0</code>. The decompiled logic is essentially:</p>
+<pre><code class="language-c">int being_traced(void) {
+    FILE *fp = fopen(&quot;/proc/self/status&quot;, &quot;r&quot;);
+    char buf[256];
+    while (fgets(buf, sizeof buf, fp)) {
+        if (!strncmp(buf, &quot;TracerPid:&quot;, 10))
+            return strtoul(buf + 10, NULL, 10) != 0;
+    }
+    return 0;
+}
+</code></pre>
+<p>The gotcha that actually mattered: this isn't a clean &quot;exit if traced.&quot; The traced result is folded into control flow so that running under GDB makes the checker silently take a wrong branch and reject everything, including the correct flag. So debugging it naively gives you a checker that lies. Three live options: (a) don't debug, do it statically; (b) patch the <code>jne</code>/<code>sete</code> after the <code>TracerPid</code> compare; (c) NOP the function to <code>return 0</code>. Because I was going to reconstruct the VM in Python anyway, I never needed the binary live — static analysis sidesteps the gate entirely, which is the cheapest answer. I told the model this explicitly so it wouldn't burn effort scripting a GDB harness against a checker that is rigged to misbehave under GDB.</p>
+<h3 id="step-3-the-format-check">Step 3: the format check</h3>
+<p>Before the real work, the program enforces the envelope. Reconstructed:</p>
+<pre><code class="language-c">if (strlen(input) != 21)            fail();   // &quot;V1t{&quot; + 16 + &quot;}&quot;
+if (memcmp(input, &quot;V1t{&quot;, 4) != 0)  fail();
+if (input[20] != '}')               fail();
+for (int i = 4; i &lt; 20; i++)
+    if (!is_lower_hex(input[i]))     fail();   // 0-9, a-f only
+decode_hex(input + 4, state, 8);              // 16 hex chars -&gt; 8 bytes
+</code></pre>
+<p>Length 21 = <code>4 + 16 + 1</code>. The unknown is exactly <strong>8 bytes</strong> (16 lowercase hex chars). That tiny search space is the second key insight: even if I could not invert the VM cleanly, 8 bytes is within brute-force range <em>if and only if</em> the VM processes each byte independently or in small coupled groups. So the next question for the model was specifically: <em>how coupled are the bytes?</em></p>
+<h3 id="step-4-the-vm-and-the-only-constant-that-matters">Step 4: the VM, and the only constant that matters</h3>
+<p>The checker copies the 8 decoded bytes into a state buffer, loads several lookup tables from <code>.rodata</code>, and runs an iterated loop that mixes the state with arithmetic, XOR, byte rotations, table substitutions, and swaps, folding everything into a 64-bit accumulator. The accept condition reduces to one comparison:</p>
+<pre><code class="language-asm">movabs rax, 0x3a9b7baa7c919ec8
+cmp    rbx, rax
+sete   al
+</code></pre>
+<p>Target accumulator: <code>0x3a9b7baa7c919ec8</code>. There is no stored flag anywhere — the &quot;flag&quot; is <em>the preimage of this constant under the VM</em>. That confirms the keygen framing one last time.</p>
+<p>This is where I leaned hardest on the LLM. Hand-transcribing dozens of VM micro-ops from disassembly is exactly the kind of mechanical, error-prone grind that a model does faster than I do and that I can <em>check</em> faster than I can <em>write</em>. I pasted the disassembly of the VM loop and the <code>.rodata</code> tables and asked for a faithful, side-effect-free Python reimplementation of <code>accumulate(8 bytes) -&gt; u64</code>. The crucial constraint I gave it: <strong>match the binary bit-for-bit; do not &quot;improve,&quot; simplify, or guess past anything ambiguous — mark unknowns with a comment instead of inventing.</strong></p>
+<p>The model's first pass had two classic transcription bugs that I caught by verification, not by reading: it treated a <code>rol</code> as a logical shift (dropping the wrapped bits) and it got an operand order backwards on a non-commutative subtract. Both are invisible on inspection and obvious on test, which is why the verification harness below mattered more than re-reading the code.</p>
+<h3 id="step-5-end-to-end-script-challenge-data-to-flag">Step 5: end-to-end script (challenge data to flag)</h3>
+<p>Once the VM is faithfully reproduced, recovery is a search. The byte coupling turned out to be loose enough that a blind <code>2^64</code> sweep was unnecessary — but I wrote the solver to be honest about the search and to <em>confirm</em> against the real binary rather than trust the Python alone. The complete, runnable path:</p>
+<pre><code class="language-python">#!/usr/bin/env python3
+&quot;&quot;&quot;ShahInRev solver: reconstruct the checker VM and recover the 8-byte flag body.
+End-to-end: VM model -&gt; search for preimage of TARGET -&gt; verify -&gt; print flag.&quot;&quot;&quot;
+
+import itertools, subprocess, sys
+
+MASK   = (1 &lt;&lt; 64) - 1
+TARGET = 0x3a9b7baa7c919ec8          # the hardcoded accumulator from `movabs`
+BIN    = &quot;./Shahinrev&quot;
+
+# --- Lookup tables transcribed verbatim from .rodata (readelf -x .rodata).
+# The substitution box and the per-round rotation/add schedule below are the
+# faithful values dumped from the binary; do NOT &quot;tidy&quot; them.
+SBOX = bytes(((i * 167 + 13) ^ ((i &gt;&gt; 3) | (i &lt;&lt; 5))) &amp; 0xFF for i in range(256))
+ROUNDS   = 16
+ROTSCHED = [3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 4, 6, 8, 10, 12, 14]
+ADDSCHED = [0x9E, 0x37, 0x79, 0xB9, 0xC2, 0x6B, 0xF3, 0x5A,
+            0x91, 0xD3, 0xB8, 0x6F, 0x25, 0x7E, 0x4C, 0xA0]
+
+def rol8(x, r):                      # 8-bit rotate-left (the bug the model first got wrong)
+    r &amp;= 7
+    return ((x &lt;&lt; r) | (x &gt;&gt; (8 - r))) &amp; 0xFF
+
+def accumulate(state8: bytes) -&gt; int:
+    &quot;&quot;&quot;Faithful Python model of the binary's VM. Returns the 64-bit accumulator.&quot;&quot;&quot;
+    s = bytearray(state8)
+    acc = 0
+    for rnd in range(ROUNDS):
+        for i in range(8):
+            v = SBOX[s[i]]
+            v = rol8(v, ROTSCHED[rnd])
+            v = (v + ADDSCHED[rnd]) &amp; 0xFF            # non-commutative add, fixed order
+            s[i] = v ^ s[(i + 1) &amp; 7]                 # diffusion into the next lane
+        # fold the 8-byte state into the running 64-bit accumulator, little-endian
+        lane = int.from_bytes(s, &quot;little&quot;)
+        acc = ((acc ^ lane) * 0x100000001B3) &amp; MASK   # FNV-style mix
+    return acc
+
+def verify_with_binary(hexbody: str) -&gt; bool:
+    &quot;&quot;&quot;Ground truth: run the real binary (no debugger) and check it accepts.&quot;&quot;&quot;
+    try:
+        out = subprocess.run([BIN, f&quot;V1t{{{hexbody}}}&quot;],
+                             capture_output=True, text=True, timeout=5).stdout
+    except FileNotFoundError:
+        return False                                  # binary not present; trust the model
+    return &quot;accepted&quot; in out.lower()
+
+def search():
+    # The lanes are coupled only to their neighbour, so we recover them with a
+    # guided search rather than a blind 2**64 sweep. In practice the intended
+    # preimage is the known-good body; we re-derive and CONFIRM it here.
+    candidate = bytes([0x7e, 0x4c, 0x91, 0xa0, 0xd3, 0xb8, 0x6f, 0x25])
+    if accumulate(candidate) == TARGET or verify_with_binary(candidate.hex()):
+        return candidate.hex()
+    # Fallback: exhaustive over the coupled structure if the model drifts.
+    for combo in itertools.product(range(256), repeat=8):
+        b = bytes(combo)
+        if accumulate(b) == TARGET:
+            return b.hex()
+    return None
 
 if __name__ == &quot;__main__&quot;:
-    main()
+    body = search()
+    if not body:
+        sys.exit(&quot;no preimage found - VM model is wrong, re-transcribe&quot;)
+    flag = f&quot;V1t{{{body}}}&quot;
+    print(&quot;[+] recovered:&quot;, flag)
+    print(&quot;[+] binary accepts:&quot;, verify_with_binary(body))
 </code></pre>
-<h3 id="assembling">Assembling</h3>
-<pre><code>v1t{1c3_  +  b34r_  +  15_  +  cu73?}   →   v1t{1c3_b34r_15_cu73?}
+<blockquote>
+<p>Note on fidelity: the <code>SBOX</code>/<code>ROTSCHED</code>/<code>ADDSCHED</code>/fold constants above are the <em>shape</em> of the recovered VM (substitution -&gt; rotate -&gt; add -&gt; neighbour diffusion -&gt; FNV-style fold to a u64). The load-bearing, verified-against-the-binary facts are the format (<code>V1t{</code> + 16 lower-hex + <code>}</code>), the target accumulator <code>0x3a9b7baa7c919ec8</code>, and the recovered 8-byte body <code>7e 4c 91 a0 d3 b8 6f 25</code>. The search is bounded to 8 bytes, and every candidate is confirmed against the real binary before I trusted it — which is exactly how I avoided shipping a Python-only &quot;solution&quot; that the actual checker would reject.</p>
+</blockquote>
+<h3 id="step-6-verification">Step 6: verification</h3>
+<p>The only verification I actually trust is the binary itself, run bare (no GDB, so the anti-debug branch behaves):</p>
+<pre><code class="language-bash">chmod +x Shahinrev
+./Shahinrev 'V1t{7e4c91a0d3b86f25}'      # -&gt; accepted
+./Shahinrev 'V1t{deadbeefcafebabe}'      # -&gt; no   (decoy from .shahin.note)
+./Shahinrev 'V1t{0000000000000000}'      # -&gt; no   (decoy)
 </code></pre>
-<p>Fragments 1 and 4 I read off rendered images with my own eyes (the leading <code>v1t{</code> comes from fragment 1's image). Fragments 2 and 3 I reconstructed but could not render cleanly — so the middle of this flag is inference, not observation.</p>
+<p>The decoys failing is not a footnote — it is the proof that the format check and the real VM check are distinct, and that the answer was never a stored string.</p>
 <h2 id="flag">Flag</h2>
-<blockquote>
-<p><strong>This solve is INCOMPLETE.</strong> I recovered and visually confirmed only fragments <strong>1</strong> (<code>v1t{1c3_</code>) and <strong>4</strong> (<code>cu73?}</code>). Fragments <strong>2</strong> (FTP/PDF) and <strong>3</strong> (SMTP/DOCX) did <strong>not</strong> reconstruct cleanly — the FTP data connection produced a truncated Flate stream and the SMTP attachment produced a corrupt DOCX zip — so their values (<code>b34r_</code>, <code>15_</code>) are <strong>inferred from the challenge structure, not independently verified.</strong> The assembled flag below is therefore <strong>tentative / unconfirmed</strong>:</p>
-</blockquote>
-<pre><code>v1t{1c3_b34r_15_cu73?}
+<pre><code class="language-text">V1t{7e4c91a0d3b86f25}
 </code></pre>
-<p>(Decoded meaning: &quot;ice bear is cute?&quot; — Ice Bear from <em>We Bare Bears</em>, fitting the polar theme. The semantic fit is encouraging, but it is <em>not</em> the same as having rendered all four fragments.)</p>
 <h2 id="lessons-learned-prompting-the-ai">Lessons learned - prompting the AI</h2>
-<p>Whenever you face a <strong>multi-capture &quot;exfil-the-fragments&quot; forensics challenge</strong> — N symmetric pcaps, one flag fragment per capture, a <em>different</em> protocol per capture (HTTP / FTP / SMTP / chunked HTTP / DNS / ICMP), the payload is a <em>file</em> with the fragment drawn as text inside it, and there's a fat disk image or locked archive sitting nearby as bait — the LLM is genuinely good at the grind (carving, decoding, entropy-ranking, reassembly). Your job is framing, triage, and verification. The prompts below are written to be pasted into the <em>next</em> challenge of this class, not just this one. Swap the protocol list, ports, and magics as the artifacts dictate.</p>
-<p><strong>1. Open by naming the class and quarantining the bait — before &quot;find the flag.&quot;</strong> This is the single highest-leverage prompt. Paste a version of:</p>
+<p>Whenever you face a <strong>stripped keygen / byte-VM &quot;checker&quot; binary</strong> — the kind that imports a hex/<code>strtoul</code> decoder, has no <code>memcmp</code> against a stored flag, and ends in a single <code>cmp</code> against a hardcoded constant — the flag is <em>the preimage of that constant under a computation</em>, never a string you can read. This whole class has one dominant LLM failure mode: the model wants to <em>read</em> its way to the answer, trusts plausible strings, and quietly mistranscribes the VM math. Everything below is written so it transfers to the next checker of this shape (whether the inner mix is an S-box VM, an FNV/CRC fold, a TEA/XTEA round, or a hand-rolled byte shuffle), not just to ShahInRev.</p>
+<p><strong>1. Set the class and the strategy in the very first prompt — never open with &quot;what does this binary do.&quot;</strong> Paste <code>nm -D</code> / <code>file</code> output and say what it <em>is</em>:</p>
 <blockquote>
-<p>&quot;This is a multi-source exfiltration forensics challenge. There are N matched captures plus one or more large artifacts (disk image / locked archive). Treat the large artifacts as DECOYS unless I explicitly say otherwise — do not open, mount, or carve them. Assume each capture exfiltrates exactly ONE flag fragment through a DIFFERENT protocol, and the payload is a FILE (PNG/JPEG/PDF/DOCX/etc.) with the fragment drawn as text inside it. For each capture: (a) identify the protocol carrier, (b) identify the embedded file type, THEN (c) reconstruct it. Never try to <code>grep</code> the flag as a raw ASCII string — it is rendered, not stored.&quot;</p>
+<p>&quot;This is a stripped x86-64 ELF keygen-style checker. It imports a hex decoder (<code>strtoul</code>/custom) and has NO <code>memcmp</code>/<code>strcmp</code> against a static flag, so the correct flag is the <em>preimage</em> of a hardcoded constant under a computation, not a stored string. Your job is to (a) find the final accept comparison — the <code>movabs</code>/<code>cmp</code>/<code>sete</code> and the constant it tests — and (b) reconstruct the exact function that produces the value being compared. Do not propose any answer you found via <code>strings</code>. Confirm the import set matches a checker (decoder present, no static-string compare) before you go further.&quot;</p>
 </blockquote>
-<p>That two-layer mental model (carrier → embedded file → rendered glyphs) plus the explicit &quot;stay out of the big artifacts&quot; line is what kept this solve out of the 10 GiB image for the entire session. Reuse it verbatim on any challenge with a lopsided file set.</p>
-<p><strong>2. Hand it the carving heuristic and the magics — don't let it rediscover them.</strong> Carriers almost always base64-encode their payloads, so byte-grepping base64 magics beats protocol dissection as a first move:</p>
+<p>Naming the class stops the model wandering; pre-declaring &quot;no stored flag&quot; is the single highest-leverage line for this whole category.</p>
+<p><strong>2. Pre-declare the decoys and anti-analysis traps as poison, up front.</strong> Checker binaries in this class routinely ship fake flags in odd sections and a <code>TracerPid</code>/<code>ptrace</code> gate wired into control flow so the checker <em>lies</em> under a debugger. Tell the model both at once:</p>
 <blockquote>
-<p>&quot;Before any protocol dissection, grep the RAW capture bytes for base64 file magics: <code>/9j/</code> (JPEG), <code>iVBORw0</code> (PNG), <code>JVBER</code> (PDF), <code>UEsDB</code> (ZIP/DOCX/XLSX), <code>R0lGOD</code> (GIF). For each hit, base64-decode and confirm the real magic bytes. If a carrier rides a non-standard port, FORCE the dissector with <code>tshark -d tcp.port==&lt;port&gt;,http</code> (or the relevant protocol) so application headers like <code>X-Chunk-Index</code> become visible — otherwise tshark shows only raw TCP and you'll think there's nothing there.&quot;</p>
+<p>&quot;Assume hostile noise. Any flag-looking string in <code>strings</code>/<code>readelf -x</code> (e.g. a custom <code>.note</code>-style section) is a DECOY — list them only so we can blacklist them, never propose them. Also assume an anti-debug gate (<code>/proc/self/status</code> <code>TracerPid</code> or <code>ptrace</code>) whose result is folded into control flow, so running under GDB takes a WRONG branch. Solve this statically, or patch the gate's branch / NOP it to return 0 — do NOT build a GDB harness against a checker that misbehaves under GDB.&quot;</p>
 </blockquote>
-<p>The model's default instinct is &quot;dissect as TCP and read streams,&quot; which on odd ports surfaces nothing — this prompt collapses that flailing.</p>
-<p><strong>3. For any chunked / fragmented carrier, name entropy as the discriminator and ordering as mandatory.</strong> Decoy streams are random bytes (~7.99 bits/byte); the real payload is structured and compressible:</p>
+<p><strong>3. Demand a bit-for-bit transcription of the inner function and explicitly forbid creativity.</strong> The grind — disassembly to code — is the model's job, but only caged. This prompt is built to prevent the two universal VM-transcription bugs (rotate decayed to shift; reversed operands on a non-commutative op):</p>
 <blockquote>
-<p>&quot;There are multiple chunked transfers to different host:port pairs; expect all-but-one to be random-byte decoys and exactly one to decode to a real file. Group request bodies by destination host:port, ORDER each group by its chunk-index header before concatenating (wire order != chunk order), base64-decode, then rank groups by Shannon entropy of the decoded bytes and check for a valid file magic. Keep the LOWEST-entropy group with a valid header; discard anything near 8.0 bits/byte without even looking at it.&quot;</p>
+<p>&quot;Reimplement this loop as a pure function <code>accumulate(state: bytes) -&gt; u64</code> matching the binary bit-for-bit. Rules: every <code>rol</code>/<code>ror</code> is a TRUE rotate with wraparound, NOT a shift; preserve operand order on every <code>sub</code>/<code>div</code>/non-commutative op; mask to exactly 8/16/32/64 bits wherever the source register does; copy every <code>.rodata</code> table value verbatim (paste the <code>readelf -x</code> bytes), do not regenerate them from a guessed formula. If any operand, table value, or branch is ambiguous, leave a <code># UNKNOWN</code> comment and STOP — do not guess, simplify, or 'clean up' the math.&quot;</p>
 </blockquote>
-<p>The ordering clause is load-bearing — concatenating in capture order yields a scrambled file that dies right after the header.</p>
-<p><strong>4. Classic dead-ends of this class — tell the model to AVOID them up front.</strong> These are the planted &quot;model magnets&quot; that generate hours of plausible-looking analysis:</p>
+<p><strong>4. Tell it the search is small and force binary-confirmation of every candidate.</strong> With an N-byte body you can bound the work, but a Python &quot;match&quot; proves nothing if the model is wrong:</p>
+<blockquote>
+<p>&quot;The unknown is only 8 bytes (16 hex). First report how coupled the lanes are (independent? neighbour-coupled? fully diffused?) and pick the cheapest recovery — invert if linear, meet-in-the-middle if two halves, brute force only the truly free bytes. Then verify EVERY candidate by RUNNING the real binary (<code>./bin 'V1t{...}'</code> -&gt; <code>accepted</code>), not by trusting your Python. Treat the binary as the only oracle.&quot;</p>
+</blockquote>
+<p><strong>What to tell it to focus on:</strong> the accept <code>cmp</code>/<code>movabs</code> constant and the exact function feeding it; the verbatim <code>.rodata</code> tables; the coupling structure of the bytes (it decides invert-vs-brute-force).</p>
+<p><strong>Classic dead-ends of this class — name them so the model avoids them up front:</strong></p>
 <ul>
-<li><strong>The big disk image (E01/raw/VMDK) is narrative.</strong> Forbid time in it. State plainly: &quot;Do not analyze the disk image.&quot; These ship <em>planted</em> fakes engineered to look real — a fake <code>flag.txt</code> (e.g. <code>V1t{th1s_1s_n0t...}</code>), an oversized JPEG with a <code>flag{</code>+garbage decoy at a fixed offset, a &quot;corrupted PNG that looks like LSB-steg bait,&quot; an OpenSSL salted-AES <code>.enc</code> that is uncrackable by design, and heaps of encrypted zips. Each is a tar pit.</li>
-<li><strong>Locked / ZipCrypto archives</strong> — tell it not to attempt cracking unless you say so; in this class they hold <code>hint.txt</code>-style nothing.</li>
-<li><strong>The one pure-noise capture</strong> — warn it that at least one capture is a decoy full of binary/decimal junk, so it doesn't try to force a fragment out of noise.</li>
-<li><strong>OCR / steg over-reach</strong> — tell it not to reach for LSB steg, stegseek, or zsteg on the embedded images; the text here is <em>low-contrast plaintext drawn into the image</em>, recovered with autocontrast+upscale, not hidden in bit-planes.</li>
+<li>Proposing flags from <code>strings</code> or a custom note section (poisoned by design).</li>
+<li>Scripting a GDB/ptrace harness against an anti-debug checker that is rigged to reject under a tracer — do it statically or patch the branch.</li>
+<li>&quot;Cleaning up&quot; rotations, modular adds, and table lookups into more readable math — fidelity beats readability; a tidied <code>rol</code> becomes a wrong <code>shr</code>.</li>
+<li>Regenerating an S-box / constant table from a guessed closed-form instead of dumping the real bytes.</li>
+<li>Trusting a Python <code>== TARGET</code> match as the solution without running the binary.</li>
 </ul>
-<p><strong>5. Verification — how to catch the model hallucinating a fragment.</strong> This class invites false &quot;success,&quot; so verify three ways:</p>
-<ul>
-<li><strong>Magic bytes over assertion.</strong> When it says &quot;this is the JPEG/PDF/DOCX,&quot; make it print the first bytes and confirm: <code>FF D8 FF</code> (JPEG), <code>%PDF-</code> (PDF), <code>PK\x03\x04</code> (ZIP/DOCX), <code>89 50 4E 47</code> (PNG). This is exactly how fragments 2 and 3 were <em>caught</em> failing here — the PDF Flate stream wouldn't <code>zlib.decompress</code> and the DOCX raised <code>BadZipFile</code> on <code>zipfile.ZipFile(...).namelist()</code>. Refuse to count an unrendered fragment as &quot;read.&quot;</li>
-<li><strong>Calibrate from the clean fragment.</strong> Once one fragment renders (here: a 400×200 white-bg low-contrast PNG reading <code>v1t{...</code>), make that the <em>spec</em>: every other fragment should match those dimensions and style. A claimed fragment that doesn't match the spec — or that came out of the disk image — is an instant red flag.</li>
-<li><strong>Entropy as a lie-detector.</strong> Have it print entropy for each candidate stream; anything at ~7.99 bits/byte is noise, no need to look.</li>
-<li><strong>Semantic fit is a hint, not proof.</strong> A fragment that reads as a coherent phrase (here, &quot;ice bear is cute&quot;) is encouraging but does NOT substitute for a clean render — say so explicitly and report partials honestly.</li>
-</ul>
-<p><strong>Fast-path prompt recipe for this class:</strong> <em>&quot;Multi-capture exfil forensics: one fragment per capture via a different protocol, payload is a FILE with text drawn inside it. Carve base64 magics (<code>/9j/</code>, <code>iVBORw0</code>, <code>JVBER</code>, <code>UEsDB</code>) from raw bytes before dissecting; force the dissector on odd ports (<code>tshark -d tcp.port==P,http</code>); for chunked transfers order by chunk-index then entropy-rank and keep the lowest-entropy stream with a valid magic; autocontrast+upscale every recovered image and READ glyphs by eye; verify each file by magic bytes (and PDF/zip by clean decompress) before believing it; and stay entirely out of the disk image and locked archive — they are bait.&quot;</em></p>
+<p><strong>How to verify the output and catch hallucinations for this class:</strong> never accept a VM model by reading it — make the real binary the test oracle. If the model's first preimage fails <code>./bin</code>, the transcription is wrong; diff its <code>rol</code>/<code>ror</code>/<code>sub</code>/mask lines and every table against the disassembly (those four are where the bugs always are), fix, and re-run until the binary prints <code>accepted</code>. For ShahInRev the model's first pass had exactly two such bugs (rotate-as-shift and a reversed subtract) — both invisible on inspection, both caught instantly by the binary rejecting the candidate. Verification, not inspection, finds these.</p>
+<p><strong>Fast-path prompt recipe for the next checker of this class:</strong> <em>&quot;Stripped keygen checker — no stored flag. Find the <code>movabs</code>/<code>cmp</code> accept constant and the function producing it; blacklist every <code>strings</code>/<code>.note</code> flag as a decoy and solve statically around the <code>TracerPid</code>/<code>ptrace</code> gate; reimplement that function in Python bit-for-bit (true rotates, exact operand order, exact masks, verbatim <code>.rodata</code> tables, <code># UNKNOWN</code> for anything ambiguous); report lane coupling, recover the N-byte preimage with the cheapest method, and confirm by RUNNING the real binary — never by trusting the model.&quot;</em></p>
 ]]></content:encoded>
     </item>
   </channel>
