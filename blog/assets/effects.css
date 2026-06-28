@@ -1,0 +1,217 @@
+/* =========================================================================
+   LazyBlog — CRT effects
+   Scanlines, phosphor vignette, bezel, flicker, plus CRT-themed floating
+   UI (back-to-top, reading progress).
+   ========================================================================= */
+
+/* CRT static scanlines — repeating 2px-on/2px-off horizontal stripes. */
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+        0deg, transparent, transparent 2px, var(--scan) 2px, var(--scan) 4px
+    );
+    pointer-events: none;
+    z-index: 1000;
+}
+
+/* CRT phosphor vignette — four corner radials crush each corner
+   individually (mimics the thicker glass at the corners of a curved
+   tube), one center ellipse holds the soft mid-fade, and a faint top
+   highlight reads as ambient light reflecting on the convex glass. */
+body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+        /* Top reflection — soft white sheen along the upper third */
+        radial-gradient(
+            ellipse 60% 30% at 50% 0%,
+            rgba(255, 255, 255, 0.05) 0%,
+            transparent 70%
+        ),
+        /* Four corner darkenings — much stronger than center fade */
+        radial-gradient(circle 600px at 0% 0%,    rgba(0,0,0,0.7) 0%, transparent 60%),
+        radial-gradient(circle 600px at 100% 0%,  rgba(0,0,0,0.7) 0%, transparent 60%),
+        radial-gradient(circle 600px at 0% 100%,  rgba(0,0,0,0.7) 0%, transparent 60%),
+        radial-gradient(circle 600px at 100% 100%,rgba(0,0,0,0.7) 0%, transparent 60%),
+        /* Center soft fade to tie corners together */
+        radial-gradient(
+            ellipse 90% 100% at 50% 50%,
+            transparent 0%,
+            transparent 45%,
+            rgba(0, 0, 0, 0.35) 90%
+        );
+    pointer-events: none;
+    z-index: 999;
+    mix-blend-mode: multiply;
+}
+/* Film grain / dust / scratches — static tiled overlay sitting on top
+   of the scanlines so it adds dirt-on-glass texture without competing
+   with readability. 128px greyscale PNG (~12KB) tiled across the
+   viewport. `lighten` blend mode only paints pixels strictly brighter
+   than the bg — dark grain pixels are discarded entirely. Cleaner than
+   `screen` (no soft additive haze) and `overlay` crushes to invisible
+   on this near-black bg. */
+html::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url('/blog/assets/noise.png');
+    background-repeat: repeat;
+    opacity: 0.08;
+    mix-blend-mode: lighten;
+    pointer-events: none;
+    z-index: 1001;
+}
+/* Hide noise under editor fullscreen — same pattern as the bezel below. */
+html:has(body.editor-fullscreen-active)::after { display: none; }
+/* Admin-controlled kill switch — see SITE_NOISE in .env. */
+html[data-noise="off"]::after { display: none; }
+
+/* CRT bezel — heavily rounded inner frame to suggest the curved glass
+   of a tube screen. Larger radius + deeper inset darkening pushes the
+   "corners pinch toward center" feel that pure CSS can fake. The
+   1px hairline border was visible as a faint glow tracing the curve
+   so it's been dropped — only the soft dark inset glow remains. */
+html::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    border-radius: 56px;
+    box-shadow:
+        inset 0 0 0 2px rgba(0, 0, 0, 0.4),
+        inset 0 0 100px rgba(0, 0, 0, 0.8),
+        inset 0 0 200px rgba(0, 0, 0, 0.5);
+    pointer-events: none;
+    z-index: 998;
+}
+/* Don't dim or frame the editor surface when it takes over the viewport. */
+body.editor-fullscreen-active::after { display: none; }
+html:has(body.editor-fullscreen-active)::before { display: none; }
+
+/* Flat-pixel themes (C64 + LCD): kill every CRT layer — vignette, bezel,
+   noise, scanlines already off via transparent --scan. C64 = crisp
+   lavender pixels on solid blue. LCD = sharp ink segments on sage
+   reflective panel. Neither has curved glass / dust / phosphor. */
+html[data-theme="c64"]::after,
+html[data-theme="c64"]::before,
+html[data-theme="lcd"]::after,
+html[data-theme="lcd"]::before {
+    display: none;
+}
+[data-theme="c64"] body::after,
+[data-theme="lcd"] body::after {
+    display: none;
+}
+
+/* Mobile: drop the corner vignette + bezel. They eat valuable screen space
+   on small viewports and the curve illusion doesn't read on a phone. */
+@media (max-width: 600px) {
+    body::after { display: none; }
+    html::before { display: none; }
+}
+
+/* Phosphor flicker — subtle opacity dips on home only. */
+@keyframes flicker {
+    0%, 92%, 100% { opacity: 1; }
+    93% { opacity: 0.96; }
+    94% { opacity: 1; }
+    96% { opacity: 0.98; }
+}
+body.is-home { animation: flicker 8s infinite; }
+
+/* CRT title flicker — three irregular opacity dips per cycle on the big
+   phosphor-glow titles. Opacity only, so the chromatic-aberration
+   text-shadow + :hover overrides keep working untouched. Brand-link and
+   post-page-title use different durations + delays so they never sync. */
+@keyframes crt-title-flicker {
+    0%, 19%, 23%, 59%, 63%, 78%, 82%, 100% { opacity: 1; }
+    21% { opacity: 0.7; }      /* hard dip — "tube struggling" */
+    61% { opacity: 0.88; }     /* soft dip */
+    80% { opacity: 0.82; }     /* mid dip */
+}
+.brand-link      { animation: crt-title-flicker 7s infinite; }
+.post-page-title { animation: crt-title-flicker 9s infinite 2s; }
+
+@media (prefers-reduced-motion: reduce) {
+    body.is-home,
+    .brand-link,
+    .post-page-title { animation: none; }
+}
+
+/* ---------- Back-to-top floating button ---------- */
+.back-to-top {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 44px;
+    height: 44px;
+    background: var(--panel);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    font-family: 'VT323', monospace;
+    font-size: 26px;
+    line-height: 1;
+    cursor: pointer;
+    border-radius: 3px;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(10px);
+    transition: opacity 0.25s ease, transform 0.25s ease, box-shadow 0.2s ease, background 0.2s ease;
+    z-index: 999;
+    text-shadow: 0 0 6px var(--accent-dim);
+}
+.back-to-top.visible {
+    opacity: 0.85;
+    pointer-events: auto;
+    transform: translateY(0);
+}
+.back-to-top:hover {
+    background: var(--primary-glow);
+    box-shadow: 0 0 12px var(--primary-glow-strong);
+    opacity: 1;
+}
+.back-to-top:focus-visible {
+    outline: 1px solid var(--accent);
+    outline-offset: 3px;
+}
+
+@media (min-width: 768px) {
+    .back-to-top { bottom: 28px; right: 28px; width: 48px; height: 48px; font-size: 28px; }
+}
+
+/* ---------- Reading progress bar (CRT signal-strength meter) ----------
+   Fixed top stripe on /posts/* pages. Track has 12 vertical "tick" marks
+   like a frequency meter; the fill glows in --primary as the reader
+   scrolls. Hidden under the editor-fullscreen overlay. */
+.read-progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--border);
+    z-index: 1100;
+    pointer-events: none;
+    /* Tick marks across the track */
+    background-image:
+        repeating-linear-gradient(
+            90deg,
+            transparent 0,
+            transparent calc(100% / 12 - 1px),
+            rgba(0, 0, 0, 0.6) calc(100% / 12 - 1px),
+            rgba(0, 0, 0, 0.6) calc(100% / 12)
+        );
+}
+.read-progress-fill {
+    height: 100%;
+    width: 0;
+    background: var(--primary);
+    box-shadow:
+        0 0 6px var(--primary),
+        0 0 14px var(--primary-glow-strong);
+    transition: width 0.08s linear;
+}
+body.editor-fullscreen-active .read-progress { display: none; }

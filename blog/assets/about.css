@@ -1,0 +1,786 @@
+/* =========================================================================
+   LazyBlog — about
+   Loaded only on /about (see layout.php conditional). Cyberpunk-HUD
+   layout adapted to the CRT phosphor palette: dashed corner-bracket
+   frames around each block, monospace labels, uppercase device-id strip.
+   Avatar is square (no border-radius).
+   ========================================================================= */
+.about-page { font-family: 'Share Tech Mono', monospace; }
+.about-hud {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    margin-top: 0;
+}
+
+/* Top meta strip — DEVICE ID 0X... · UPLINK: ONLINE */
+.about-meta-strip {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--text-dim);
+    padding-bottom: 12px;
+    border-bottom: 1px dashed var(--border);
+}
+.about-device-id { color: var(--accent); text-shadow: 0 0 4px var(--accent-dim); }
+.about-status strong { color: var(--primary); }
+
+/* Identity row: avatar + name block. Stacks on mobile.
+   align-items: stretch + flex-column name-block + `margin-top: auto`
+   on .about-currently-inline pins the "NOW »" snippet to the same
+   bottom edge as the avatar, regardless of which side is taller. */
+.about-identity {
+    display: flex;
+    gap: 24px;
+    align-items: stretch;
+    flex-wrap: wrap;
+}
+.about-avatar {
+    flex: 0 0 auto;
+    padding: 10px;
+    background: var(--panel);
+    /* Centre the square photo when the row grows taller than 180+padding. */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+/* Inner wrapper holds the phosphor-tint overlay. Needed because the
+   parent .hud-frame already uses ::before + ::after for corner brackets,
+   so we get a fresh ::after here for the multiply-blend color wash. */
+.about-avatar-photo {
+    position: relative;
+    display: block;
+    width: 180px;
+    height: 180px;
+    overflow: hidden;
+}
+.about-avatar-photo img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    /* Desaturate so the multiply overlay can carry the phosphor color
+       without fighting the photo's natural saturation. */
+    filter: grayscale(0.55) contrast(1.05);
+}
+.about-avatar-photo::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--primary);
+    mix-blend-mode: multiply;
+    opacity: 0.45;
+    pointer-events: none;
+}
+.about-name-block {
+    flex: 1 1 280px;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+.about-name { margin: 4px 0 6px; }
+.about-callsign {
+    color: var(--accent);
+    font-size: 14px;
+    letter-spacing: 2px;
+    margin-bottom: 4px;
+}
+.about-location {
+    color: var(--text-dim);
+    font-size: 12px;
+    letter-spacing: 1.5px;
+}
+
+/* Generic CRT panel — used by CONTACT + BIO blocks. The hud-frame
+   sibling rule below draws the corner brackets. */
+.about-panel {
+    padding: 18px 22px;
+    background: var(--panel);
+}
+.about-panel-label {
+    color: var(--accent);
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    padding-bottom: 6px;
+    border-bottom: 1px dashed var(--border);
+}
+
+/* Inline "NOW »" note under the identity block — short snippet of
+   what the operator is currently doing. Optional, only shown when
+   `currently:` frontmatter is set. `margin-top: auto` anchors it to
+   the bottom of the (column-flex) name-block so its bottom edge
+   aligns with the avatar's. */
+.about-currently-inline {
+    margin-top: auto;
+    padding: 10px 12px;
+    border-left: 2px solid var(--accent-dim);
+    background: rgba(255, 183, 0, 0.04);
+    font-size: 13px;
+    line-height: 1.55;
+    color: var(--text);
+}
+.about-currently-label {
+    color: var(--accent);
+    font-size: 11px;
+    letter-spacing: 2px;
+    margin-right: 8px;
+}
+.about-currently-text { color: var(--text); }
+
+/* 2-col panel grid (CONTACT + STACK side-by-side on desktop). */
+.about-grid {
+    display: grid;
+    gap: 22px;
+    grid-template-columns: 1fr;
+}
+@media (min-width: 768px) {
+    .about-grid { grid-template-columns: 1fr 1fr; }
+}
+
+/* Stats panel — 4 big-number cells in a grid. */
+.about-stat-grid {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+}
+@media (min-width: 640px) {
+    .about-stat-grid { grid-template-columns: repeat(4, 1fr); }
+}
+.about-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px 0;
+}
+.about-stat-num {
+    font-family: 'VT323', monospace;
+    font-size: clamp(28px, 5vw, 38px);
+    color: var(--primary);
+    line-height: 1;
+    letter-spacing: 1px;
+    text-shadow: 0 0 8px var(--primary-glow-strong);
+    white-space: nowrap;       /* "8 DAYS" never wraps → all 4 cells share baseline */
+}
+.about-stat-label {
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--text-dim);
+}
+.about-stat-footer {
+    margin-top: 14px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--border);
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    color: var(--text-dim);
+    text-align: right;
+}
+
+/* Stack — pill row of monospace chips. Visually distinct from .tag-chip
+   (the footer/post tags) by using filled bg + dashed border so it reads
+   as "stuff I use", not "click for related posts". */
+.about-stack {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.about-stack-chip {
+    display: inline-block;
+    padding: 4px 10px;
+    background: var(--primary-glow);
+    border: 1px dashed var(--primary-dim);
+    border-radius: 2px;
+    color: var(--primary);
+    font-size: 12px;
+    letter-spacing: 1px;
+    white-space: nowrap;
+}
+
+/* Auto-generated terminal log section. Uses `pre` so whitespace + line
+   breaks are preserved verbatim, with span colouring to distinguish
+   prompt / output lines. */
+.about-log-body {
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    border: none;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--text-dim);
+    white-space: pre;
+    overflow-x: auto;
+}
+.about-log-prompt {
+    color: var(--accent);
+    text-shadow: 0 0 4px var(--accent-dim);
+}
+.about-log-out {
+    color: var(--primary);
+}
+
+/* Contact list — bracketed label + value/link */
+.about-contacts {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.about-contact-row {
+    display: flex;
+    gap: 16px;
+    align-items: baseline;
+    flex-wrap: wrap;
+}
+.about-contact-label {
+    color: var(--accent);
+    font-size: 11px;
+    letter-spacing: 2px;
+    min-width: 140px;
+    flex-shrink: 0;
+}
+.about-contact-value {
+    color: var(--primary);
+    font-size: 14px;
+    letter-spacing: 1px;
+    text-decoration: none;
+    border-bottom: 1px dashed transparent;
+}
+a.about-contact-value:hover {
+    border-bottom-color: var(--primary-dim);
+    text-shadow: 0 0 6px var(--primary-glow-strong);
+}
+
+/* BIO body inherits .post-body typography from post.css. Just tighten
+   the top margin so the panel label sits close to the first heading. */
+.about-body > :first-child { margin-top: 0; }
+
+/* HUD corner-bracket frame — dashed L-marks at each corner of a panel.
+   ::before + ::after draw the top-left and bottom-right corners with
+   real dashed borders; the top-right + bottom-left corners are layered
+   via 4 linear-gradients in the element's own background — keeps markup
+   clean with no extra <div>s. */
+.hud-frame {
+    position: relative;
+    border: 1px dashed var(--border);
+    background-image:
+        /* top-right horizontal arm */
+        linear-gradient(to left,  var(--accent) 18px, transparent 18px),
+        /* top-right vertical arm */
+        linear-gradient(to bottom,var(--accent) 18px, transparent 18px),
+        /* bottom-left horizontal arm */
+        linear-gradient(to right, var(--accent) 18px, transparent 18px),
+        /* bottom-left vertical arm */
+        linear-gradient(to top,   var(--accent) 18px, transparent 18px);
+    background-size: 18px 2px, 2px 18px, 18px 2px, 2px 18px;
+    background-position:
+        top -1px right -1px,
+        top -1px right -1px,
+        bottom -1px left -1px,
+        bottom -1px left -1px;
+    background-repeat: no-repeat;
+}
+.hud-frame::before,
+.hud-frame::after {
+    content: '';
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    pointer-events: none;
+}
+/* Top-left corner */
+.hud-frame::before {
+    top: -1px;
+    left: -1px;
+    border-top: 2px dashed var(--accent);
+    border-left: 2px dashed var(--accent);
+}
+/* Bottom-right corner */
+.hud-frame::after {
+    bottom: -1px;
+    right: -1px;
+    border-bottom: 2px dashed var(--accent);
+    border-right: 2px dashed var(--accent);
+}
+
+/* ───── Current Streak card ─────
+ * Duolingo-inspired hero panel: big numeral on the left, a tinted
+ * phosphor flame on the right. Unit label (DAYS/WEEKS/…) sits next
+ * to the count so the same component reads correctly across all
+ * four cadences the STREAK_UNIT env supports.
+ */
+.about-streak {
+    overflow: hidden;
+}
+.about-streak-body {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+.about-streak-text {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+.about-streak-num {
+    font-family: 'VT323', monospace;
+    font-size: 3.2rem;
+    line-height: 1.05;
+    color: var(--primary);
+    text-shadow: 0 0 12px var(--primary-glow);
+    margin-top: 6px;
+}
+.about-streak-unit-tag {
+    /* Renders the raw STREAK_UNIT env value next to the panel heading
+     * so the operator can see at a glance which cadence is active. */
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    text-transform: lowercase;
+    letter-spacing: 0.08em;
+    margin-left: 6px;
+    text-shadow: none;
+}
+.about-streak-unit {
+    font-size: 1.6rem;
+    letter-spacing: 0.08em;
+    color: var(--primary);
+    margin-left: 6px;
+}
+.about-streak-sub {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    letter-spacing: 0.06em;
+    margin-top: 8px;
+}
+.about-streak-warning {
+    color: var(--accent);
+    text-shadow: 0 0 4px var(--accent);
+}
+.about-streak-flame {
+    flex: 0 0 auto;
+    color: var(--primary);
+    filter: drop-shadow(0 0 8px var(--primary-glow));
+    transition: color 0.3s ease, filter 0.3s ease, opacity 0.3s ease;
+}
+/* Streak broken — flame goes cold: muted grey, no glow. Numeric value
+ * stays readable so the operator can still see "0 WEEKS" clearly. */
+.about-streak.is-cold .about-streak-flame {
+    color: var(--border);
+    filter: none;
+    opacity: 0.5;
+}
+.about-streak.is-cold .about-streak-num,
+.about-streak.is-cold .about-streak-unit {
+    color: var(--text-dim);
+    text-shadow: none;
+}
+.about-streak.is-at-risk .about-streak-flame {
+    color: var(--accent);
+    filter: drop-shadow(0 0 8px var(--accent));
+    animation: about-streak-flame-flicker 1.4s ease-in-out infinite;
+}
+@keyframes about-streak-flame-flicker {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.7; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .about-streak.is-at-risk .about-streak-flame { animation: none; }
+}
+@media (max-width: 480px) {
+    .about-streak-flame { width: 56px; height: 70px; }
+    .about-streak-num { font-size: 2.4rem; }
+    .about-streak-unit { font-size: 1.2rem; }
+}
+
+/* ───── BADGES panel ─────
+ * Auto-fit tile grid. Unlocked badges glow phosphor; locked tiles dim
+ * with a dashed border and surface their N/M progress. Tier-agnostic at
+ * the structural level — hidden-tier tweaks come from .is-hidden-unlocked
+ * in the next phase.
+ */
+.about-badges-grid {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    /* Wider min so the longest codes (HALF-YEAR-ONLINE, SATURDAY-LATE-TX)
+     * fit on one line without breaking at hyphens. */
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 10px;
+}
+.about-badge {
+    border: 1px solid var(--border);
+    background: var(--panel);
+    padding: 10px 12px;
+    font-family: 'Share Tech Mono', monospace;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-height: 86px;
+}
+.about-badge.is-locked {
+    opacity: 0.5;
+    border-style: dashed;
+}
+.about-badge.is-unlocked {
+    border-color: var(--primary-dim);
+}
+.about-badge-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+.about-badge-icon {
+    color: var(--text-dim);
+    font-size: 0.95rem;
+    /* `[ ]` contains a literal space between the brackets — keep them
+     * together so a narrow tile doesn't wrap the close-bracket onto a
+     * second line. */
+    white-space: nowrap;
+    flex: 0 0 auto;
+}
+.about-badge.is-unlocked .about-badge-icon {
+    color: var(--primary);
+    text-shadow: 0 0 4px var(--primary-glow);
+}
+.about-badge-code {
+    font-size: 0.88rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--text-dim);
+    /* Codes are kebab-uppercase with hyphens; default browser behaviour
+     * breaks at every hyphen and stacks vertically inside a cramped
+     * tile. Override to only break when the word genuinely overflows. */
+    overflow-wrap: break-word;
+    word-break: normal;
+    line-height: 1.2;
+}
+.about-badge.is-unlocked .about-badge-code {
+    color: var(--primary);
+    text-shadow: 0 0 4px var(--primary-glow);
+}
+/* Hidden tier uses the accent token so unlocked surprises read visually
+ * distinct from volume milestones, even on monochrome reads. */
+.about-badge.is-hidden-unlocked {
+    border-color: var(--accent-dim);
+}
+.about-badge.is-hidden-unlocked .about-badge-icon,
+.about-badge.is-hidden-unlocked .about-badge-code {
+    color: var(--accent);
+    text-shadow: 0 0 4px var(--accent);
+}
+
+/* ───── Recent-unlock pulse ─────
+ * Marks the freshest unlocked badge. Three short cycles on page load,
+ * then settles back to the steady unlocked look. Pure decoration —
+ * never load-bearing, and we drop it entirely under reduced-motion.
+ */
+@keyframes about-badge-phosphor-pulse {
+    0%, 100% {
+        box-shadow: inset 0 0 6px var(--primary-glow);
+    }
+    50% {
+        box-shadow: inset 0 0 18px var(--primary-glow), 0 0 8px var(--primary-glow);
+    }
+}
+@keyframes about-badge-phosphor-pulse-text {
+    0%, 100% {
+        text-shadow: 0 0 4px var(--primary-glow);
+    }
+    50% {
+        text-shadow: 0 0 12px var(--primary), 0 0 22px var(--primary-glow);
+    }
+}
+@keyframes about-badge-accent-pulse {
+    0%, 100% {
+        box-shadow: inset 0 0 6px rgba(255, 183, 0, 0.18);
+    }
+    50% {
+        box-shadow: inset 0 0 18px rgba(255, 183, 0, 0.25), 0 0 8px rgba(255, 183, 0, 0.18);
+    }
+}
+@keyframes about-badge-accent-pulse-text {
+    0%, 100% {
+        text-shadow: 0 0 4px var(--accent);
+    }
+    50% {
+        text-shadow: 0 0 12px var(--accent), 0 0 22px var(--accent);
+    }
+}
+.about-badge.is-recent-unlock {
+    animation: about-badge-phosphor-pulse 2.5s ease-in-out 3;
+    animation-fill-mode: forwards;
+}
+.about-badge.is-recent-unlock .about-badge-code,
+.about-badge.is-recent-unlock .about-badge-icon {
+    animation: about-badge-phosphor-pulse-text 2.5s ease-in-out 3;
+}
+.about-badge.is-recent-unlock.is-hidden-unlocked {
+    animation-name: about-badge-accent-pulse;
+}
+.about-badge.is-recent-unlock.is-hidden-unlocked .about-badge-code,
+.about-badge.is-recent-unlock.is-hidden-unlocked .about-badge-icon {
+    animation-name: about-badge-accent-pulse-text;
+}
+@media (prefers-reduced-motion: reduce) {
+    .about-badge.is-recent-unlock,
+    .about-badge.is-recent-unlock .about-badge-code,
+    .about-badge.is-recent-unlock .about-badge-icon {
+        animation: none;
+    }
+    /* Static stand-in so reduced-motion users still see *some* hint
+     * that this entry is the freshest unlock. */
+    .about-badge.is-recent-unlock {
+        box-shadow: inset 0 0 10px var(--primary-glow);
+    }
+}
+.about-badge-meta {
+    font-size: 0.78rem;
+    color: var(--text-dim);
+    letter-spacing: 0.04em;
+}
+.about-badge-desc {
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    line-height: 1.35;
+    margin-top: auto;
+}
+
+/* Cap the H1 inside the identity strip — the base h1 rule scales to
+   `clamp(38px, 9vw, 68px)` for post titles, which wraps the operator
+   name to 2-3 lines when squeezed next to the avatar. Smaller clamp
+   keeps "HA TRUNG HIEU" on ONE line so info-right stays vertically
+   inside the avatar's box. */
+@media (max-width: 900px) {
+    .about-name { font-size: clamp(28px, 5.5vw, 44px); margin: 2px 0 4px; }
+    .about-currently-inline { font-size: 12px; padding: 8px 10px; }
+}
+@media (max-width: 600px) {
+    /* Keep the horizontal avatar | name-block layout on narrow viewports
+       too — without nowrap + flex-basis:0 the name-block wraps below
+       the avatar (because its 280px flex-basis can't fit), producing a
+       big empty gutter to the right of the photo. */
+    .about-identity {
+        flex-wrap: nowrap;
+        align-items: flex-start;
+        gap: 14px;
+    }
+    .about-name-block {
+        flex: 1 1 0;
+        min-width: 0;
+    }
+    .about-name { font-size: clamp(20px, 6vw, 30px); letter-spacing: 1px; }
+    .about-callsign { font-size: 12px; letter-spacing: 1.5px; margin-bottom: 2px; }
+    .about-location { font-size: 11px; letter-spacing: 1px; }
+    .about-currently-inline {
+        font-size: 11px;
+        padding: 6px 8px;
+        letter-spacing: 0;
+        line-height: 1.4;
+    }
+    .about-currently-label { font-size: 10px; letter-spacing: 1px; margin-right: 6px; }
+    .about-avatar-photo { width: 120px; height: 120px; }
+    .about-contact-label { min-width: 100px; }
+    .about-badges-grid { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 380px) {
+    /* Squeeze further on tiny viewports so the H1 still has room to
+       wrap to two lines without forcing horizontal overflow. */
+    .about-avatar-photo { width: 96px; height: 96px; }
+    .about-name { font-size: clamp(18px, 6.5vw, 24px); }
+    .about-identity { gap: 12px; }
+}
+@media (max-width: 400px) {
+    .about-badges-grid { grid-template-columns: 1fr; }
+}
+
+/* ───── HACK THE BOX panel ─────
+ * Live HTB v4 profile (rank / points / owns), cached server-side. Keeps the
+ * CRT panel chrome but injects HTB's signature phosphor-green as a FIXED
+ * brand accent (not a theme token) so the block reads as "Hack The Box" in
+ * every theme. The dynamic rank-progress width is the page's only inline
+ * style — allowed by the style-src 'unsafe-inline' CSP directive.
+ */
+.about-htb { --htb-green: #9fef00; }
+.about-htb .about-panel-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+.about-htb-rank-tag {
+    color: #0b0f0a;
+    background: var(--htb-green);
+    padding: 2px 9px;
+    border-radius: 2px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    text-shadow: none;
+    box-shadow: 0 0 8px rgba(159, 239, 0, 0.45);
+}
+.about-htb-head {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 16px;
+}
+.about-htb-logo {
+    flex: 0 0 auto;
+    color: var(--htb-green);
+    filter: drop-shadow(0 0 6px rgba(159, 239, 0, 0.5));
+}
+.about-htb-id {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+.about-htb-handle {
+    font-size: 1.15rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: var(--htb-green);
+    text-shadow: 0 0 6px rgba(159, 239, 0, 0.35);
+}
+.about-htb-sub {
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+}
+
+/* Rank progress: current rank → next rank, % filled. */
+.about-htb-progress-wrap { margin-bottom: 18px; }
+.about-htb-progress-labels {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+}
+.about-htb-progress-pct { color: var(--htb-green); font-weight: 700; }
+.about-htb-progress-track {
+    height: 8px;
+    background: rgba(159, 239, 0, 0.08);
+    border: 1px solid rgba(159, 239, 0, 0.2);
+    overflow: hidden;
+}
+.about-htb-progress-fill {
+    height: 100%;
+    background: var(--htb-green);
+    box-shadow: 0 0 10px rgba(159, 239, 0, 0.6);
+    transition: width 0.6s ease;
+}
+
+/* Stat numbers in HTB green to reinforce the brand inside the CRT grid. */
+.about-htb-stats .about-stat-num {
+    color: var(--htb-green);
+    text-shadow: 0 0 8px rgba(159, 239, 0, 0.4);
+}
+
+/* "View full profile" CTA — outlined green button that fills on hover. */
+.about-htb-link {
+    display: inline-block;
+    margin-top: 18px;
+    padding: 8px 18px;
+    border: 1px solid var(--htb-green);
+    color: var(--htb-green);
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    text-decoration: none;
+    transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+.about-htb-link:hover,
+.about-htb-link:focus-visible {
+    background: var(--htb-green);
+    color: #0b0f0a;
+    box-shadow: 0 0 14px rgba(159, 239, 0, 0.5);
+    outline: none;
+}
+@media (prefers-reduced-motion: reduce) {
+    .about-htb-progress-fill { transition: none; }
+}
+
+/* "#1 in <country>" hero — the country-leaderboard flex, featured above
+   the rank progress bar. Big VT323 numeral + flag + label. */
+.about-htb-country-rank {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+    padding: 9px 14px;
+    background: rgba(159, 239, 0, 0.07);
+    border: 1px solid rgba(159, 239, 0, 0.25);
+    border-left-width: 3px;
+}
+.about-htb-flag { font-size: 1.4rem; line-height: 1; }
+.about-htb-country-num {
+    font-family: 'VT323', monospace;
+    font-size: 1.9rem;
+    line-height: 1;
+    color: var(--htb-green);
+    text-shadow: 0 0 8px rgba(159, 239, 0, 0.5);
+}
+.about-htb-country-text {
+    font-size: 12px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+}
+
+/* ───── CERTIFICATIONS panel ─────
+ * Offensive-security credentials (OSCP, OSWE, …). Chips use the accent
+ * token so they read as "earned creds", visually distinct from the STACK
+ * chips (which use the phosphor primary).
+ */
+.about-certs-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+.about-cert-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    background: rgba(255, 183, 0, 0.06);
+    border: 1px solid var(--accent-dim);
+    border-radius: 2px;
+    color: var(--accent);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    text-shadow: 0 0 4px var(--accent-dim);
+}
+.about-cert-mark {
+    color: var(--accent);
+    font-size: 0.95rem;
+    text-shadow: 0 0 6px var(--accent-dim);
+}

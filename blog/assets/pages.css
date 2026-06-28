@@ -1,0 +1,736 @@
+/* =========================================================================
+   LazyBlog — standalone pages
+   Archive (heatmap + log), Search, 404, Series index.
+   ========================================================================= */
+
+/* ---------- 404 page ---------- */
+.not-found-section {
+    text-align: center;
+    padding-top: 24px;
+}
+.not-found-section .callsign,
+.not-found-section .section-tag { text-align: center; }
+.not-found-section p { margin: 14px 0; }
+
+/* Retro block-art 404 — phosphor glow, no border, inline-block so the
+   monospaced pre stays narrow and centered on its own line. */
+.ascii-404 {
+    display: inline-block;
+    background: transparent;
+    border: none;
+    padding: 0;
+    margin: 24px 0 12px;
+    font-family: 'Share Tech Mono', 'Courier New', monospace;
+    font-size: clamp(7px, 1.6vw, 12px);
+    line-height: 1.05;
+    letter-spacing: 0;
+    color: var(--primary);
+    text-shadow:
+        0 0 6px var(--primary),
+        0 0 18px var(--primary-glow-strong),
+        0 0 36px var(--primary-glow);
+    white-space: pre;
+    overflow-x: auto;
+    user-select: none;
+    /* Subtle flicker matches the home-page CRT vibe */
+    animation: ascii-404-flicker 6s infinite;
+}
+@keyframes ascii-404-flicker {
+    0%, 96%, 100% { opacity: 1; }
+    97% { opacity: 0.85; }
+    98% { opacity: 1; }
+    99% { opacity: 0.92; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .ascii-404 { animation: none; }
+}
+
+.not-found-subtitle {
+    margin-top: 8px;
+    margin-bottom: 4px;
+}
+
+/* ---------- Archive page (transmission log heatmap) ----------
+   GitHub-style activity grid: columns = weeks (Mon-start), rows = days.
+   Cell intensity reflects post count for that day. Clicking a single-post
+   cell jumps to the post; multi-post cells anchor to the date row in the
+   list below. */
+.archive-page { font-family: 'Share Tech Mono', monospace; }
+.archive-title { font-family: 'VT323', monospace; color: var(--primary); margin: 8px 0 4px; }
+.archive-range {
+    color: var(--text-dim);
+    font-size: 12px;
+    letter-spacing: 2px;
+    margin: 0 0 24px;
+}
+
+.heatmap-wrap {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    padding: 16px;
+    margin: 16px 0 40px;
+    overflow-x: auto;
+}
+.heatmap-months {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 14px;
+    gap: 3px;
+    margin-left: 28px;            /* match .heatmap-dow width */
+    margin-bottom: 6px;
+    color: var(--text-dim);
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    min-height: 14px;
+}
+.heatmap-month-label { white-space: nowrap; }
+.heatmap-body { display: flex; gap: 4px; }
+.heatmap-dow {
+    display: grid;
+    grid-template-rows: repeat(7, 14px);
+    gap: 3px;
+    color: var(--text-dim);
+    font-size: 9px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    width: 24px;
+    align-items: center;
+}
+.heatmap-grid {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 14px;
+    gap: 3px;
+}
+.heatmap-week {
+    display: grid;
+    grid-template-rows: repeat(7, 14px);
+    gap: 3px;
+}
+.heatmap-cell {
+    width: 14px;
+    height: 14px;
+    border-radius: 2px;
+    display: block;
+    text-decoration: none;
+    transition: outline-color 0.15s, box-shadow 0.15s;
+    outline: 1px solid transparent;
+}
+.heatmap-cell.cell-outside { background: transparent; }
+.heatmap-cell.cell-0       { background: var(--panel); outline-color: var(--border); }
+.heatmap-cell.cell-1       { background: var(--primary-dim); }
+.heatmap-cell.cell-2       { background: var(--primary); opacity: 0.7; }
+.heatmap-cell.cell-3       {
+    background: var(--primary);
+    box-shadow: 0 0 6px var(--primary-glow-strong);
+}
+a.heatmap-cell:hover {
+    outline-color: var(--accent);
+    box-shadow: 0 0 8px var(--accent-dim);
+}
+.heatmap-legend {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 4px;
+    margin-top: 10px;
+    color: var(--text-dim);
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+.heatmap-legend .heatmap-cell { width: 12px; height: 12px; }
+
+.archive-year { margin: 24px 0; }
+.archive-year-label {
+    color: var(--accent);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 14px;
+    letter-spacing: 3px;
+    margin: 12px 0 8px;
+}
+.archive-list { list-style: none; margin: 0; padding: 0; }
+.archive-item {
+    display: flex;
+    gap: 16px;
+    align-items: baseline;
+    padding: 6px 0;
+    border-bottom: 1px dashed var(--border);
+    scroll-margin-top: 24px;
+}
+.archive-item:target {
+    background: var(--primary-glow);
+    padding-left: 8px;
+    margin-left: -8px;
+}
+.archive-date {
+    color: var(--text-dim);
+    font-size: 12px;
+    letter-spacing: 1px;
+    min-width: 92px;
+    flex-shrink: 0;
+}
+.archive-link {
+    color: var(--text);
+    text-decoration: none;
+    border-bottom: 1px dashed transparent;
+    font-family: 'VT323', monospace;
+    font-size: 22px;
+    line-height: 1.2;
+}
+.archive-link:hover {
+    color: var(--primary);
+    border-bottom-color: var(--primary-dim);
+    text-shadow: 0 0 6px var(--primary-glow-strong);
+}
+.archive-icon { margin-right: 4px; }
+
+/* Archive rows are date + title + series-chip on a single flex row. On
+   narrow viewports the chip on the right squeezes long titles into
+   three+ line wraps that look broken. Hide the chip below 600px — the
+   series info is still visible on the post page itself, on /series,
+   and on the desktop archive. */
+@media (max-width: 600px) {
+    .archive-item .post-series-tag { display: none; }
+}
+
+/* ---------- Search page ----------
+   Server-rendered search; no JS. Diacritic-insensitive (handled in PHP);
+   matched terms wrapped in <mark> by the view. Input/button styled to
+   feel like a terminal command prompt. */
+.search-page { font-family: 'Share Tech Mono', monospace; }
+.search-form {
+    display: flex;
+    gap: 8px;
+    margin: 16px 0 24px;
+    flex-wrap: wrap;
+}
+.search-input {
+    flex: 1;
+    min-width: 200px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 16px;
+    padding: 12px 16px;
+    letter-spacing: 1px;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+.search-input:focus {
+    border-color: var(--primary-dim);
+    border-left-color: var(--primary);
+    box-shadow: 0 0 12px var(--primary-glow);
+}
+.search-input::placeholder { color: var(--text-dim); }
+.search-submit {
+    background: var(--panel);
+    border: 1px solid var(--accent-dim);
+    color: var(--accent);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 13px;
+    letter-spacing: 2px;
+    padding: 0 18px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.search-submit:hover {
+    background: var(--primary-glow);
+    border-color: var(--accent);
+    color: var(--primary);
+}
+.search-hint, .search-empty, .search-meta {
+    color: var(--text-dim);
+    font-size: 13px;
+    letter-spacing: 1px;
+}
+.search-empty { color: var(--accent); }
+.search-meta { margin: 16px 0; }
+
+.search-results { list-style: none; margin: 0; padding: 0; }
+.search-item {
+    padding: 16px 0;
+    border-bottom: 1px dashed var(--border);
+}
+.search-item:last-child { border-bottom: none; }
+.search-result-meta {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 6px;
+    font-size: 12px;
+}
+/* Search result tags mirror the tag-page treatment — plain text chips
+   (no box / no border) so the page reads as one consistent typographic
+   block instead of a row of competing pills. */
+.search-result-meta .tag-chip {
+    border: 0;
+    background: transparent;
+    padding: 0;
+    color: var(--primary-dim);
+    transition: color 0.18s ease, text-shadow 0.18s ease;
+}
+.search-result-meta .tag-chip:hover {
+    background: transparent;
+    color: var(--primary);
+    text-shadow: 0 0 6px var(--primary-glow-strong);
+}
+.search-date { color: var(--text-dim); letter-spacing: 1px; }
+.search-title-link { text-decoration: none; display: block; }
+.search-title {
+    font-family: 'VT323', monospace;
+    font-size: 28px;
+    color: var(--primary);
+    line-height: 1.2;
+    letter-spacing: 2px;
+}
+.search-title-link:hover .search-title {
+    text-shadow: 0 0 10px var(--primary), 0 0 24px var(--primary-glow-strong);
+}
+.search-icon { margin-right: 4px; }
+.search-snippet {
+    color: var(--text);
+    font-family: 'Play', system-ui, sans-serif;
+    margin: 6px 0 0;
+    line-height: 1.5;
+    font-size: 14px;
+}
+/* Same vertical rhythm as the snippet so the protected hits don't
+   collapse against the title row. The pill carries its own margins. */
+.search-lock-row { margin: 6px 0 0; }
+.search-lock-row .post-lock { margin-left: 0; }
+/* <mark> highlight — phosphor-block on matched terms, similar to the
+   active-TOC item but inline. */
+.search-page mark {
+    background: var(--primary);
+    color: var(--bg);
+    padding: 0 3px;
+    text-shadow: none;
+    border-radius: 1px;
+}
+
+/* ---------- /series/{slug} page ---------- */
+.series-page { font-family: 'Share Tech Mono', monospace; }
+.series-page-title {
+    font-family: 'VT323', monospace;
+    color: var(--primary);
+    margin: 8px 0 4px;
+}
+.series-meta {
+    color: var(--text-dim);
+    font-size: 12px;
+    letter-spacing: 2px;
+    margin: 0 0 24px;
+}
+.series-meta code {
+    font-size: 12px;
+    padding: 1px 6px;
+}
+.series-list {
+    list-style: none !important;
+    margin: 0;
+    padding: 0;
+}
+.series-item {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px dashed var(--border);
+}
+.series-item::marker { content: ''; }
+.series-item:last-child { border-bottom: none; }
+.series-part-no {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 14px;
+    color: var(--accent);
+    letter-spacing: 2px;
+    min-width: 32px;
+    flex-shrink: 0;
+    text-shadow: 0 0 4px var(--accent-dim);
+}
+.series-item-body { flex: 1; min-width: 0; }
+.series-item-title {
+    font-family: 'VT323', monospace;
+    font-size: 22px;
+    color: var(--primary);
+    text-decoration: none;
+    line-height: 1.2;
+}
+.series-item-title:hover {
+    text-shadow: 0 0 6px var(--primary), 0 0 14px var(--primary-glow-strong);
+}
+.series-item-meta {
+    margin-top: 4px;
+    font-size: 12px;
+    color: var(--text-dim);
+}
+.series-summary { color: var(--text-dim); }
+.series-icon { margin-right: 4px; }
+
+/* ---------- /series index — Jukebox-style card grid ----------
+   Each card: typographic cover (VT323 title fills the cover area) +
+   part-count chip at top-right + repeated title + date-range meta.
+   No images — the site doesn't store per-series covers, so the
+   cover IS the typography. */
+.series-card-grid {
+    list-style: none !important;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+    padding: 0;
+    margin: 24px 0 0;
+}
+@media (max-width: 1024px) {
+    .series-card-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 720px) {
+    .series-card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 420px) {
+    .series-card-grid { grid-template-columns: 1fr; }
+}
+.series-card {
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+    background: var(--bg);
+    transition: border-color 0.22s ease, box-shadow 0.22s ease;
+}
+.series-card:hover {
+    border-color: var(--primary-dim);
+    box-shadow: 0 0 18px var(--primary-glow);
+}
+.series-card-link {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+}
+.series-card-cover {
+    position: relative;
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+    background: var(--panel);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.series-card-cover-qr {
+    /* SVG inherits color via fill="currentColor" — `color: var(--primary)`
+       tints the QR to the active theme. width:100% lets the QR fill the
+       square cover area minus the padding. */
+    display: block;
+    width: 78%;
+    color: var(--primary);
+    line-height: 0;
+}
+.series-card-cover-qr svg {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+/* Centre overlay — deterministic mark per series (greek, leet, glyph).
+   Sits on top of the QR, masks ~20% of the modules. ECC H lets the QR
+   still decode despite the overlay. */
+.series-card-cover-mark {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    min-width: 20%;
+    min-height: 20%;
+    padding: 4px 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--panel);
+    border: 1px solid var(--primary);
+    color: var(--primary);
+    font-family: 'VT323', monospace;
+    font-size: clamp(14px, 1.6vw, 22px);
+    letter-spacing: 1px;
+    line-height: 1;
+    text-shadow:
+        0 0 4px var(--primary),
+        0 0 12px var(--primary-glow-strong);
+}
+.series-card-tag {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 1;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    background: rgba(0, 0, 0, 0.7);
+    border: 1px solid var(--accent-dim);
+    padding: 2px 8px;
+    border-radius: 2px;
+    letter-spacing: 1px;
+}
+/* Manifest-backed cover: Atkinson dither pattern flowing the theme color
+   through CSS mask. Same currentColor trick QR uses, so the 6 themes auto-
+   tint without runtime overrides. */
+.series-card-cover-dot {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background-color: currentColor;
+    -webkit-mask-image: var(--dot-mask);
+    mask-image: var(--dot-mask);
+    -webkit-mask-size: cover;
+    mask-size: cover;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    mask-position: center;
+    color: var(--primary);
+}
+@supports not (mask-image: url('')) {
+    /* Old browser without mask-image — hide the dot layer so the markup
+       below it (which we don't render when cover exists) doesn't show,
+       leaving the panel background as a safe fallback. */
+    .series-card-cover-dot { display: none; }
+}
+/* Hover affordance: peel the theme-tint mask off the cover and surface
+   the underlying 1-bit Bayer render in solid black-on-white — the same
+   look as the reference dither aesthetic the cover was authored against.
+   Scoped via :has() so the QR + greek-glyph fallback (rendered when no
+   cover.webp exists) doesn't flash white on hover. (hover: hover) guards
+   the rule from touch devices where :hover sticks after a tap. */
+.series-card-cover,
+.series-card-cover-dot {
+    transition: background-color 0.18s ease, color 0.18s ease;
+}
+@media (hover: hover) {
+    .series-card-cover:has(.series-card-cover-dot):hover {
+        background-color: #fff;
+    }
+    .series-card-cover:has(.series-card-cover-dot):hover .series-card-cover-dot {
+        color: #000;
+    }
+}
+.series-card-body {
+    padding: 10px 12px 14px;
+}
+.series-card-title {
+    font-family: 'VT323', monospace;
+    font-size: 18px;
+    color: var(--primary);
+    line-height: 1.2;
+    margin: 0 0 2px;
+    letter-spacing: 1px;
+}
+.series-card-link:hover .series-card-title {
+    text-shadow: 0 0 8px var(--primary-glow-strong);
+}
+.series-card-desc {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.45;
+    margin: 4px 0 6px;
+    /* Two-line clamp keeps card height predictable across descriptions. */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.series-card-meta {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+}
+/* Detail header — cover inline-left, title/desc/meta stack to the right.
+   Two-column grid collapses to single-column on narrow viewports so the
+   cover and metadata stay legible without a giant centered image
+   dominating the page. Both columns explicitly text-align: left + justify-
+   self: start to override any header/main centering that might leak in. */
+.series-detail-header {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+    /* Pull tight to the top of <main> — the page header band already
+       provides separation from above, so the title/cover row doesn't
+       need its own top margin. Bottom margin keeps a small gap above
+       the posts list. */
+    margin: -12px 0 12px;
+    align-items: start;
+    justify-items: start;
+    text-align: left;
+}
+@media (min-width: 1200px) {
+    .series-detail-header { margin-top: -20px; }
+}
+.series-detail-header.has-cover {
+    grid-template-columns: 200px minmax(0, 1fr);
+    gap: 22px;
+}
+@media (max-width: 640px) {
+    /* Stay 2-column on mobile — shrink the cover instead of collapsing
+       to a stack. Keeps the visual relationship "cover ↔ meta" intact
+       on narrow viewports. */
+    .series-detail-header.has-cover {
+        grid-template-columns: 120px minmax(0, 1fr);
+        gap: 14px;
+    }
+}
+.series-detail-cover {
+    position: relative;
+    width: 200px;
+    aspect-ratio: 1 / 1;
+    color: var(--primary);
+    border: 1px solid var(--border);
+    padding: 6px;
+    background: var(--panel);
+    justify-self: start;
+    margin: 0;
+    overflow: hidden;
+}
+.series-detail-cover-tag {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 1;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    background: rgba(0, 0, 0, 0.7);
+    border: 1px solid var(--accent-dim);
+    padding: 2px 8px;
+    border-radius: 2px;
+    letter-spacing: 1px;
+}
+@media (max-width: 640px) {
+    .series-detail-cover {
+        width: 120px;
+        padding: 4px;
+    }
+}
+.series-detail-cover-dot,
+.series-detail-cover-qr {
+    display: block;
+    width: 100%;
+    height: 100%;
+    color: var(--primary);
+}
+.series-detail-cover-dot {
+    background-color: currentColor;
+    -webkit-mask-image: var(--dot-mask);
+    mask-image: var(--dot-mask);
+    -webkit-mask-size: cover;
+    mask-size: cover;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    mask-position: center;
+}
+/* Mirrors the .series-card-cover hover behaviour — see the comment block
+   above the card rule. Same :has() + (hover: hover) scoping. */
+.series-detail-cover,
+.series-detail-cover-dot {
+    transition: background-color 0.18s ease, color 0.18s ease;
+}
+@media (hover: hover) {
+    .series-detail-cover:has(.series-detail-cover-dot):hover {
+        background-color: #fff;
+    }
+    .series-detail-cover:has(.series-detail-cover-dot):hover .series-detail-cover-dot {
+        color: #000;
+    }
+}
+.series-detail-cover-qr {
+    position: relative;
+    line-height: 0;
+}
+.series-detail-cover-qr svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+.series-detail-cover-qr .series-detail-cover-mark {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    min-width: 24%;
+    min-height: 24%;
+    padding: 4px 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--panel);
+    border: 1px solid var(--primary);
+    color: var(--primary);
+    font-family: 'VT323', monospace;
+    font-size: clamp(14px, 1.6vw, 22px);
+    letter-spacing: 1px;
+    line-height: 1;
+}
+.series-detail-meta {
+    min-width: 0;
+    text-align: left;
+    justify-self: stretch;
+    align-self: start;
+    /* Cancel any inherited top margin on the first child so the title
+       hugs the cover top edge instead of leaving a gap. */
+    margin-top: 0;
+}
+.series-detail-meta > :first-child {
+    margin-top: 0 !important;
+}
+.series-detail-meta .series-page-title {
+    margin: 0 0 10px;
+    text-align: left;
+    /* VT323 has a generous ascent above cap height — without a negative
+       top offset the title's visual top sits 6-10px below the cover's
+       top edge despite both grid items being `align-items: start`. Pull
+       the line box up so the highlight block's top matches the cover's
+       border y. */
+    line-height: 1;
+    padding-top: 0;
+    margin-top: -8px;
+}
+/* Selection-highlight treatment — inverted block that wraps tight around
+   the text on each line. box-decoration-break: clone keeps the background
+   from collapsing into one giant rectangle on multi-line titles, so
+   wrapped titles read as multiple "selected" segments stacked, matching
+   the real text-selection visual the user wants. */
+.series-detail-meta .series-page-title-mark {
+    display: inline;
+    background-color: var(--primary);
+    color: var(--bg);
+    padding: 2px 10px 4px;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+    /* Strip the global h1/h2 RGB-split text-shadow — it reads as chromatic
+       noise on the inverted block instead of phosphor glow. */
+    text-shadow: none;
+    box-shadow: 0 0 16px var(--primary-glow);
+}
+.series-detail-desc {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 14px;
+    color: var(--text);
+    line-height: 1.55;
+    max-width: 60ch;
+    margin: 8px 0 12px;
+    text-align: left;
+}
+.series-detail-meta .series-meta {
+    margin: 0;
+    text-align: left;
+}
+.series-detail-actions {
+    margin-top: 32px;
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    align-items: center;
+}

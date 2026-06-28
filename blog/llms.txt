@@ -1,0 +1,12 @@
+# LazyBlog
+
+> A personal blog transmitting thoughts over imperfect radio waves. Expect noise, fading, and low bandwidth—but always authentic signals.
+
+## Posts
+
+- [System Online — Welcome to LazyBlog](https://doantung99.github.io/blog/posts/welcome-to-lazyblog.md): Your local LazyBlog instance is live. Here's how to write your first real post and make this blog your own.
+
+## Tags
+
+- getting-started: https://doantung99.github.io/blog/tags/getting-started
+- meta: https://doantung99.github.io/blog/tags/meta

@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>LazyBlog</title>
+    <link>https://doantung99.github.io/blog/</link>
+    <description>A personal blog transmitting thoughts over imperfect radio waves. Expect noise, fading, and low bandwidth—but always authentic signals.</description>
+    <language>vi</language>
+    <lastBuildDate>Sun, 28 Jun 2026 22:49:56 +0700</lastBuildDate>
+    <generator>LazyBlog (PHP + Markdown)</generator>
+    <atom:link href="https://doantung99.github.io/blog/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>System Online — Welcome to LazyBlog</title>
+      <link>https://doantung99.github.io/blog/posts/welcome-to-lazyblog</link>
+      <guid isPermaLink="true">https://doantung99.github.io/blog/posts/welcome-to-lazyblog</guid>
+      <pubDate>Fri, 26 Jun 2026 00:00:00 +0700</pubDate>
+      <dc:creator>XV5HP</dc:creator>
+      <category>meta</category>
+      <category>getting-started</category>
+      <description>Your local LazyBlog instance is live. Here's how to write your first real post and make this blog your own.</description>
+      <content:encoded><![CDATA[<p>If you're reading this, the transmitter is warm and the local stack is
+running. This is a sample post — delete it whenever you like and start
+broadcasting your own signal.</p>
+<div class="highlight-box">
+<p><strong>This blog has no database and no build step.</strong> Every post is a plain
+markdown file under <code>content/posts/</code> named <code>YYYY-MM-DD-slug.md</code>. Drop a
+file in, refresh, and it's live.</p>
+
+</div>
+<h2 id="two-ways-to-write">Two ways to write</h2>
+<ol>
+<li><strong>Edit files directly.</strong> Create <code>content/posts/2026-06-27-my-post.md</code>
+with YAML frontmatter (title, date, tags...) and markdown below it.</li>
+<li><strong>Use the admin UI</strong> at <code>/admin</code>. It ships with an EasyMDE editor,
+live server-side preview, tag chips, and image upload. You'll need to
+set an admin password first (see below).</li>
+</ol>
+<h2 id="set-up-the-admin-login">Set up the admin login</h2>
+<p>To unlock <code>/admin</code>, generate a password hash and drop it into <code>.env</code>:</p>
+<pre><code class="language-bash">docker compose exec app php scripts/hash-password.php yourpassword
+</code></pre>
+<p>Copy the printed hash into <code>ADMIN_PASSWORD_HASH=&quot;...&quot;</code> in your <code>.env</code>,
+then reload the page. That's it.</p>
+<h2 id="a-few-things-that-just-work">A few things that just work</h2>
+<ul>
+<li>Standalone image lines render as full-bleed figures with a theme tint.</li>
+<li>A bare YouTube URL on its own line auto-embeds as a 16:9 player.</li>
+<li>Inline frequencies like <span class="freq-tag">145.800 MHz</span> become freq-tag chips automatically.</li>
+<li>Every post is also served as raw markdown at <code>/posts/{slug}.md</code>, and the
+whole site publishes <code>llms.txt</code>, <code>llms-full.txt</code>, and a valid RSS feed.</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Theme</th>
+<th>Vibe</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>amber</td>
+<td>warm phosphor (default)</td>
+</tr>
+<tr>
+<td>green</td>
+<td>classic terminal</td>
+</tr>
+<tr>
+<td>C64</td>
+<td>lavender retro</td>
+</tr>
+<tr>
+<td>LCD</td>
+<td>paper-sage</td>
+</tr>
+</tbody>
+</table>
+<p>Flip themes from the picker in the header — your choice persists in
+localStorage.</p>
+<p>73 de LazyBlog. Now go write something real.</p>
+]]></content:encoded>
+    </item>
+  </channel>
+</rss>

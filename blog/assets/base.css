@@ -1,0 +1,528 @@
+/* =========================================================================
+   LazyBlog — base
+   Theme tokens, reset, typography, layout (header/main/footer), smooth scroll.
+   ========================================================================= */
+
+/* ---------- Theme tokens ---------- */
+:root, [data-theme="amber"] {
+    --bg: #100a04;
+    --panel: #1a1208;
+    --primary: #ffb700;
+    --primary-dim: #7a5800;
+    --primary-glow: rgba(255, 183, 0, 0.15);
+    --primary-glow-strong: rgba(255, 183, 0, 0.30);
+    /* Accent stays in the amber family — lifted/lighter sibling so it
+       reads as warm phosphor wash, not a contrasting acid-green flash. */
+    --accent: #ffd065;
+    --accent-dim: #7a5c20;
+    --text: #efe0c0;
+    --text-dim: #7a6a55;
+    --border: #3a2a1e;
+    --scan: rgba(255, 183, 0, 0.03);
+}
+
+[data-theme="green"] {
+    --bg: #0a0e0a;
+    --panel: #0f1a0f;
+    --primary: #39ff14;
+    --primary-dim: #1a7a08;
+    --primary-glow: rgba(57, 255, 20, 0.15);
+    --primary-glow-strong: rgba(57, 255, 20, 0.30);
+    /* Accent stays in the green family — mint-tinted lifted sibling
+       instead of an amber contrast. */
+    --accent: #8aff70;
+    --accent-dim: #3a7a28;
+    --text: #d8efd0;
+    --text-dim: #5a7a55;
+    --border: #1e3a1e;
+    --scan: rgba(57, 255, 20, 0.03);
+}
+
+[data-theme="crypt"] {
+    --bg: #0a0303;
+    --panel: #1a0808;
+    --primary: #ff2418;
+    --primary-dim: #7a1008;
+    --primary-glow: rgba(255, 36, 24, 0.15);
+    --primary-glow-strong: rgba(255, 36, 24, 0.30);
+    /* Accent stays in the red family — soft coral so it reads as a
+       lifted/desaturated sibling of the blood-red primary instead of
+       an orange/amber contrast. */
+    --accent: #ff8a7a;
+    --accent-dim: #7a3028;
+    /* Pink-tinted text avoids the halation that pure white triggers against
+       a blood-red primary; stays in the warm family so hierarchy reads. */
+    --text: #efc8c0;
+    --text-dim: #7a5a55;
+    --border: #3a1e1e;
+    --scan: rgba(255, 36, 24, 0.03);
+}
+
+[data-theme="lcd"] {
+    /* E-ink / dot-matrix LCD — warm off-white "paper" panel with pure
+       black segment ink. Page bg is a slightly dustier cream so the
+       lighter card panels read as raised paper inserts sitting on top
+       (Kindle / newspaper / dot-matrix terminal aesthetic). All-black
+       text holds maximum contrast for reading long-form. Inverted from
+       every other theme (dark text on light bg). */
+    --bg: #c9c5b8;
+    --panel: #e6e2d4;
+    --primary: #1a1a1a;
+    --primary-dim: #4a4640;
+    --primary-glow: rgba(0, 0, 0, 0.05);
+    --primary-glow-strong: rgba(0, 0, 0, 0.12);
+    --accent: #000000;
+    --accent-dim: #4a4640;
+    --text: #1a1a1a;
+    --text-dim: #5a5550;
+    --border: #1a1a1a;
+    /* Faint horizontal pixel-grid hatching — keeps the "this is a
+       display, not pure paper" cue without competing with the text. */
+    --scan: rgba(0, 0, 0, 0.03);
+}
+
+[data-theme="c64"] {
+    /* Commodore 64 boot screen palette — saturated periwinkle blue background,
+       lighter lavender text, all flat (no CRT glow / no scanline overlay).
+       Numbers ripped from the iconic VICE default + the user's reference
+       screenshot, biased slightly bluer than the original 0x4040C0 so the
+       primary text contrast clears WCAG AA at 16px. */
+    --bg: #4040C0;
+    --panel: #3636AB;
+    --primary: #A8A8FC;
+    --primary-dim: #6868D8;
+    --primary-glow: rgba(168, 168, 252, 0.10);
+    --primary-glow-strong: rgba(168, 168, 252, 0.20);
+    /* White accent for chips / CTAs reads as the "READY." prompt cursor
+       against the lavender body text. */
+    --accent: #FFFFFF;
+    --accent-dim: #C8C8FC;
+    --text: #C8C8FC;
+    --text-dim: #7878D8;
+    --border: #6868D8;
+    /* Flat — C64's identity is pixel blocks on solid blue, not CRT phosphor
+       wash. Transparent scan token kills the repeating-gradient overlay
+       without needing to disable body::before. */
+    --scan: transparent;
+}
+
+[data-theme="brutalist"] {
+    /* Cool-tinted near-black + bluish whites — not pure #000/#fff, which
+       would read as flat OLED test pattern. The slight blue undertone
+       matches the "intentional brutalist site" look (GitHub dark, Linear,
+       Are.na). */
+    --bg: #08090c;
+    --panel: #0e1117;
+    --primary: #e6edf3;
+    --primary-dim: #6e7681;
+    --primary-glow: rgba(230, 237, 243, 0.05);
+    --primary-glow-strong: rgba(230, 237, 243, 0.10);
+    --accent: #e6edf3;
+    --accent-dim: #484f58;
+    --text: #c9d1d9;
+    --text-dim: #8b949e;
+    --border: #21262d;
+    /* Transparent --scan kills the repeating-gradient scanlines without
+       needing to disable body::before — keeps the cascade simple. */
+    --scan: transparent;
+}
+
+/* ---------- Reset ---------- */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+::selection { background: var(--primary); color: var(--bg); text-shadow: none; }
+::-moz-selection { background: var(--primary); color: var(--bg); text-shadow: none; }
+
+/* ---------- Mobile-first base ---------- */
+html, body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Play', system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.7;
+    min-height: 100vh;
+    /* `clip` (not `hidden`) so descendants can still use position: sticky.
+       `hidden` implicitly sets overflow-y: auto on the html/body element,
+       which creates a scroll container that breaks all inner sticky elements
+       (e.g. the editor toolbar in admin). `clip` blocks overflow without
+       establishing a scroll context. */
+    overflow-x: clip;
+    -webkit-text-size-adjust: 100%;
+    -webkit-font-smoothing: antialiased;
+}
+
+@media (min-width: 768px) {
+    html, body { font-size: 17px; line-height: 1.75; }
+}
+@media (min-width: 1200px) {
+    html, body { font-size: 18px; line-height: 1.8; }
+}
+
+/* ---------- Typography ----------
+   Headings get a phosphor-glow stack PLUS a subtle chromatic-aberration
+   RGB split (red shifted -1px, cyan shifted +1px). The split mimics a
+   misaligned CRT shadow mask and reads as "glitchy retro" without being
+   nausea-inducing — kept low alpha so it stays a flavor, not noise. */
+h1, h2, h3, .story-title, .post-title, .site-brand {
+    font-family: 'VT323', monospace;
+    color: var(--primary);
+    text-shadow:
+        -1px 0 0 rgba(255, 0, 80, 0.6),
+        1px 0 0 rgba(0, 220, 255, 0.5),
+        0 0 6px var(--primary),
+        0 0 22px var(--primary-glow-strong),
+        0 0 56px var(--primary-glow);
+    letter-spacing: 3px;
+    line-height: 1.1;
+}
+/* Reduced motion users get clean text — no chromatic split, just the glow. */
+@media (prefers-reduced-motion: reduce) {
+    h1, h2, h3, .story-title, .post-title, .site-brand {
+        text-shadow:
+            0 0 6px var(--primary),
+            0 0 22px var(--primary-glow-strong),
+            0 0 56px var(--primary-glow);
+    }
+}
+/* Mobile: drop the chromatic RGB split. The 1px shift reads as
+   oversized colored fringes once the title font shrinks below ~32px,
+   making the brand and post titles look glitchy-bad instead of CRT. */
+@media (max-width: 600px) {
+    h1, h2, h3, .story-title, .post-title, .site-brand {
+        text-shadow:
+            0 0 6px var(--primary),
+            0 0 22px var(--primary-glow-strong),
+            0 0 56px var(--primary-glow);
+    }
+}
+
+/* Crypt theme: primary is already red, so the chromatic-aberration red
+   shift stacks on top of itself and reads as a jagged outline instead of
+   a subtle CRT misalignment. Drop the split, keep the phosphor glow. */
+[data-theme="crypt"] h1,
+[data-theme="crypt"] h2,
+[data-theme="crypt"] h3,
+[data-theme="crypt"] .story-title,
+[data-theme="crypt"] .post-title,
+[data-theme="crypt"] .site-brand {
+    text-shadow:
+        0 0 6px var(--primary),
+        0 0 22px var(--primary-glow-strong),
+        0 0 56px var(--primary-glow);
+}
+
+/* Brutalist theme: drop only the chromatic RGB split on headings — the
+   colored fringes clash with a flat palette. Keep the phosphor glow so
+   VT323's pixel edges still soften, and keep vignette + bezel + flicker
+   so the CRT identity holds. Scanlines already vanish via the transparent
+   --scan token in the palette. */
+[data-theme="brutalist"] h1,
+[data-theme="brutalist"] h2,
+[data-theme="brutalist"] h3,
+[data-theme="brutalist"] .story-title,
+[data-theme="brutalist"] .post-title,
+[data-theme="brutalist"] .site-brand {
+    text-shadow:
+        0 0 6px var(--primary),
+        0 0 22px var(--primary-glow-strong),
+        0 0 56px var(--primary-glow);
+}
+
+/* Flat-pixel themes (C64 + LCD): catch-all flatten. Boot-screen + LCD
+   panel aesthetics are crisp pixel blocks — any glow / chromatic smear /
+   drop shadow reads as VHS rot, not Commodore / DMG. Scoped so the
+   other phosphor themes keep their identity. */
+[data-theme="c64"] *,
+[data-theme="c64"] *::before,
+[data-theme="c64"] *::after,
+[data-theme="lcd"] *,
+[data-theme="lcd"] *::before,
+[data-theme="lcd"] *::after {
+    text-shadow: none !important;
+    box-shadow: none !important;
+    filter: none !important;
+}
+
+h1, .site-brand { font-size: clamp(38px, 9vw, 68px); }
+/* `<p class="site-brand">` is normal-weight by default; h1 is browser-bold.
+   The weight mismatch makes the brand on non-home pages render thinner,
+   so the phosphor text-shadow reads visibly dimmer than the same title
+   on home. Pin to bold so every page shows the brand at identical glow. */
+.site-brand { margin: 0; font-weight: bold; }
+h1 .brand-link, .site-brand .brand-link { color: inherit; text-decoration: none; }
+h1 .brand-link:hover,
+.site-brand .brand-link:hover { text-shadow: 0 0 16px var(--primary), 0 0 48px var(--primary-glow-strong); }
+
+h2 { font-size: clamp(28px, 5vw, 36px); margin: 28px 0 16px; }
+h3 { font-size: clamp(22px, 4vw, 26px); margin: 24px 0 12px; }
+h3 { color: var(--accent); text-shadow: 0 0 8px var(--accent-dim); }
+
+/* All underlines are dashed across the site (1px thin dashes) to soften the
+   look vs. the default solid bar — fits the CRT terminal aesthetic. */
+a {
+    color: var(--primary);
+    text-decoration: underline;
+    text-decoration-style: dashed;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+}
+a:hover { text-shadow: 0 0 8px var(--primary-glow-strong); }
+
+p { margin: 12px 0; }
+ul, ol { margin: 12px 0 12px 24px; }
+li { margin: 6px 0; }
+
+/* Horizontal rule — themed thin line with soft phosphor glow. */
+hr {
+    border: 0;
+    height: 1px;
+    background: var(--primary-dim);
+    box-shadow: 0 0 6px var(--primary-glow);
+    margin: 28px 0;
+}
+
+code, pre {
+    font-family: 'Share Tech Mono', monospace;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    padding: 1px 6px;
+    border-radius: 2px;
+}
+pre { padding: 12px 14px; overflow-x: auto; margin: 12px 0; }
+pre code { border: none; padding: 0; background: transparent; }
+
+strong { color: var(--primary); }
+em { color: var(--accent); font-style: italic; }
+
+blockquote {
+    border-left: 3px solid var(--primary-dim);
+    padding: 8px 16px;
+    margin: 16px 0;
+    color: var(--text-dim);
+    background: var(--panel);
+}
+
+/* ---------- Header (centered) ---------- */
+header {
+    border-bottom: 1px solid var(--border);
+    padding: 28px 20px 24px;
+    text-align: center;
+}
+@media (min-width: 768px) {
+    header { padding: 40px 40px 28px; }
+}
+
+.callsign {
+    font-family: 'Share Tech Mono', monospace;
+    color: var(--primary-dim);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    font-size: 11px;
+    margin-bottom: 6px;
+}
+
+.subtitle {
+    font-family: 'Share Tech Mono', monospace;
+    color: var(--text-dim);
+    font-size: 12px;
+    margin-top: 12px;
+    letter-spacing: 1px;
+}
+
+.header-actions {
+    margin-top: 18px;
+    display: inline-flex;
+    gap: 10px;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+}
+.header-btn {
+    /* inline-flex + center alignment normalises content positioning so
+       <a>.header-btn (text node child) and <button>.header-btn (span
+       child) render at identical metrics. Pure inline-block left a 1-2px
+       baseline drift on the picker toggle. */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    /* Reset UA button widget metrics (Chrome adds implicit padding to
+       native <button> via `appearance: auto`). */
+    appearance: none;
+    -webkit-appearance: none;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    line-height: 1.4;
+    background: transparent;
+    border: 1px solid var(--accent-dim);
+    color: var(--accent);
+    padding: 6px 14px;
+    letter-spacing: 2px;
+    cursor: pointer;
+    border-radius: 2px;
+    text-decoration: none;
+    transition: background 0.18s ease, border-color 0.18s ease;
+}
+.header-btn:hover { background: var(--primary-glow); border-color: var(--accent); text-shadow: 0 0 6px var(--accent-dim); }
+.header-btn[aria-current="page"] {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+/* Theme picker dropdown: triggers like a .header-btn, opens a panel of
+   theme options anchored below it. Menu is absolute-positioned and uses
+   themed tokens so it re-skins with whatever theme is active. */
+.theme-picker {
+    position: relative;
+    /* inline-flex with stretch makes the button child take wrapper height
+       1-to-1 — eliminates baseline drift introduced by an inline-block
+       wrapper around an inline-block toggle. */
+    display: inline-flex;
+    align-items: stretch;
+}
+.theme-picker-menu {
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    min-width: 140px;
+    background: var(--panel);
+    border: 1px solid var(--accent-dim);
+    border-radius: 2px;
+    padding: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    z-index: 50;
+    box-shadow: 0 0 12px var(--primary-glow);
+}
+.theme-picker-menu[hidden] { display: none; }
+.theme-picker-menu button {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    background: transparent;
+    border: 0;
+    color: var(--accent);
+    padding: 6px 12px;
+    text-align: left;
+    cursor: pointer;
+    border-radius: 2px;
+}
+.theme-picker-menu button:hover { background: var(--primary-glow); }
+.theme-picker-menu button[aria-current="true"] {
+    color: var(--primary);
+    text-shadow: 0 0 6px var(--primary-glow-strong);
+}
+
+/* ---------- Main layout ---------- */
+main {
+    width: 100%;
+    max-width: 960px;
+    margin: 0 auto;
+    /* Tighter bottom padding — footer's own top padding (and the rule)
+       already provides separation, so we don't need to double-stack
+       breathing room here. */
+    padding: 16px 20px 18px;
+}
+@media (min-width: 768px) {
+    main { padding: 20px 40px 22px; }
+}
+@media (min-width: 1200px) {
+    main { max-width: 1020px; padding: 24px 48px 24px; }
+}
+
+/* Admin canvas widths + admin styles live in /assets/admin.css and are
+   only loaded on /admin paths (see layout.php). */
+
+/* The first heading in main shouldn't have a big top margin — header border
+   already separates it from the brand area. */
+main > section:first-child > h2:first-child,
+main > article:first-child > .post-page-title:first-of-type,
+main > article:first-child > .section-tag:first-child {
+    margin-top: 4px;
+}
+
+/* ---------- Footer (site-wide metadata) ---------- */
+footer {
+    border-top: 1px solid var(--border);
+    padding: 20px 20px 24px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    text-align: left;
+}
+@media (min-width: 768px) {
+    footer { padding: 24px 40px 28px; }
+}
+
+.footer-block {
+    margin-bottom: 22px;
+    max-width: 960px;
+    margin-left: auto;
+    margin-right: auto;
+}
+.footer-block:last-child { margin-bottom: 0; }
+
+.footer-label {
+    color: var(--primary-dim);
+    letter-spacing: 3px;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+}
+
+.footer-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+.footer-ai a { color: var(--accent); text-decoration: underline; }
+
+/* Source / "Powered by" link — sits at the very bottom of the footer
+   below the copyright. Single centered line, dim by default, glows on
+   hover. Reads as a subtle brand mark, not an ad. */
+.footer-source {
+    text-align: center;
+    margin-top: 14px;
+    letter-spacing: 2px;
+}
+.footer-source-link {
+    color: var(--text-dim);
+    text-decoration: none;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    transition: color 0.18s ease, text-shadow 0.18s ease;
+}
+.footer-source-link:hover {
+    color: var(--accent);
+    text-shadow: 0 0 6px var(--accent-dim);
+}
+
+/* Tiny version stamp directly below the GitHub link. Operators see at a
+   glance which build is serving. Dim by design — informational, not
+   decorative. Source of truth: /VERSION file, surfaced via App\Version. */
+.footer-version {
+    text-align: center;
+    color: var(--text-dim);
+    opacity: 0.6;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    margin-top: 6px;
+}
+
+.footer-copyright {
+    text-align: center;
+    color: var(--text-dim);
+    padding-top: 18px;
+    border-top: 1px dashed var(--border);
+    margin-top: 8px;
+    letter-spacing: 3px;
+}
+/* No separator needed when copyright is the very first footer line
+   (i.e. no § EXTENSIONS plugin block above) — the <footer> border-top
+   already provides the visual break. */
+footer > .footer-copyright:first-child {
+    padding-top: 0;
+    margin-top: 0;
+    border-top: 0;
+}
+
+/* Smooth scroll for anchor jumps */
+html { scroll-behavior: smooth; }
+.post-body h2, .post-body h3 { scroll-margin-top: 24px; }
